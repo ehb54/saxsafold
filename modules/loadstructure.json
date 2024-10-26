@@ -1,0 +1,413 @@
+{
+    "moduleid"     : "loadstructure"
+    ,"label"       : "Load"
+    ,"help"        : "Load a structure"
+    ,"noreset"     : "true"
+    ,"executable"  : "loadstructure.php"
+#    ,"resource"   : "docker-local"
+#    ,"dependencies" : [ 
+#        { "base" : "python" }
+#        ,{ "file" : "mass_load.py" }
+# comment above 2 lines and uncomment 2 lines below for perl executable
+#        { "base" : "perl" }
+#        ,{ "cpan" : "JSON" }
+#    ]
+    ,"addproject" : "true"
+    ,"panels" : [
+        {
+            "root" : {
+                "label" : [
+                    1,
+                    1
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "gap" : "1px",
+                "align" : "left",
+                "size" : [
+                    1,
+                    "auto"
+                ]
+            }
+        },
+        {
+            "header" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "body" : {
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "size" : [
+                    "auto",
+                    [
+                        1,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "footer" : {
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "inputpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "resultpanel" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
+    ]
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Load a structure"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+            ,"layout" : {
+                "parent" : "header"
+            }
+        }
+        ,{
+            "role" : "input",
+            "id" : "pdboraf",
+            "help" : "You can either upload a PDB or mmCIF file or select an AlphaFold (v4) structure",
+            "type" : "listbox",
+            "label" : "Select input source",
+            "labelmargintop" : "0.5rem"
+            ,"required" : "true"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+            ,"values"    : "Input PDB or CIF~pdbcif~Get AlphaFold structure~alphafold"
+            ,"default"   : "pdbcif"
+            ,"repeater"  : "true"
+        },
+        {
+            "role" : "input",
+            "id" : "pdbfile",
+            "help" : "Select a PDB or mmCIF file and then click <i>Process</i> below",
+            "type" : "file",
+            "label" : "Input PDB or mmCIF file",
+            "labelmargintop" : "0.5rem"
+            ,"required" : "true"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+            ,"repeat" : "pdboraf:pdbcif"
+        },
+        {
+            "role" : "input",
+            "id" : "searchkey",
+            "help" : "Enter an AlphaFold predicted UniProt accession code or the start of a code and click Process",
+            "type" : "text",
+            "maxlen" : 30,
+            "label" : "UniProt accession",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+            ,"repeat" : "pdboraf:alphafold"
+            ,"required" : "true"
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "pname"
+            ,"label"            : "Project name"
+            ,"type"             : "text"
+            ,"required"         : "true"
+            ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
+            ,"pattern"          : "[a-zA-Z0-9_]+"
+            ,"specifiedproject" : ""
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "desc"
+            ,"label"            : "Description"
+            ,"type"             : "textarea"
+            ,"required"         : "true"
+            ,"help"             : "Enter description information about this project"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+           "role"        : "input"
+           ,"id"         : "b_submit"
+           ,"type"       : "button"
+            ,"buttontext" : "Process"
+            ,"margin"    : "1px"
+           ,"layout"    : {
+               "parent"    : "inputpanel"
+#               ,"location" : [ row, column ] (optional - defaults to [ "next", "next" ] )
+#               ,"label"    : [ row, column ] (optional - inherits )
+#               ,"data"     : [ row, column ] (optional - inherits )
+#               ,"align"    : "right"         (optional - inherits )
+#               ,"repeats"  : {}              (optional - inherits - only used for repeater fields)
+           }
+        }
+#        ,{
+#            "role"        : "output"
+#            ,"id"         : "compute_output_textarea"
+#            ,"type"       : "textareanh"
+#            ,"label"      : " "
+#            ,"append"     : "true"
+#            ,"layout"     : {
+#                "label"    : "none",
+#                "data"    : [ 1, [ 1, 3 ] ],
+#                "parent"  : "msgspanel"
+#            }
+#        },
+        ,{
+            "role"        : "output"
+#            ,"id"         : "compute_progress"
+            ,"id"         : "processing_progress"
+            ,"type"       : "progress"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
+            "role" : "output",
+            "label" : "Name",
+            "type" : "text",
+            "help" : "The structure file name or the full name from the AlphaFold database",
+            "id" : "name",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "help" : "As reported in the PDB TITLE information",
+            "id" : "title",
+            "type" : "textarea",
+            "role" : "output",
+            "label" : "Title",
+            "rows" : 3,
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "help" : "As reported in the PDB SOURCE information",
+            "id" : "source",
+            "type" : "textarea",
+            "role" : "output",
+            "label" : "Source",
+            "rows" : 5,
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "label" : "Warnings",
+            "role" : "output",
+            "help" : "Status of US-SOMO processing",
+            "type" : "html",
+            "id" : "warnings",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "label" : "Mean confidence",
+            "role" : "output",
+            "help" : "For AlphaFold structures only. Mean per-residue confidence is computed from the structure&apos;s AlphaFold residue confidence",
+            "type" : "text",
+            "id" : "afmeanconf",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "help" : "The date hydrodynamic and structural calculations were performed",
+            "id" : "somodate",
+            "type" : "text",
+            "label" : "Hydrodynamic, structural and CD calculations date",
+            "role" : "output",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "label" : "Molecular mass [Da]",
+            "role" : "output",
+            "id" : "mw",
+            "help" : "The atomic mass",
+            "type" : "text",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "id" : "psv",
+            "help" : "Computed from the sequence",
+            "type" : "text",
+            "role" : "output",
+            "label" : "Partial specific volume <b><i><span style=text-decoration:overline>&nu;<span></i></b> &nbsp;[cm<sup>3</sup>/g]",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "id" : "hyd",
+            "help" : "Based on the NMR-freezing work of Kuntz & Kauzmann <a target=_blank href=https://doi.org/10.1016/S0065-3233(08)60232-6>doi:10.1016/S0065-3233(08)60232-6</a>",
+            "type" : "text",
+            "role" : "output",
+            "label" : "Theoretical hydration [g H<sub>2</sub>O/g protein]",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "type" : "text",
+            "help" : "Computed from the non hydrated structure using the mass and positions of the atoms. This value should be close to the Rg derived from SANS in low or zero concentrations of D<sub>2</sub>O [<a target=_blank href=https://doi.org/10.1107/S1399004714013923>doi:10.1107/S1399004714013923</a>].",
+            "id" : "Rg",
+            "role" : "output",
+            "label" : "Radius of gyration <b><i>R<sub>g</sub></i></b> &nbsp;[&#8491;]",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "type" : "text",
+            "help" : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &alpha;-Helix",
+            "id" : "helix",
+            "label" : "% Helix",
+            "role" : "output",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "label" : "% Sheet",
+            "role" : "output",
+            "help" : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &beta;-Sheet",
+            "type" : "text",
+            "id" : "sheet",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "width" : "100%",
+            "label" : "Structure",
+            "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
+            "role" : "output",
+            "id" : "struct",
+            "type" : "atomicstructure",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+    ]
+}

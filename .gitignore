@@ -1,0 +1,12 @@
+*~
+#*
+appconfig.json
+directives.json
+output
+util
+ajax
+results
+ultrascan
+*.pdb
+*.PDB
+

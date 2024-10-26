@@ -1,0 +1,26 @@
+{
+    "moduleid"    : "runmmc"
+    ,"label"      : "Run MMC"
+    ,"help"       : "Run Monomer Monte Carlo on selected structures"
+    ,"executable" : "runmmc.php"
+#    ,"resource"   : "docker-local"
+#    ,"dependencies" : [ 
+#        { "base" : "python" }
+#        ,{ "file" : "mass_load.py" }
+# comment above 2 lines and uncomment 2 lines below for perl executable
+#        { "base" : "perl" }
+#        ,{ "cpan" : "JSON" }
+#    ]
+    ,"addproject" : "true"
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Run Monomer Monte Carlo"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+        }
+    ]
+}

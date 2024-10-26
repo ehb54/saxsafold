@@ -1,0 +1,26 @@
+{
+    "moduleid"    : "structureflex"
+    ,"label"      : "Structure info, flexible regions"
+    ,"help"       : "Structure info, define flexible regions"
+    ,"executable" : "structureflex.php"
+#    ,"resource"   : "docker-local"
+#    ,"dependencies" : [ 
+#        { "base" : "python" }
+#        ,{ "file" : "mass_load.py" }
+# comment above 2 lines and uncomment 2 lines below for perl executable
+#        { "base" : "perl" }
+#        ,{ "cpan" : "JSON" }
+#    ]
+    ,"addproject" : "true"
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Structure info, define flexible regions"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+        }
+    ]
+}

@@ -1,0 +1,100 @@
+{
+    "menu" : [
+        {
+            "id"       : "lookup"
+            ,"label"    : "Compute"
+            ,"icon"     : "pngs/somo.png"
+            ,"startup"  : "true"
+	    ,"modules"  : [
+                {
+#                    "id"         : "computesomoweb"
+#                    ,"label"     : "Hydrocalcs - legacy"
+#                }
+#                ,{
+                    "id"         : "loadstructure"
+                    ,"label"     : "Load structure"
+                }
+                ,{
+                    "id"         : "structureflex"
+                    ,"label"     : "Structure info, flexible regions"
+                }
+                ,{
+                    "id"         : "loadsaxs"
+                    ,"label"     : "Load SAXS"
+                }
+                ,{
+                    "id"         : "runmmc"
+                    ,"label"     : "Run MMC"
+                }
+                ,{
+                    "id"         : "computeiqpr"
+                    ,"label"     : "Compute Iq/Pr"
+                }
+            ]
+        }
+        ,{
+            "id"      : "Acknowledgements_menu"
+            ,"label"   : "Acknowledgements"
+            ,"icon"    : "pngs/noicon.png"
+            ,"autorun" : "acknowledgements"
+            ,"modules" : [
+                {
+                    "id"    : "acknowledgements"
+                    ,"label" : "Acknowledgements"
+                    ,"nobutton" : "true"
+                }
+            ]
+        }
+        ,{
+            "id"      : "disclaimer_menu"
+            ,"label"   : "Disclaimer"
+            ,"icon"    : "pngs/noicon.png"
+            ,"autorun" : "disclaimer"
+            ,"modules" : [
+                {
+                    "id"    : "disclaimer"
+                    ,"label" : "Disclaimer"
+                    ,"nobutton" : "true"
+                }
+            ]
+        }
+        ,{
+            "id"         : "admin"
+            ,"restricted" : "admin"
+            ,"label"      : "Admin"
+            ,"icon"       : "pngs/admin.png"
+            ,"modules" : [
+                {
+                    "id"    : "jobmonitor"
+                    ,"label" : "Job monitor"
+                }
+                ,{
+                    "id"    : "jobintegritycheck"
+                    ,"label" : "Integrity check"
+                }
+                ,{
+                    "id"    : "sysuserslist"
+                    ,"label" : "Users"
+                }
+                ,{
+                    "id"    : "sys_manage_users"
+                    ,"label" : "User management"
+                }
+                ,{
+                    "id"    : "jobshistory_1"
+                    ,"label" : "Job history"
+                }
+
+            ]
+        }
+        ,{
+            "id"      : "etc"
+            ,"modules" : [
+                {
+                    "id"    : "sys_file_manager"
+                    ,"label" : "File manager"
+                }
+            ]
+        }
+    ]
+}
