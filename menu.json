@@ -19,12 +19,12 @@
                     ,"label"     : "Structure info, flexible regions"
                 }
                 ,{
-                    "id"         : "loadsaxs"
-                    ,"label"     : "Load SAXS"
-                }
-                ,{
                     "id"         : "runmmc"
                     ,"label"     : "Run MMC"
+                }
+                ,{
+                    "id"         : "loadsaxs"
+                    ,"label"     : "Load SAXS"
                 }
                 ,{
                     "id"         : "computeiqpr"

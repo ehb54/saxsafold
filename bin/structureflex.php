@@ -21,6 +21,35 @@ $output = (object)[];
 
 ## process inputs here to produce output
 
+include "genapp.php";
+include "datetime.php";
+
+$ga        = new GenApp( $input, $output );
+$fdir      = preg_replace( "/^.*\/results\//", "results/", $input->_base_directory );
+$base_dir  = preg_replace( '/^.*\//', '', $input->_base_directory );
+$logon     = $input->_logon;
+$scriptdir = dirname(__FILE__);
+
+## get state
+
+require "common.php";
+$cgstate = new cgrun_state();
+
+## make sure project is loaded
+
+if ( !$cgstate->state->loaded ) {
+   error_exit( "You must first <i>Load structure</it for this project $input->_project " );
+}
+
+if ( count( $input->flexrange ) ) {
+   $cgstate->state->flex = $input->flexrange;
+}
+
+if ( !$cgstate->save() ) {
+    echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
+    exit;
+}
+
 ## log results to textarea
 
 $output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";

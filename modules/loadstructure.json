@@ -12,7 +12,7 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"addproject" : "true"
+    ,"addproject"  : "true"
     ,"panels" : [
         {
             "root" : {
@@ -321,10 +321,10 @@
             }
         },
         {
-            "help" : "The date hydrodynamic and structural calculations were performed",
+            "help" : "The date the file was loaded",
             "id" : "somodate",
             "type" : "text",
-            "label" : "Hydrodynamic, structural and CD calculations date",
+            "label" : "Load date",
             "role" : "output",
             "labelmargintop" : "0.5rem"
             ,"layout" : {
@@ -392,6 +392,17 @@
             "help" : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &beta;-Sheet",
             "type" : "text",
             "id" : "sheet",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "label" : "Downloads",
+            "role" : "output",
+            "help" : "",
+            "id" : "downloads",
+            "type" : "html",
             "labelmargintop" : "0.5rem"
             ,"layout" : {
                 "parent" : "resultpanel"

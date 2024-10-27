@@ -109,7 +109,7 @@ $ga->tcpmessage( [
 #                     ,"ExtZ"               => ""
                      ,"sheet"              => ""
                      ,"helix"              => ""
-#                     ,"downloads"          => ""
+                     ,"downloads"          => ""
                  ] );
 
 ## process inputs here to produce output
@@ -122,6 +122,7 @@ if ( !isset( $input->searchkey ) ) {
         error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
     }
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
+    $is_alphafold = false;
 } else {
     ## alphafold code
     $ga->tcpmessage( [ 'processing_progress' => 0 ] );
@@ -211,6 +212,7 @@ if ( !isset( $input->searchkey ) ) {
 
     ## process
 
+    $is_alphafold = true;
     $fpdb = "AF-${searchkey}-model_v4.cif";
 }
 
@@ -333,16 +335,14 @@ $output->downloads  =
     "<div style='margin-top:0.5rem;margin-bottom:0rem;'>"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.pdb>PDB &#x21D3;</a>&nbsp;&nbsp;&nbsp;",           $base_name )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.cif>mmCIF &#x21D3;</a>&nbsp;&nbsp;&nbsp;",         $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-pr.dat>P(r) &#x21D3;</a>&nbsp;&nbsp;&nbsp;",            $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-sesca-cd.dat>CD &#x21D3;</a>&nbsp;&nbsp;&nbsp;",        $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s.csv>CSV &#x21D3;</a>&nbsp;&nbsp;&nbsp;",                $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-process-log.txt>Log &#x21D3;</a>&nbsp;&nbsp;&nbsp;",    $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.zip>All zip'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.txz>All txz'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-pr.dat>P(r) &#x21D3;</a>&nbsp;&nbsp;&nbsp;",            $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-sesca-cd.dat>CD &#x21D3;</a>&nbsp;&nbsp;&nbsp;",        $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s.csv>CSV &#x21D3;</a>&nbsp;&nbsp;&nbsp;",                $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-process-log.txt>Log &#x21D3;</a>&nbsp;&nbsp;&nbsp;",    $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.zip>All zip'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.txz>All txz'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
     . "</div>"
     ;
-
-unset( $output->downloads );
 
 ## pdb
 if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) ) {
@@ -357,158 +357,6 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
         ];
 }                
 
-## plotly
-
-$prfile = sprintf( "ultrascan/results/%s-pr.dat", $base_name );
-if ( file_exists( $prfile ) ) {
-    if ( $prfiledata = file_get_contents( $prfile ) ) {
-        $plotin = explode( "\n", $prfiledata );
-        $plot = json_decode(
-            '{
-                "data" : [
-                    {
-                     "x"     : []
-                     ,"y"    : []
-                     ,"mode" : "lines"
-                     ,"line" : {
-                         "color"  : "rgb(150,150,222)"
-                         ,"width" : 2
-                      }
-                    }
-                 ]
-                 ,"layout" : {
-                    "title" : "P(r)"
-                    ,"font" : {
-                        "color"  : "rgb(0,5,80)"
-                    }
-                    ,"paper_bgcolor": "rgba(0,0,0,0)"
-                    ,"plot_bgcolor": "rgba(0,0,0,0)"
-                    ,"xaxis" : {
-                       "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"title" : {
-                       "text" : "Distance [&#8491;]"
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
-                    }
-                    ,"yaxis" : {
-                       "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"title" : {
-                       "text" : "Normalized Frequency"
-                       ,"standoff" : 20
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
-                    }
-                 }
-            }'
-            );
-
-        ## first two lines are headers
-        array_shift( $plotin );
-        array_shift( $plotin );
-
-        ## $plot->plotincount = count( $plotin );
-        
-        foreach ( $plotin as $linein ) {
-            $linevals = explode( "\t", $linein );
-
-            if ( count( $linevals ) == 3 ) {
-                $plot->data[0]->x[] = floatval($linevals[0]);
-                $plot->data[0]->y[] = floatval($linevals[2]);
-            }
-        }
-            
-        if ( isset( $papercolors ) && $papercolors ) {
-            $plot->data[0]->line->color               = "rgb(50,50,122)";
-            $plot->layout->font->color                = "rgb(0,0,0)";
-            $plot->layout->xaxis->title->font->color  = "rgb(0,0,0)";
-            $plot->layout->yaxis->title->font->color  = "rgb(0,0,0)";
-            $plot->layout->xaxis->gridcolor           = "rgb(150,150,150)";
-            $plot->layout->yaxis->gridcolor           = "rgb(150,150,150)";
-        }
-
-        $output->prplot = $plot;
-    }
-}
-    
-$cdfile = sprintf( "ultrascan/results/%s-sesca-cd.dat", $base_name );
-if ( file_exists( $cdfile ) ) {
-    if ( $cdfiledata = file_get_contents( $cdfile ) ) {
-        $plotin = explode( "\n", $cdfiledata );
-        $plot = json_decode(
-            '{
-                "data" : [
-                    {
-                     "x"     : []
-                     ,"y"    : []
-                     ,"mode" : "lines"
-                     ,"line" : {
-                         "color"  : "rgb(150,150,222)"
-                         ,"width" : 2
-                      }
-                    }
-                 ]
-                 ,"layout" : {
-                    "title" : "Circular Dichroism Spectrum"
-                    ,"font" : {
-                        "color"  : "rgb(0,5,80)"
-                    }
-                    ,"paper_bgcolor": "rgba(0,0,0,0)"
-                    ,"plot_bgcolor": "rgba(0,0,0,0)"
-                    ,"xaxis" : {
-                       "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"title" : {
-                       "text" : "Wavelength [nm]"
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
-                    }
-                    ,"yaxis" : {
-                       "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"title" : {
-                       "text" : "[&#920;] (10<sup>3</sup> deg*cm<sup>2</sup>/dmol)"
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
-                    }
-                 }
-            }'
-            );
-
-        ## first two lines are headers
-        $plotin = preg_grep( "/^\s*#/", $plotin, PREG_GREP_INVERT );
-
-        foreach ( $plotin as $linein ) {
-            $linevals = preg_split( '/\s+/', trim( $linein ) );
-            
-            if ( count( $linevals ) == 2 ) {
-                $plot->data[0]->x[] = floatval($linevals[0]);
-                $plot->data[0]->y[] = floatval($linevals[1]);
-            }
-        }
-        ## reverse order
-        $plot->data[0]->x = array_reverse( $plot->data[0]->x );
-        $plot->data[0]->y = array_reverse( $plot->data[0]->y );
-
-        if ( isset( $papercolors ) && $papercolors ) {
-            $plot->data[0]->line->color               = "rgb(50,50,122)";
-            $plot->layout->font->color                = "rgb(0,0,0)";
-            $plot->layout->xaxis->title->font->color  = "rgb(0,0,0)";
-            $plot->layout->yaxis->title->font->color  = "rgb(0,0,0)";
-            $plot->layout->xaxis->gridcolor           = "rgb(150,150,150)";
-            $plot->layout->yaxis->gridcolor           = "rgb(150,150,150)";
-        }
-
-        $output->cdplot = $plot;
-    }
-}
-
-
 ## log results to textarea
 
 # $output->{$textarea_key} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
@@ -516,13 +364,13 @@ if ( file_exists( $cdfile ) ) {
 
 ## not being used for load structure for now
 
-unset( $output->downloads );
-unset( $output->prplot );
-
 ## save state
 
-$cgstate->state->loaded      = true;
-$cgstate->state->description = $input->desc;
+$cgstate->state->loaded       = true;
+$cgstate->state->description  = $input->desc;
+$cgstate->state->output_load  = $output;
+$cgstate->state->is_alphafold = $is_alphafold;
+
 if ( isset( $input->refpdb ) ) {
     $cgstate->state->refpdb = $input->refpdb;
 } else {
