@@ -1,8 +1,8 @@
 {
-    "moduleid"    : "loadsaxs"
-    ,"label"      : "Load SAXS"
-    ,"help"       : "Load SAXS data"
-    ,"executable" : "loadsaxs.php"
+    "moduleid"    : "defineproject"
+    ,"label"      : "Define project"
+    ,"help"       : "Define a new project or load an existing project"
+    ,"executable" : "defineproject.php"
 #    ,"resource"   : "docker-local"
 #    ,"dependencies" : [ 
 #        { "base" : "python" }
@@ -11,8 +11,7 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"requireproject"  : "true"
-    ,"loadfields"      : "loadsaxs_load.php"
+    ,"addproject" : "true"
     ,"panels" : [
         {
             "root" : {
@@ -148,7 +147,7 @@
         {
             "role"       : "input"
             ,"id"        : "module_header"
-            ,"label"     : "Load SAXS data"
+            ,"label"     : "Define project"
             ,"type"      : "label"
             ,"default"   : "header4"
             ,"prehline"  : "true"
@@ -157,8 +156,35 @@
                 "parent" : "header"
             }
         }
+## need to get new & existing project working, some genapp side issues currently prevent
+#        ,{
+#            "role"              : "input"
+#            ,"id"               : "neworexisting"
+#            ,"label"            : "Project new or existing"
+#            ,"type"             : "listbox"
+#            ,"values"           : "New project~newproject~Existing project~existingproject"
+#            ,"default"          : "newproject"
+#            ,"help"             : "Select a new or existing project from the listbox"
+#            ,"repeater"         : "true"
+#            ,"layout"     : {
+#                "parent" : "inputpanel"
+#            }
+#        }
+#        ,{
+#            "role"     : "input"
+#            ,"id"       : "project"
+#            ,"label"    : "Select existing project"
+#            ,"type"     : "listbox"
+#            ,"required" : "false"
+#            ,"pull"     : "project"
+## pull under repeater currently doesn't work
+##            ,"repeat"   : "neworexisting:existingproject"
+#            ,"layout"     : {
+#                "parent" : "inputpanel"
+#            }
+#        }
         ,{
-            "role"              : "output"
+            "role"              : "input"
             ,"id"               : "pname"
             ,"label"            : "Project name"
             ,"type"             : "text"
@@ -166,62 +192,21 @@
             ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
             ,"pattern"          : "[a-zA-Z0-9_]+"
             ,"specifiedproject" : ""
+#            ,"repeat"           : "neworexisting:newproject"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
-
         }
         ,{
-            "role"              : "output"
+            "role"              : "input"
             ,"id"               : "desc"
             ,"label"            : "Description"
             ,"type"             : "textarea"
             ,"required"         : "true"
-            ,"help"             : "Description information about this project"
+            ,"help"             : "Enter description information about this project"
+#            ,"repeat"           : "neworexisting:newproject"
             ,"layout"     : {
                 "parent" : "inputpanel"
-            }
-        }
-        ,{
-            "role"       : "input"
-            ,"id"        : "saxsiqfile"
-            ,"label"     : "SAXS I(q) file"
-            ,"type"      : "lrfile"
-            ,"help"      : "N.B. the momentum transfer must be  <i>q</i> = 4&#x3c0;sin(&#x398;)/&#x3bb; with units &#x212B;<sup>-1</sup>"
-            ,"required"  : "true"
-            ,"layout" : {
-                "parent" : "inputpanel"
-            }
-        }
-        ,{
-            "role"       : "input"
-            ,"id"        : "saxsprfile"
-            ,"label"     : "SAXS P(r) file <a target=_blank href=https://somo.chem.utk.edu/bayesapp>[compute using BayesApp]</a>"
-            ,"type"      : "lrfile"
-            ,"help"      : "N.B. the <i>r</i> units must be &#x212B;<br>You can use BayesApp to compute a P(r) from an I(q) or download ATSAS and use GNOM"
-            ,"required"  : "true"
-            ,"layout" : {
-                "parent" : "inputpanel"
-            }
-        }
-        ,{
-            "role" : "output",
-            "label" : "SAXS I(q)",
-            "type" : "plotly",
-            "id" : "iqplot",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
-                "parent" : "resultpanel"
-            }
-        }
-        ,{
-            "role" : "output",
-            "label" : "SAXS P(r)",
-            "type" : "plotly",
-            "id" : "prplot",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
-                "parent" : "resultpanel"
             }
         }
     ]

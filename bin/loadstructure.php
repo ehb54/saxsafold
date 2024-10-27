@@ -54,42 +54,16 @@ $cgstate = new cgrun_state();
 
 ## does the project already exist ?
 
-if ( $cgstate->state->loaded ) {
-    $response =
-        json_decode(
-            $ga->tcpquestion(
-                [
-                 "id"           => "q1"
-                 ,"title"       => "<h5>Project '$input->_project' is not empty</h5>"
-                 ,"icon"        => "warning.png"
-                 ,"text"        => ""
-                 ,"timeouttext" => "The time to respond has expired, please submit again."
-                 ,"buttons"     => [ "Erase previous results", "Cancel" ]
-                 ,"fields" => [
-                     [
-                      "id"          => "l1"
-                      ,"type"       => "label"
-                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Previous results will be permenantly removed!"
-                      ,"align"      => "center"
-                     ]
-                 ]
-                ]
 
-            )
-        );
-    
-    if ( $response->_response->button == "cancel" ) {
-        echo '{"_message":{"icon":"information.png","text":"Canceled"}}';
-        exit;
-    }
+## make sure project is loaded
+
+if ( !$cgstate->state->loaded ) {
+   error_exit( "You must first <i>Define project</i> for this project $input->_project" );
 }
 
-## clear state on until load complete
-
-if ( !$cgstate->init() ) {
-    echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
-    exit;
-}
+if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+    error_exit( "Please <i>'Load SAXS'</i> first" );
+}    
 
 ## clear output
 $ga->tcpmessage( [
@@ -331,18 +305,32 @@ unset( $output->Eta_sd );
 
 $base_name = preg_replace( '/-somo\.(cif|pdb)$/i', '', $output->name );
 
-$output->downloads  = 
-    "<div style='margin-top:0.5rem;margin-bottom:0rem;'>"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.pdb>PDB &#x21D3;</a>&nbsp;&nbsp;&nbsp;",           $base_name )
+$output->downloads  = "<div style='margin-top:0.5rem;margin-bottom:0rem;'>";
+
+$output->downloads .=
+    sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.pdb>PDB &#x21D3;</a>&nbsp;&nbsp;&nbsp;",           $base_name )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.cif>mmCIF &#x21D3;</a>&nbsp;&nbsp;&nbsp;",         $base_name )
+    ;
+
+if ( $cgstate->state->saxsiqfile
+     && $cgstate->state->saxsprfile
+    ) {
+    $output->downloads .=
+        sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>Iq &#x21D3;</a>&nbsp;&nbsp;&nbsp;", preg_replace( '/^.*\//', '', $cgstate->state->saxsiqfile ) )
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>Pr &#x21D3;</a>&nbsp;&nbsp;&nbsp;", preg_replace( '/^.*\//', '', $cgstate->state->saxsprfile ) )
+        ;
+}
+
+$output->downloads .= "</div>";
+
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-pr.dat>P(r) &#x21D3;</a>&nbsp;&nbsp;&nbsp;",            $base_name )
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-sesca-cd.dat>CD &#x21D3;</a>&nbsp;&nbsp;&nbsp;",        $base_name )
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s.csv>CSV &#x21D3;</a>&nbsp;&nbsp;&nbsp;",                $base_name )
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-process-log.txt>Log &#x21D3;</a>&nbsp;&nbsp;&nbsp;",    $base_name )
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.zip>All zip'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
 #    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.txz>All txz'd &#x21D3;</a>&nbsp;&nbsp;&nbsp;",     $base_name )
-    . "</div>"
-    ;
+#    . "</div>"
+#    ;
 
 ## pdb
 if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) ) {
@@ -367,7 +355,6 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
 ## save state
 
 $cgstate->state->loaded       = true;
-$cgstate->state->description  = $input->desc;
 $cgstate->state->output_load  = $output;
 $cgstate->state->is_alphafold = $is_alphafold;
 

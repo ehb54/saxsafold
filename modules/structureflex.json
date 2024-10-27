@@ -11,8 +11,8 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"requireproject"  : "true"
-    ,"loadfields"      : "structureflex_load.php"
+    ,"requireproject"       : "true"
+    ,"loadfields"           : "structureflex_load.php"
     ,"panels" : [
         {
             "root" : {
@@ -371,6 +371,7 @@
             ,"buttontext"  : "Compute flexible regions"
             ,"buttonstyle" : "select"
             ,"hook"        : "structureflex_compute_confidence.php"
+            ,"hookdata"    : "autoflex-autoflexconfidencelevel"
             ,"layout" : {
                 "parent" : "resultpanel"
             }

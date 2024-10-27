@@ -21,20 +21,15 @@ if ( !strlen( $request->_project ) ) {
 }
 
 if ( !file_exists( "state.json" ) ) {
-    error_exit_hook( "Project $request->_project has not been loaded, Please <i>'load structure'</i> first" );
+    error_exit_hook( "Project $request->_project has not been define, Please <i>'Define project'</i> first" );
 }    
 
 $scriptdir = dirname( __FILE__ );
 require "$scriptdir/common.php";
 $cgstate = new cgrun_state();
 
-if ( !$cgstate->state->output_load ) {
-    error_exit_hook( "Project $request->_project has a state file, but apparently not been loaded, Please <i>'load structure'</i> first" );
-}    
-
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
-$result->name  = $cgstate->state->output_load->name;
 
 echo json_encode( $result );
 exit;

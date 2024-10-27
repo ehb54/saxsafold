@@ -21,7 +21,7 @@ if ( !strlen( $request->_project ) ) {
 }
 
 if ( !file_exists( "state.json" ) ) {
-    error_exit_hook( "Project $request->_project has not been loaded, Please <i>'load structure'</i> first" );
+    error_exit_hook( "Project $request->_project has not been defined, Please <i>'Define project'</i> first" );
 }    
 
 $scriptdir = dirname( __FILE__ );
@@ -29,7 +29,11 @@ require "$scriptdir/common.php";
 $cgstate = new cgrun_state();
 
 if ( !$cgstate->state->output_load ) {
-    error_exit_hook( "Project $request->_project has a state file, but apparently not been loaded, Please <i>'load structure'</i> first" );
+    error_exit_hook( "Project $request->_project has been defined, but apparently not been loaded, Please <i>'Load structure'</i> first" );
+}    
+
+if ( !$cgstate->state->output_load->struct ) {
+    error_exit_hook( "Project $request->_project has been defined, but apparently not been loaded, Please <i>'Load structure'</i> first" );
 }    
 
 if ( !$cgstate->state->is_alphafold ) {
@@ -43,12 +47,19 @@ if ( !file_exists( $pdbfile ) ) {
 
 ## read and process
 
-## currently bogus results
+$cmd = "$scriptdir/calcs/compute_flexible_regions.pl " .$request->{'autoflex-autoflexconfidencelevel'} . " 5 $pdbfile 2> /dev/null";
+$cmdres = explode( "\n", trim( `$cmd` ) );
 
-$result->nflex = 3;
-$result->{"nflex-flexrange-0"} = "1,20";
-$result->{"nflex-flexrange-1"} = "30,40";
-$result->{"nflex-flexrange-2"} = "70,80";
-    
+$selects = "";
+
+$result->nflex = count( $cmdres );
+for ( $i = 0; $i < $result->nflex; ++$i ) {
+    $result->{"nflex-flexrange-$i"} = $cmdres[ $i ];
+    $selects .= ";select " . str_replace( ",", "-", $cmdres[ $i ] ) . "; color green";
+}
+
+$result->struct = $cgstate->state->output_load->struct;
+$result->struct->script .= $selects;
+
 echo json_encode( $result );
 exit;

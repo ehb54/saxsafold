@@ -36,9 +36,8 @@ $cgstate = new cgrun_state();
 ## make sure project is loaded
 
 if ( !$cgstate->state->loaded ) {
-   error_exit( "You must first <i>Load structure</it for this project $input->_project " );
+   error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
-
 
 ## process inputs here to produce output
 

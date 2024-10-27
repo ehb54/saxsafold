@@ -7,16 +7,20 @@
             ,"startup"  : "true"
 	    ,"modules"  : [
                 {
-#                    "id"         : "computesomoweb"
-#                    ,"label"     : "Hydrocalcs - legacy"
-#                }
-#                ,{
+                    "id"         : "defineproject"
+                    ,"label"     : "Define project"
+                }
+                ,{
+                    "id"         : "loadsaxs"
+                    ,"label"     : "Load SAXS"
+                }
+                ,{
                     "id"         : "loadstructure"
                     ,"label"     : "Load structure"
                 }
                 ,{
                     "id"         : "structureflex"
-                    ,"label"     : "Structure info, flexible regions"
+                    ,"label"     : "Structure info<br>flexible regions"
                 }
                 ,{
                     "id"         : "runmmc"
@@ -25,10 +29,6 @@
                 ,{
                     "id"         : "retrievemmc"
                     ,"label"     : "Retrieve MMC"
-                }
-                ,{
-                    "id"         : "loadsaxs"
-                    ,"label"     : "Load SAXS"
                 }
                 ,{
                     "id"         : "computeiqpr"

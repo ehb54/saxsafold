@@ -35,10 +35,10 @@ $scriptdir = dirname(__FILE__);
 require "common.php";
 $cgstate = new cgrun_state();
 
-## make sure project is loaded
+## make sure project is defined
 
 if ( !$cgstate->state->loaded ) {
-   error_exit( "You must first <i>Load structure</it for this project $input->_project " );
+   error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
 if ( count( $input->flexrange ) ) {
@@ -52,7 +52,9 @@ if ( !$cgstate->save() ) {
 
 ## log results to textarea
 
-$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
-$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
+$output->_textarea = "Flexible regions saved";
+
+#$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
+#$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 echo json_encode( $output );

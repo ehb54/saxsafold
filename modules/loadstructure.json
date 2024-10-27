@@ -12,7 +12,8 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"addproject"  : "true"
+    ,"requireproject"  : "true"
+    ,"loadfields"      : "loadstructure_load.php"
     ,"panels" : [
         {
             "root" : {
@@ -200,26 +201,22 @@
             ,"required" : "true"
         }
         ,{
-            "role"              : "input"
+            "role"              : "output"
             ,"id"               : "pname"
             ,"label"            : "Project name"
             ,"type"             : "text"
-            ,"required"         : "true"
             ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
-            ,"pattern"          : "[a-zA-Z0-9_]+"
-            ,"specifiedproject" : ""
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
 
         }
         ,{
-            "role"              : "input"
+            "role"              : "output"
             ,"id"               : "desc"
             ,"label"            : "Description"
             ,"type"             : "textarea"
-            ,"required"         : "true"
-            ,"help"             : "Enter description information about this project"
+            ,"help"             : "Description information about this project"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }

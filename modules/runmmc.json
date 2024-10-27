@@ -11,7 +11,164 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"addproject" : "true"
+    ,"requireproject"  : "true"
+    ,"loadfields"      : "runmmc_load.php"
+    ,"noreset"         : "true"
+    ,"nosubmit"        : "true"
+    ,"panels" : [
+        {
+            "root" : {
+                "label" : [
+                    1,
+                    1
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "gap" : "1px",
+                "align" : "left",
+                "size" : [
+                    1,
+                    "auto"
+                ]
+            }
+        },
+        {
+            "header" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "body" : {
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "size" : [
+                    "auto",
+                    [
+                        1,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "footer" : {
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "inputpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "infopanel" : {
+                "parent" : "body",
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "resultpanel" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
+    ]
     ,"fields"   : [
         {
             "role"       : "input"
@@ -21,6 +178,163 @@
             ,"default"   : "header4"
             ,"prehline"  : "true"
             ,"posthline" : "true"
+            ,"layout" : {
+                "parent" : "header"
+            }
+            
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "pname"
+            ,"label"            : "Project name"
+            ,"type"             : "text"
+            ,"required"         : "true"
+            ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
+            ,"pattern"          : "[a-zA-Z0-9_]+"
+            ,"specifiedproject" : ""
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "desc"
+            ,"label"            : "Description"
+            ,"type"             : "textarea"
+            ,"required"         : "true"
+            ,"help"             : "Description information about this project"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label" : "Downloads",
+            "role" : "output",
+            "help" : "",
+            "id" : "downloads",
+            "type" : "html",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "output"
+            ,"label"      : " "
+            ,"type"       : "html"
+            ,"id"         : "instructions"
+            ,"layout" : {
+                "parent" : "infopanel"
+            }
+        }
+        ,{
+            "role"     : "output",
+            "id"       : "runname",
+            "label"    : "run name",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "pdbfile",
+            "label"   : "reference pdb",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "dcdfile",
+            "label"    : "output file name (dcd)",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "trials",
+            "label"    : "number of trial attempts",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "goback",
+            "label"    : "return to previous structure",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "temp",
+            "label"    : "temperature (K)",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"    : "output",
+            "id"      : "moltype_list_box",
+            "label"    : "molecule type",
+            "type"    : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "numranges",
+            "label"    : "number of flexible regions to vary",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "reslow",
+            "label"    : "residue range for each flexible region",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "dtheta",
+            "label"    : "maximum angle(s)",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"     : "output",
+            "id"       : "residue_alignment",
+            "label"    : "structure alignment range",
+            "type"     : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"    : "output",
+            "id"      : "overlap_list_box",
+            "label"    : "overlap basis",
+            "type"    : "text"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
         }
     ]
 }
