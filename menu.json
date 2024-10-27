@@ -23,6 +23,10 @@
                     ,"label"     : "Run MMC"
                 }
                 ,{
+                    "id"         : "retrievemmc"
+                    ,"label"     : "Retrieve MMC"
+                }
+                ,{
                     "id"         : "loadsaxs"
                     ,"label"     : "Load SAXS"
                 }

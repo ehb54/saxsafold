@@ -1,0 +1,26 @@
+{
+    "moduleid"    : "retrievemmc"
+    ,"label"      : "Run MMC"
+    ,"help"       : "Run Monomer Monte Carlo on selected structures"
+    ,"executable" : "retrievemmc.php"
+#    ,"resource"   : "docker-local"
+#    ,"dependencies" : [ 
+#        { "base" : "python" }
+#        ,{ "file" : "mass_load.py" }
+# comment above 2 lines and uncomment 2 lines below for perl executable
+#        { "base" : "perl" }
+#        ,{ "cpan" : "JSON" }
+#    ]
+    ,"addproject" : "true"
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Retrieve Monomer Monte Carlo Results"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+        }
+    ]
+}

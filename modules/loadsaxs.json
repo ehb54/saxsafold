@@ -209,7 +209,7 @@
             ,"id"        : "saxsprfile"
             ,"label"     : "SAXS P(r) file <a target=_blank href=https://somo.chem.utk.edu/bayesapp>[compute using BayesApp]</a>"
             ,"type"      : "lrfile"
-            ,"help"      : "N.B. the <i>r</i> units must be &#x212B;"
+            ,"help"      : "N.B. the <i>r</i> units must be &#x212B;<br>You can use BayesApp to compute a P(r) from an I(q) or download ATSAS and use GNOM"
             ,"required"  : "true"
             ,"layout" : {
                 "parent" : "inputpanel"
