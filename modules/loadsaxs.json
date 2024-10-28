@@ -205,22 +205,21 @@
             }
         }
         ,{
-            "role" : "output",
-            "label" : "SAXS I(q)",
-            "type" : "plotly",
-            "id" : "iqplot",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
+            "role"              : "output"
+            ,"label"             : "SAXS I(q)"
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
                 "parent" : "resultpanel"
             }
         }
         ,{
-            "role" : "output",
-            "label" : "SAXS P(r)",
-            "type" : "plotly",
-            "id" : "prplot",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
+            "role"              : "output"
+            ,"label"            : "SAXS P(r)"
+            ,"type"             : "plotly"
+            ,"id"               : "prplot"
+            ,"layout"           : {
                 "parent" : "resultpanel"
             }
         }

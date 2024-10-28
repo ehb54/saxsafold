@@ -57,8 +57,9 @@ function mkdir_if_needed( $dir ) {
 }
 
 function run_cmd( $cmd, $exit_if_error = true, $array_result = false ) {
-    exec( "$cmd 2>&1", $res, $res_code );
-    if ( $exit_if_error && $res_code ) {
+    global $run_cmd_last_error_code;
+    exec( "$cmd 2>&1", $res, $run_cmd_last_error_code );
+    if ( $exit_if_error && $run_cmd_last_error_code ) {
         error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$res_code'" );
     }
     if ( !$array_result ) {

@@ -45,6 +45,15 @@ if ( count( $input->flexrange ) ) {
    $cgstate->state->flex = $input->flexrange;
 }
 
+$output->_textarea = "Flexible regions saved\n";
+
+if ( $cgstate->state->mmcdownloaded ) {
+   unset( $cgstate->state->mmcdownloaded );
+   $output->_textarea .= "Note: previous MMC results have already been retrieved, you will need to Run MMC & Retrieve MMC again for further processing\n";
+}
+
+$cgstate->state->mmcstride = 10;
+
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
     exit;
@@ -52,7 +61,6 @@ if ( !$cgstate->save() ) {
 
 ## log results to textarea
 
-$output->_textarea = "Flexible regions saved";
 
 #$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
 #$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";

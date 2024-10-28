@@ -40,7 +40,9 @@ if ( !$cgstate->state->flex || !count( $cgstate->state->flex ) ) {
     error_exit_hook( "No Flexible regions have been defined, Please run <i>'Structure info & flexible regions SAXS'</i> first" );
 }    
 
-
+## not sure if we want a timestamp, that will change the name every time
+# $timestamp = `date '+%Y%m%d%H%M%S'`;
+$cgstate->state->mmcrunname = "run_$request->_project";
 
 $result->instructions = <<<EOT
 
@@ -64,10 +66,11 @@ You can first download it above under <b>Downloads</b> if needed.
 <br>
 The checkbox for 'Advanced input' should remain unchecked.
 <br>
-Plese use the SASSIE-web server linked here, that is the only one currently integreated for results Retrieval.
-/br>
-The 'structure alignment range' is arbitrary and can be changed from the values shown below. This is a convenience for viewing the resulting
-structures. Probably best to avoid flexible regions.
+Please use the SASSIE-web server linked here, that is the only one currently integreated for results Retrieval.
+<br>
+The 'structure alignment range' is arbitrary and can be changed from the values shown below.
+<br>
+This is a convenience for viewing the resulting structures. Probably best to avoid flexible regions.
 <hr>
 <br>
 
@@ -78,7 +81,7 @@ $result->desc                 = $cgstate->state->description;
 $result->pname                = $request->_project;
 $result->downloads            = $cgstate->state->output_load->downloads;
 
-$result->runname              = "run_$request->_project";
+$result->runname              = $cgstate->state->mmcrunname;
 $result->pdbfile              = $cgstate->state->output_load->name;
 $result->dcdfile              = "$result->runname.dcd";
 $result->trials               = 50000;
@@ -90,6 +93,10 @@ $result->reslow               = str_replace( ":", ",", str_replace( ",", "-", im
 $result->dtheta               = implode( ",", array_fill( 0, $result->numranges, "30.0" ) );
 $result->residue_alignment    = "10-50";
 $result->overlap_list_box     = "heavy atoms";
+
+if ( !$cgstate->save() ) {
+    error_exit_hook( "Could not save important state important state information: $cgstate->errors" );
+}
 
 echo json_encode( $result );
 exit;
