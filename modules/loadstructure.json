@@ -177,7 +177,7 @@
             "role" : "input",
             "id" : "pdbfile",
             "help" : "Select a PDB or mmCIF file and then click <i>Process</i> below",
-            "type" : "file",
+            "type" : "lrfile",
             "label" : "Input PDB or mmCIF file",
             "labelmargintop" : "0.5rem"
             ,"required" : "true"

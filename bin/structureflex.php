@@ -59,6 +59,8 @@ if ( !$cgstate->save() ) {
     exit;
 }
 
+$output->struct = $cgstate->state->output_load->struct;
+
 ## log results to textarea
 
 

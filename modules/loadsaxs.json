@@ -117,8 +117,8 @@
                     [1,1]
                 ]
             }
-        },
-        {
+        }
+        ,{
             "resultpanel" : {
                 "align" : "left",
                 "size" : [
@@ -206,21 +206,23 @@
         }
         ,{
             "role"              : "output"
-            ,"label"             : "SAXS I(q)"
+            ,"label"             : ""
             ,"type"              : "plotly"
             ,"id"                : "iqplot"
             ,"labelmargintop"    : "0.5rem"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
             }
         }
         ,{
             "role"              : "output"
-            ,"label"            : "SAXS P(r)"
+            ,"label"            : ""
             ,"type"             : "plotly"
             ,"id"               : "prplot"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
             }
         }
     ]

@@ -242,9 +242,20 @@
             "role"              : "output"
             ,"label"            : " "
             ,"type"             : "plotly"
+            ,"id"               : "histplot2"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"            : " "
+            ,"type"             : "plotly"
             ,"id"               : "histplot"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
             }
         }
     ]

@@ -1,7 +1,7 @@
 {
     "moduleid"    : "computeiqpr"
-    ,"label"      : "Compute Iq/Pr"
-    ,"help"       : "Compute Iq/Pr on selected structures"
+    ,"label"      : "Compute I(q)/P(r), preselect models"
+    ,"help"       : "Compute I(q)/P(r) on selected structures, preselect models"
     ,"executable" : "computeiqpr.php"
 #    ,"resource"   : "docker-local"
 #    ,"dependencies" : [ 
@@ -11,16 +11,300 @@
 #        { "base" : "perl" }
 #        ,{ "cpan" : "JSON" }
 #    ]
-    ,"addproject" : "true"
+    ,"loadfields"      : "computeiqpr_load.php"
+    ,"panels" : [
+        {
+            "root" : {
+                "label" : [
+                    1,
+                    1
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "gap" : "1px",
+                "align" : "left",
+                "size" : [
+                    1,
+                    "auto"
+                ]
+            }
+        },
+        {
+            "header" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "body" : {
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "size" : [
+                    "auto",
+                    [
+                        1,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "footer" : {
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "inputpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "resultpanel" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
+    ]
     ,"fields"   : [
         {
             "role"       : "input"
             ,"id"        : "module_header"
-            ,"label"     : "Compute SAXS data on selected curves"
+            ,"label"     : "Compute I(q)/P(r), preselect models"
             ,"type"      : "label"
             ,"default"   : "header4"
             ,"prehline"  : "true"
             ,"posthline" : "true"
+            ,"layout" : {
+                "parent" : "header"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "pname"
+            ,"label"            : "Project name"
+            ,"type"             : "text"
+            ,"required"         : "true"
+            ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
+            ,"pattern"          : "[a-zA-Z0-9_]+"
+            ,"specifiedproject" : ""
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "desc"
+            ,"label"            : "Description"
+            ,"type"             : "textarea"
+            ,"required"         : "true"
+            ,"help"             : "Description information about this project"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label" : "Downloads",
+            "role" : "output",
+            "help" : "",
+            "id" : "downloads",
+            "type" : "html",
+            "labelmargintop" : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "iqmethod"
+            ,"label"            : "I(q) computation method"
+            ,"type"             : "listbox"
+            ,"help"             : "Select I(q) computation method"
+            ,"values"           : "PEPSI-SAXS~pepsi~FoXS~foxs~CRYSOL 3~crysol3~CRYSOL 2.8~crysol28"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "prerrors"
+            ,"label"            : "Use Errors in P(r) fitting"
+            ,"type"             : "checkbox"
+            ,"help"             : "For model preselection, P(r) can be fit with or without P(r) SDs"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "width"             : "100%",
+            "label"             : "Structure",
+            "help"              : "Right click on structure for more options",
+            "role"              : "output",
+            "id"                : "struct",
+            "type"              : "atomicstructure",
+            "labelmargintop"    : "1rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : "<br>"
+            ,"type"              : "label"
+            ,"id"                : "plotsheader"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : "<br>"
+            ,"type"              : "label"
+            ,"id"                : "plotsheader"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "prplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplotall"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "prplotall"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplotsel"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "prplotsel"
+#            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
         }
     ]
 }

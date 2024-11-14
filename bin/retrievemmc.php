@@ -95,18 +95,30 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
 
         sleep(1);
 
-        $dcdname    = $cgstate->state->mmcrunname . ".dcd";
-        $pdbname    = $cgstate->state->output_load->name;
-        $mmcextracted = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name ) . "_extracted.pdb";
+        $dcdname          = $cgstate->state->mmcrunname . ".dcd";
+        $pdbname          = $cgstate->state->output_load->name;
+        $mmcextracted     = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name ) . "_extracted.pdb";
+        $mmcsplitbasename = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name );
 
         ## how do we define chunk size -c ?
         # $cmd = "cd monomer_monte_carlo && mdconvert -c 1700 -s $input->mmcstride -t $pdbname -o out.pdb $dcdname";
-        $chunk = 10 * $input->mmcstride;
+        $chunk = 2000 * $input->mmcstride;
         $cmd = "cd monomer_monte_carlo && rm $mmcextracted 2>/dev/null; grep -Pv '^CRYST1' $pdbname > $pdbname.noCRYST1.pdb && mdconvert -c $chunk -s $input->mmcstride -t $pdbname.noCRYST1.pdb -o $mmcextracted $dcdname";
 
         # $ga->tcpmessage( [ "_textarea" => "cmd $cmd\n" ] );
         $cmdres     = run_cmd( $cmd, false, false );
-        $ga->tcpmessage( [ "_textarea" => "$cmdres\n" ] );
+        $ga->tcpmessage( [ "_textarea" =>
+                           "$cmdres\n"
+                           . "creating individual model files\n\n"
+                         ] );
+        if ( $run_cmd_last_error_code ) {
+            error_exit( "Error extracting MMC frames : $cmdres\n" );
+        }
+
+        $cmd = "rm -rf preselected; mkdir preselected && cd monomer_monte_carlo && $scriptdir/calcs/splitmodels.pl $mmcextracted ../preselected/$mmcsplitbasename";
+        #$ga->tcpmessage( [ "_textarea" => "$cmd\n" ] );
+        $cmdres     = run_cmd( $cmd, false, false );
+        #$ga->tcpmessage( [ "_textarea" => "$cmdres\n" ] );
         if ( $run_cmd_last_error_code ) {
             error_exit( "Error extracting MMC frames : $cmdres\n" );
         }

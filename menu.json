@@ -32,7 +32,11 @@
                 }
                 ,{
                     "id"         : "computeiqpr"
-                    ,"label"     : "Compute Iq/Pr"
+                    ,"label"     : "Compute I(q)/P(r)<br>Preselect models"
+                }
+                ,{
+                    "id"         : "finalmodel"
+                    ,"label"     : "Final model selection<br>using WAXSiS"
                 }
             ]
         }

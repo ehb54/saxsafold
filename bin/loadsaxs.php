@@ -129,6 +129,8 @@ if ( file_exists( $iqfile ) ) {
             $plot->layout->yaxis->gridcolor           = "rgb(150,150,150)";
         }
 
+        $plot->layout->paper_bgcolor = 'white';
+
         $output->iqplot = $plot;
     }
 }
@@ -223,15 +225,20 @@ if ( file_exists( $prfile ) ) {
             $plot->layout->yaxis->gridcolor           = "rgb(150,150,150)";
         }
 
+        $plot->layout->paper_bgcolor = 'white';
+
         $output->prplot = $plot;
     }
 }
 
 ## save state
 
-$cgstate->state->saxsiqfile = $input->saxsiqfile[0];
-$cgstate->state->saxsprfile = $input->saxsprfile[0];
+$cgstate->state->saxsiqfile      = $input->saxsiqfile[0];
+$cgstate->state->saxsprfile      = $input->saxsprfile[0];
 $cgstate->state->output_loadsaxs = $output;
+$cgstate->state->qmax            = end( $output->iqplot->data[0]->x);
+$cgstate->state->qmin            = $output->iqplot->data[0]->x[0];
+$cgstate->state->qpoints         = count( $output->iqplot->data[0]->x);
 
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
