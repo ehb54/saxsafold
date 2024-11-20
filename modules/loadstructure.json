@@ -222,6 +222,17 @@
             }
         }
         ,{
+            "role"              : "input"
+            ,"id"               : "solvent_e_density"
+            ,"label"            : "Solvent electron density"
+            ,"type"             : "float"
+            ,"default"          : 0.335
+            ,"help"             : "Used for Debye calculations"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
            "role"        : "input"
            ,"id"         : "b_submit"
            ,"type"       : "button"

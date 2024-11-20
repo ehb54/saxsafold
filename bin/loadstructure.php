@@ -50,10 +50,11 @@ $scriptdir = dirname(__FILE__);
 ## get state
 
 require "common.php";
+require "waxsis.php";
+
 $cgstate = new cgrun_state();
 
 ## does the project already exist ?
-
 
 ## make sure project is loaded
 
@@ -253,7 +254,7 @@ if ( $pid ) {
     shell_exec( $cmd );
     $time_end   = dt_now();
     $ga->tcpmessage( [ $textarea_key =>
-                       "\nComputations ending\n"
+                       "\nStructural Computations ending\n"
                        . "Duration: " . dhms_from_minutes( dt_duration_minutes( $time_start, $time_end ) ) . "\n"
                      ] );
     ob_end_clean();
@@ -268,6 +269,7 @@ if ( isset( $errorlines ) && !empty( $errorlines ) ) {
     error_exit_admin( $errorlines );
 }
 
+
 ## assemble final output
 
 $logresults = explode( "\n", `grep -P '^__:' $logfile` );
@@ -280,6 +282,37 @@ foreach ( $logresults as $v ) {
         $output->{$fields[0]} = $fields[1];
     }
 }
+
+## WAXSiS run
+
+$ga->tcpmessage( [
+                     $textarea_key =>
+                     "WAXSiS computations startings\n"
+                     . "solvent_e_density $input->solvent_e_density\n"
+                 ] );
+$waxsis_cb = function( $line ) {
+    global $ga;
+    global $textarea_key;
+    $ga->tcpmessage( [ $textarea_key => $line ] );
+};
+    
+$waxsis_params = 
+    (object)[
+        'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
+        ,'maxq'               => $cgstate->state->qmax
+        ,'convergence'        => 'quick'
+        ,'expfile'            => $cgstate->state->saxsiqfile
+        ,'solvent_e_density'  => (float) $input->solvent_e_density
+    ];
+
+$waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
+
+run_waxsis(
+    $output->name
+    ,$waxsis_params
+    ,$waxsis_cb
+    );
+
 
 $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
 
