@@ -56,16 +56,78 @@ function mkdir_if_needed( $dir ) {
     return is_dir( $dir );
 }
 
+# take an object of values and set to default obj values if not present in object
+function object_set_defaults( $inobj, $defobj ) {
+    if ( !$inobj ) {
+        $inobj = (object)[];
+    }
+
+    foreach ( (array) $defobj as $k => $v ) {
+        if ( !isset( $inobj->{$k} ) ) {
+            $inobj->{$k} = $v;
+        }
+    }
+
+    return $inobj;
+}
+
 function run_cmd( $cmd, $exit_if_error = true, $array_result = false ) {
     global $run_cmd_last_error_code;
+
     exec( "$cmd 2>&1", $res, $run_cmd_last_error_code );
     if ( $exit_if_error && $run_cmd_last_error_code ) {
-        error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$res_code'" );
+        error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$run_cmd_last_error_code'" );
     }
     if ( !$array_result ) {
         return implode( "\n", $res ) . "\n";
     }
     return $res;
+}
+
+function run_streaming_cmd( $cmd, $cb_on_write, $exit_if_error = true, $array_result = false, $stderr_file = "error-output.txt" ) {
+    global $run_cmd_last_error_code;
+
+    $descriptorspec = array(
+        0 => array( "pipe", "r" ),
+        1 => array( "pipe", "w" ),
+        2 => array( "file", $stderr_file, "w" )
+        );
+
+    $process = proc_open( $cmd, $descriptorspec, $pipes );
+
+    $res = [];
+
+    if ( is_resource( $process ) ) {
+        
+        # close stdin to proc
+        fclose( $pipes[0] );
+
+        while ( !feof( $pipes[1] ) ) {
+            $line  = fgets( $pipes[1] );
+            $res[] = $line;
+            $cb_on_write( $line );
+        }
+
+        fclose($pipes[1]);
+
+        $run_cmd_last_error_code = proc_close($process);
+
+        if ( $exit_if_error && $run_cmd_last_error_code ) {
+            error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$run_cmd_last_error_code'" );
+        }
+        if ( !$array_result ) {
+            return implode( "\n", $res ) . "\n";
+        }
+        return $res;
+    }
+
+    ## !is_resource
+    
+    if ( $exit_if_error ) {
+        error_exit( "shell command [$cmd] failed to run" );
+    } 
+    $run_cmd_last_error_code = -1;
+    return $array_result ? [] : "";
 }
 
 function error_exit( $msg ) {
