@@ -93,7 +93,7 @@ $ga->tcpmessage( [
 
 if ( !isset( $input->searchkey ) ) {
     if ( !isset( $input->pdbfile[0] ) ) {
-        $ga->tcpmessage( [ 'processing_progress' => $progress ] );
+        $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
         error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
     }
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
@@ -179,7 +179,7 @@ if ( !isset( $input->searchkey ) ) {
     foreach ( $extensions as $v ) {
         $thisf = "AF-${searchkey}-$v";
         if ( !file_exists( $thisf  ) ) {
-            $ga->tcpmessage( [ 'processing_progress' => $progress ] );
+            $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
             error_exit_admin( "Error downloading $thisf from Google cloud, perhaps try again later" );
         }
     }
@@ -289,11 +289,22 @@ $ga->tcpmessage( [
                      $textarea_key =>
                      "WAXSiS computations startings\n"
                      . "solvent_e_density $input->solvent_e_density\n"
+                     ,'processing_progress' => 0.3
                  ] );
+
+$waxsis_lc = 0;
+
 $waxsis_cb = function( $line ) {
     global $ga;
     global $textarea_key;
-    $ga->tcpmessage( [ $textarea_key => $line ] );
+    global $waxsis_lc;
+
+    $waxsis_lc++;
+
+    $ga->tcpmessage( [
+                         $textarea_key => $line
+                         ,'processing_progress' => min(0.3 + 0.6 * ( $waxsis_lc / 118 ), .95 )
+                     ] );
 };
     
 $waxsis_params = 
@@ -307,12 +318,57 @@ $waxsis_params =
 
 $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
 
-run_waxsis(
-    $output->name
-    ,$waxsis_params
-    ,$waxsis_cb
+## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
+
+## for testing, don't run WAXSiS
+if ( 0 ) {
+    run_waxsis(
+        $output->name
+        ,$waxsis_params
+        ,$waxsis_cb
+        );
+}
+waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
+
+#$ga->tcpmessage( [
+#                     $textarea_key => "WAXSiS Fitted curve data:\n" . json_encode( $waxsis_fitted_data, JSON_PRETTY_PRINT ) . "\n"
+#                 ] );
+
+## output files?
+
+### waxsis/fittedCalcInterpolated_waxsis.fit
+
+## setup Iq/Pr plots
+
+$iqplot = unserialize( serialize( $cgstate->state->output_loadsaxs->iqplot ) );
+
+
+## add WAXSiS data to Iq/Pr plots
+
+$iqplot->data[1] = json_decode(
+    '[
+       {
+         "x"        : []
+         ,"y"       : []
+         ,"type" : "scatter"
+         ,"line" : {
+              ,"width" : 1
+         }
+       ]'
     );
 
+$iqplot->data[0]->name = "Exp I(q)";
+
+$iqplot->data[1] = unserialize( serialize( $iqplot->data[0] ) );
+$iqplot->data[1]->x = $waxsis_fitted_data->x;
+$iqplot->data[1]->y = $waxsis_fitted_data->y;
+$iqplot->data[1]->error_y->array = $waxsis_fitted_data->error_y;
+# $iqplot->data[1]->error_y->array = []; # off for now
+$iqplot->data[1]->name = "WAXSiS";
+$iqplot->data[1]->line->color = "rgb(175,0,0,.9)";
+
+$output->iqplot = $iqplot;
+$output->prplot = $cgstate->state->output_loadsaxs->prplot;
 
 $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
 
@@ -435,7 +491,7 @@ function update_ui( $message = true ) {
     $progresslines = preg_grep( '/^__~pgrs al : /', $log );
     if ( count( $progresslines ) ) {
         $progress = floatVal( preg_replace( '/^__~pgrs al : /', '', end( $progresslines ) ) );
-        $ga->tcpmessage( [ 'processing_progress' => $progress ] );
+        $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
     }
     $is_done = preg_grep( '/^__~finished/', $log );
         
