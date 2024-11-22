@@ -417,6 +417,27 @@
             }
         }
         ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"            : ""
+            ,"type"             : "plotly"
+            ,"id"               : "prplot"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
             "width" : "100%",
             "label" : "Structure",
             "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",

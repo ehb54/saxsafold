@@ -6,6 +6,8 @@ $scriptdir = dirname(__FILE__);
 
 require_once "$scriptdir/common.php";
 
+## should be converted to a CLASS!
+
 $waxsis_defaults =
     (object) [
         'maxq'               => 0.5
@@ -18,12 +20,59 @@ $waxsis_defaults =
         ,'random_seed'       => 'no'
     ];
 
+function waxsis_fitted_data_initval ( $data ) {
+    $data->x       = [];
+    $data->y       = [];
+    $data->error_y = [];
+}
+
+$waxsis_fitted_data = (object)[];
+
+waxsis_fitted_data_initval( $waxsis_fitted_data );
+
 # example cmd
 # ssh host docker run -i --rm -v /genappdata/container_mounts/saxsafold/saxsafold-results/users/emre/struct1/tmp:/genapp/run genapp_alphamultisaxshub:Calculations-waxsis_0827_2 waxsis -s AF-G0A007-F1-model_v4-somo.pdb -q 0.5 -nq 501 -curve_q_unit A -scatt_convention q -constant_subtractions yes  -buffer_subtract total -ligand remove_cryst_agents -replace_selen yes -convergence normal -solvent_density 0.334 -envelope_dist 7 -random_seed yes -nt 8 -go
+
+function waxis_load_data( $file, $data_struct ) {
+    waxsis_fitted_data_initval( $data_struct );
+    if ( !file_exists( $file ) ) {
+        echo "Expected WAXSiS produced fit '$file' does not exist\n";
+        error_exit( "Expected WAXSiS produced fit '$file' does not exist" );
+    }
+    echo "Expected WAXSiS produced fit '$file' DOES exist\n";
+    if ( $data = file_get_contents( $file ) ) {
+        $plotin  = explode( "\n", $data );
+
+        echo "Got " . count( $plotin ) . " lines of data\n";
+
+        # remove comment lines
+        $plotin = preg_grep( '/^\s*#/', $plotin, PREG_GREP_INVERT );
+
+        foreach ( $plotin as $linein ) {
+            $linevals = preg_split( '/\s+/', trim( $linein ) );
+
+            if ( count( $linevals ) > 2 ) {
+                $data_struct->x[]       = floatval($linevals[0]);
+                $data_struct->y[]       = floatval($linevals[1]);
+                $data_struct->error_y[] = floatval($linevals[2]);
+            } else {
+                if ( count( $linevals ) == 2 ) {
+                    $data_struct->x[]    = floatval($linevals[0]);
+                    $data_struct->y[]    = floatval($linevals[1]);
+                }
+            }
+        }
+    }
+}
 
 function run_waxsis( $pdb, $config, $cb_on_write ) {
     global $ga;
     global $waxsis_defaults;
+    global $waxsis_fitted_data;
+    global $run_cmd_last_error_code;
+
+    waxsis_fitted_data_initval( $waxsis_fitted_data );
+    
     $config = object_set_defaults( $config, $waxsis_defaults );
     echo json_encode( $config, JSON_PRETTY_PRINT ) . "\n";
 
@@ -55,7 +104,7 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
         . " -v $cwd/$config->subdir:/genapp/run genapp_alphamultisaxshub:Calculations-waxsis_0827_2"
         . " waxsis"
         . " -s $pdb"
-        . ( strlen( $config->expfile ) ? " -expfile $config->expfile " : "" )
+        . ( strlen( $config->expfile ) ? " -expfile " . basename( $config->expfile ) : "" )
         . " -q $config->maxq"
         . " -nq $config->qpoints"
         . " -curve_q_unit A"
@@ -76,9 +125,18 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
     echo "$cmd\n";
 
     run_streaming_cmd( $cmd, $cb_on_write, false, false, 'waxsis/last_run_errors.txt' );
+    if ( $run_cmd_last_crror_code ) {
+        error_exit( "Error running WAXSiS on structure" );
+    }
+
+    ## load waxsis_fitted_curve
+    waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
 }
 
 ## testing
+
+# waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
+# echo json_encode( $waxsis_fitted_data, JSON_PRETTY_PRINT ) . "\n";
 
 #  $cb_on_write = function( $line ) {
 #     echo "callback received : $line";
