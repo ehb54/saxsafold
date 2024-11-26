@@ -40,6 +40,8 @@ $output = (object)[];
 
 include "genapp.php";
 include "datetime.php";
+include "sas.php";
+$sas = new SAS( false );
 
 $ga        = new GenApp( $input, $output );
 $fdir      = preg_replace( "/^.*\/results\//", "results/", $input->_base_directory );
@@ -328,7 +330,6 @@ if ( 0 ) {
         ,$waxsis_cb
         );
 }
-waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
 
 #$ga->tcpmessage( [
 #                     $textarea_key => "WAXSiS Fitted curve data:\n" . json_encode( $waxsis_fitted_data, JSON_PRETTY_PRINT ) . "\n"
@@ -340,34 +341,18 @@ waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data
 
 ## setup Iq/Pr plots
 
-$iqplot = unserialize( serialize( $cgstate->state->output_loadsaxs->iqplot ) );
+$waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
 
+if (
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
+    && $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsisfile  )
+    && $sas->add_plot( "I(q)", "WAXSiS" )
+    ) {
+    $output->iqplot = $sas->plot( "I(q)" );
+} else {
+    error_exit( $sas->last_error );
+}
 
-## add WAXSiS data to Iq/Pr plots
-
-$iqplot->data[1] = json_decode(
-    '[
-       {
-         "x"        : []
-         ,"y"       : []
-         ,"type" : "scatter"
-         ,"line" : {
-              ,"width" : 1
-         }
-       ]'
-    );
-
-$iqplot->data[0]->name = "Exp I(q)";
-
-$iqplot->data[1] = unserialize( serialize( $iqplot->data[0] ) );
-$iqplot->data[1]->x = $waxsis_fitted_data->x;
-$iqplot->data[1]->y = $waxsis_fitted_data->y;
-$iqplot->data[1]->error_y->array = $waxsis_fitted_data->error_y;
-# $iqplot->data[1]->error_y->array = []; # off for now
-$iqplot->data[1]->name = "WAXSiS";
-$iqplot->data[1]->line->color = "rgb(175,0,0,.9)";
-
-$output->iqplot = $iqplot;
 $output->prplot = $cgstate->state->output_loadsaxs->prplot;
 
 $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
