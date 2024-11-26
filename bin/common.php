@@ -131,6 +131,9 @@ function run_streaming_cmd( $cmd, $cb_on_write, $exit_if_error = true, $array_re
 }
 
 function error_exit( $msg ) {
+    if ( !strlen( $msg ) ) {
+        $msg = "Empty error message!";
+    }
     echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
     exit;
 }

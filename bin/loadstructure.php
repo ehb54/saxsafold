@@ -51,7 +51,7 @@ $scriptdir = dirname(__FILE__);
 
 ## get state
 
-require "common.php";
+include_once "common.php";
 require "waxsis.php";
 
 $cgstate = new cgrun_state();
@@ -312,7 +312,7 @@ $waxsis_cb = function( $line ) {
 $waxsis_params = 
     (object)[
         'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
-        ,'maxq'               => $cgstate->state->qmax
+        ,'maxq'               => $cgstate->state->qmax * 1.01  # extend to prevent extrapolation when interpolating
         ,'convergence'        => 'quick'
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => (float) $input->solvent_e_density
@@ -322,8 +322,8 @@ $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
 
 ## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
 
-## for testing, don't run WAXSiS
-if ( 0 ) {
+## for testing expediency, don't run WAXSiS
+if ( 1 ) {
     run_waxsis(
         $output->name
         ,$waxsis_params
@@ -352,6 +352,36 @@ if (
 } else {
     error_exit( $sas->last_error );
 }
+
+$ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
+
+## test interpolate
+
+if ( !$sas->interpolate( "WAXSiS", "Exp. I(q)", "WAXSiS_interpolated" ) ) {
+    error_exit( $sas->last_error );
+}
+
+
+if ( !$sas->add_plot( "I(q)", "WAXSiS_interpolated" ) ) {
+    error_exit( $sas->last_error );
+}
+
+$rmsd = -1;
+if ( !$sas->rmsd( "Exp. I(q)", "WAXSiS_interpolated", $rmsd ) ) {
+    error_exit( $sas->last_error );
+}
+    
+# $ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
+
+$chi2 = -1;
+if ( !$sas->nchi2( "Exp. I(q)", "WAXSiS_interpolated", $chi2 ) ) {
+   error_exit( $sas->last_error );
+}
+    
+$rmsd = round( $rmsd, 3 );
+$chi2 = round( $chi2, 3 );
+
+$sas->annotate_plot( "I(q)", "RMSD $rmsd   nChi^2 $chi2 " );
 
 $output->prplot = $cgstate->state->output_loadsaxs->prplot;
 

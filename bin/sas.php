@@ -2,7 +2,8 @@
 {};
 
 ## a class for handling Iq Pr
-## 
+
+include_once "common.php";
 
 class SAS {
 
@@ -44,6 +45,9 @@ class SAS {
                     ,"font" : {
                         "color"  : "rgb(0,5,80)"
                     }
+                    ,"margin" : {
+                        "b" : 100
+                    }
                     ,"paper_bgcolor": "white"
                     ,"plot_bgcolor": "white"
                     ,"xaxis" : {
@@ -67,6 +71,18 @@ class SAS {
                         }
                      }
                     }
+                    ,"annotations" : [ 
+                     {
+                        "xref"       : "paper"
+                        ,"yref"      : "paper"
+                        ,"x"         : -0.1
+                        ,"xanchor"   : "left"
+                        ,"y"         : -0.3
+                        ,"yanchor"   : "top"
+                        ,"text"      : ""
+                        ,"showarrow" : false
+                     }
+                   ]
                  }
                  ,"config" : {
                     "showLink" : true
@@ -85,6 +101,9 @@ class SAS {
                     "title" : "P(r)"
                     ,"font" : {
                         "color"  : "rgb(0,5,80)"
+                    }
+                    ,"margin" : {
+                        "b" : 100
                     }
                     ,"paper_bgcolor": "white"
                     ,"plot_bgcolor": "white"
@@ -107,6 +126,18 @@ class SAS {
                         }
                      }
                     }
+                    ,"annotations" : [ 
+                     {
+                        "xref"       : "paper"
+                        ,"yref"      : "paper"
+                        ,"x"         : 0
+                        ,"xanchor"   : "left"
+                        ,"y"         : -0.2
+                        ,"yanchor"   : "top"
+                        ,"text"      : ""
+                        ,"showarrow" : false
+                     }
+                   ]
                  }
                  ,"config" : {
                     "showLink" : true
@@ -119,6 +150,9 @@ class SAS {
 
     private function error_exit( $msg ) {
         if ( $this->exit_on_error ) {
+            if ( !strlen( $msg ) ) {
+                $msg = "SAS::Empty error message!";
+            }
             echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
             if ( $this->debug ) { echo "\n"; };
             exit;
@@ -132,8 +166,8 @@ class SAS {
         }
     }
 
-    function name_exists( $name ) {
-        $this->debug_msg( "SAS::name_exists( '$name' )" );
+    function data_name_exists( $name ) {
+        $this->debug_msg( "SAS::data_name_exists( '$name' )" );
         return isset( $this->data->$name );
     }
 
@@ -159,7 +193,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        if ( $this->name_exists( $name ) ) {
+        if ( $this->data_name_exists( $name ) ) {
             $this->last_error = "SAS: Duplicate name '$name'";
             return $this->error_exit( $this->last_error );
         }
@@ -176,8 +210,8 @@ class SAS {
 
             $this->debug_msg( "Got " . count( $plotin ) . " lines of data\n" );
 
-            # remove blank & text & comment lines
-            $plotin = preg_grep( '/^(\s*#|\s*$|\s*[A-Za-z])/', $plotin, PREG_GREP_INVERT );
+            # remove blank & text & comment lines & lines that start with quotes
+            $plotin = preg_grep( '/^(\s*#|\s*$|\s*[A-Za-z\'"~*])/', $plotin, PREG_GREP_INVERT );
 
             # any lines left
             if ( !count( $plotin ) ) {
@@ -237,6 +271,20 @@ class SAS {
         return true;
     }
 
+    # adds an annotation to a plot
+
+    function annotate_plot( $plotname, $msg ) {
+
+        if ( !isset( $this->plots->$plotname ) ) {
+            $this->last_error = "annotate_plot() '$names' does not exist\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $this->plots->$plotname->layout->annotations[0]->text = $msg;
+
+        return true;
+    }
+
     # creates a plot from an existing plot
     function create_plot_from_plot( $type, $name, $org_plot ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
@@ -254,7 +302,7 @@ class SAS {
         ## check for duplicate data names
 
         foreach( $org_plot->data as $v ) {
-            if ( $this->name_exists( $v->name ) ) {
+            if ( $this->data_name_exists( $v->name ) ) {
                 $this->last_error = "create_plot_from_plot() curve '$v->name' already exists as data\n";
                 return $this->error_exit( $this->last_error );
             }
@@ -267,10 +315,11 @@ class SAS {
         foreach( $this->plots->$name->data as $v ) {
             $dataname = $v->name;
             $this->data->$dataname = (object) [];
+            $this->data->$dataname->type = $type;
             $this->data->$dataname->x = &$v->x;
             $this->data->$dataname->y = &$v->y;
-            if ( isset( $this->$dataname->error_y ) ) {
-                $this->$dataname->y = &$v->error_y->array;
+            if ( isset( $v->error_y ) ) {
+                $this->data->$dataname->error_y = &$v->error_y->array;
             }
         }
 
@@ -336,7 +385,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        if ( !$this->data->$dataname ) {
+        if ( !isset( $this->data->$dataname ) ) {
             $this->last_error = "add_plot() dataname $dataname is not a data name\n";
             return $this->error_exit( $this->last_error );
         }
@@ -359,7 +408,9 @@ class SAS {
             ]
             ;
 
-        if ( $this->data->$dataname->error_y ) {
+        error_log( "add_plot $name $dataname 5\n", 3, "logerr.txt" );
+
+        if ( isset( $this->data->$dataname->error_y ) ) {
             end( $this->plots->$name->data )->error_y = (object)[
                 "type"       => "data"
                 ,"array"     => &$this->data->$dataname->error_y
@@ -390,17 +441,17 @@ class SAS {
         $this->debug_msg( "SAS::interpolate( '$fromname', '$toname', '$destname' )" );
         $this->last_error = "";
 
-        if ( !$this->name_exists( $fromname ) ) {
+        if ( !$this->data_name_exists( $fromname ) ) {
             $this->last_error = "SAS: curve name '$fromname' does not exist";
             return $this->error_exit( $this->last_error );
         }
 
-        if ( !$this->name_exists( $toname ) ) {
+        if ( !$this->data_name_exists( $toname ) ) {
             $this->last_error = "SAS: curve name '$toname' does not exist";
             return $this->error_exit( $this->last_error );
         }
 
-        if ( $this->name_exists( $destname ) ) {
+        if ( $this->data_name_exists( $destname ) ) {
             $this->last_error = "SAS: curve name '$destname' already exists";
             return $this->error_exit( $this->last_error );
         }
@@ -414,26 +465,149 @@ class SAS {
         ## getconf ARG_MAX could be checked for size, but currently 2505728 on a ubuntu 20.04 container
 
         $cmdarg =
-            '{"iq":"interpolate"'
+            '{"interpolate":1'
                   . ',"from_x":' . json_encode( $this->data->$fromname->x )
                   . ',"from_y":' . json_encode( $this->data->$fromname->y )
                   . ( $this->data->$fromname->y ? ',"from_e":' . json_encode( $this->data->$fromname->error_y ) : '' )
                   . ',"to_x":' . json_encode( $this->data->$toname->x )
                   . '}'
-                  ;
-        file_put_contents( "temp_cmdarg.txt", $cmdarg );
+            ;
+
+        $cmd = "/ultrascan3/us_somo/bin64/us_saxs_cmds_t json '$cmdarg' 2>&1";
+
+        # file_put_contents( "temp_cmdarg.txt", $cmdarg );
+        # file_put_contents( "temp_cmd.sh", $cmd );
+
+        $res = run_cmd( $cmd );
+        
+        # file_put_contents( "temp_cmd_result.txt", $res );
+
+        if ( null === ( $resobj = json_decode( $res ) ) ) {
+            $this->last_error = "SAS: error interpolating curve '$fromname' to '$toname' - invalid JSON returned";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( isset( $resobj->errors ) ) {
+            $this->last_error = "SAS: error interpolating curve '$fromname' to '$toname' - $resobj->errors";
+            return $this->error_exit( $this->last_error );
+        }
+
+        ## create new curve, the interpolated one
+
+        $this->data->$destname = (object)[];
+        $this->data->$destname->type = $this->data->$toname->type;
+        ## do we need this unserialize/serialize ?
+        $this->data->$destname->x    = unserialize( serialize( $this->data->$toname->x ) );
+        $this->data->$destname->y    = $resobj->to_y;
+        if ( isset( $resobj->to_e ) ) {
+            $this->data->$destname->error_y    = $resobj->to_e;
+        }
 
         return true;
     }
 
-    function chi2( $name1, $name2 ) {
-        $this->debug_msg( "SAS::chi2( '$name1', '$name2' )" );
+    # rmsd - calculate rmsd
+    function rmsd( $name1, $name2, &$rmsd ) {
+        $this->debug_msg( "SAS::rmsd( '$name1', '$name2' )" );
         $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name1 ) ) {
+            $this->last_error = "SAS::rmsd() curve name '$name1' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $name2 ) ) {
+            $this->last_error = "SAS::rmsd() curve name '$name2' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( count( array_diff( $this->data->$name1->x, $this->data->$name2->x ) ) ) {
+            $this->last_error = "SAS::rmsd() curves named '$name1' and '$name2' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $len1 = count( $this->data->$name1->y );
+        $len2 = count( $this->data->$name2->y );
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::rmsd() curves named '$name1' and '$name2' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $msd = 0;
+        
+        for ( $i = 0; $i < $len1; ++$i ) {
+            $msd += pow( $this->data->$name1->y[$i] - $this->data->$name2->y[$i], 2 );
+        }
+
+        $rmsd = sqrt( $msd );
+        return true;
+    }
+
+    # nchi2 - calculate chi2, assumes $targetname has the SDs
+    function nchi2( $targetname, $fromname, &$chi2 ) {
+        $this->debug_msg( "SAS::nchi2( '$targetname', '$fromname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $targetname ) ) {
+            $this->last_error = "SAS::nchi2() curve name '$targetname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::nchi2() curve name '$fromname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( count( array_diff( $this->data->$targetname->x, $this->data->$fromname->x ) ) ) {
+            $this->last_error = "SAS::nchi2() curves named '$targetname' and '$fromname' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$targetname->error_y ) ) {
+            $this->last_error = "SAS::nchi2() curve name '$targetname' has no SDs";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $len1 = count( $this->data->$targetname->y );
+        $len2 = count( $this->data->$targetname->error_y );
+        $len3 = count( $this->data->$fromname->y );
+
+        if ( $len1 < 2 ) {
+            $this->last_error = "SAS::nchi2() curves have too few points";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::nchi2() curve name '$targetname' has an inconsistent number of SDs";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len3 ) {
+            $this->last_error = "SAS::nchi2() curves named '$targetname' and '$fromname' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $chi2 = 0;
+        
+        for ( $i = 0; $i < $len1; ++$i ) {
+            if ( $this->data->$targetname->error_y[ $i ] == 0 ) {
+                $this->last_error = "SAS::nchi2() curve named '$targetname' has a zero SD at pos $i";
+                return $this->error_exit( $this->last_error );
+            }                
+            $chi2 += pow( ( $this->data->$targetname->y[$i] - $this->data->$fromname->y[$i] ) / $this->data->$targetname->error_y[ $i ] , 2 );
+        }
+
+        $chi2 /= $len1 - 1;
+
+        return true;
     }
 
     function common_grid( $name1, $name2 ) {
         $this->debug_msg( "SAS::common_grid( '$name1', '$name2' )" );
         $this->last_error = "";
+        $this->last_error = "SAS::common_grid() not yet implemented!";
+        return $this->error_exit( $this->last_error );
     }
 
     function dump_data( $pretty = true ) {

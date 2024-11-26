@@ -32,7 +32,7 @@ $scriptdir = dirname(__FILE__);
 
 ## get state
 
-require "common.php";
+include_once "common.php";
 $cgstate = new cgrun_state();
 
 ## make sure project is loaded

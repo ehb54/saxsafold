@@ -125,12 +125,13 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
     echo "$cmd\n";
 
     run_streaming_cmd( $cmd, $cb_on_write, false, false, 'waxsis/last_run_errors.txt' );
-    if ( $run_cmd_last_crror_code ) {
+    if ( $run_cmd_last_error_code ) {
         error_exit( "Error running WAXSiS on structure" );
     }
 
-    ## load waxsis_fitted_curve
-    waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
+    ### disabled
+    #    ## load waxsis_fitted_curve
+    #    waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
 }
 
 ## testing
