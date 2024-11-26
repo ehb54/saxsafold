@@ -21,6 +21,8 @@ $output = (object)[];
 
 include "genapp.php";
 include "datetime.php";
+include "sas.php";
+$sas = new SAS( false );
 
 $ga        = new GenApp( $input, $output );
 $fdir      = preg_replace( "/^.*\/results\//", "results/", $input->_base_directory );
@@ -44,9 +46,6 @@ if ( !$cgstate->state->loaded ) {
 ## possibly plot (easy for P(r), we have the code)
 
 ## plotly
-
-include "sas.php";
-$sas = new SAS( false );
 
 $iqfile = $input->saxsiqfile[0];
 
