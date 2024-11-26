@@ -13,7 +13,8 @@ class SAS {
     private $debug;
     private $exit_on_error;
 
-    const LINE_WIDTH = 1;
+    const WIDTH_LINE      = 1;
+    const WIDTH_ERROR_CAP = 1;
 
     ## php 8.1 has enum, should eventually replace
 
@@ -173,7 +174,7 @@ class SAS {
         if ( $data = file_get_contents( $file ) ) {
             $plotin  = explode( "\n", $data );
 
-            echo "Got " . count( $plotin ) . " lines of data\n";
+            $this->debug_msg( "Got " . count( $plotin ) . " lines of data\n" );
 
             # remove blank & text & comment lines
             $plotin = preg_grep( '/^(\s*#|\s*$|\s*[A-Za-z])/', $plotin, PREG_GREP_INVERT );
@@ -236,8 +237,8 @@ class SAS {
         return true;
     }
 
-    # creates a plot object containing the specified files
-    function create_plot( $type, $name, $datanames, $options ) {
+    # creates a plot object containing the specified datanames
+    function create_plot( $type, $name, $datanames, $options = null ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
         $this->last_error = "";
 
@@ -282,6 +283,7 @@ class SAS {
                 return $this->error_exit( $this->last_error );
             }
         }
+        return true;
     }
 
     # adds to existing plot object 
@@ -311,7 +313,7 @@ class SAS {
                 ,"type" => "scatter"
                 ,"name" => $dataname
                 ,"line" => (object) [
-                    "width" => self::LINE_WIDTH
+                    "width" => self::WIDTH_LINE
                     # ,"color"  => "rgb(150,150,222)"
                 ]
             ]
@@ -319,9 +321,11 @@ class SAS {
 
         if ( $this->data->$dataname->error_y ) {
             end( $this->plots->$name->data )->error_y = (object)[
-                "type" => "data"
-                ,"array" => &$this->data->$dataname->error_y
-                ,"visible" => true
+                "type"       => "data"
+                ,"array"     => &$this->data->$dataname->error_y
+                ,"visible"   => true
+                ,"thickness" => self::WIDTH_LINE
+                ,"width"     => self::WIDTH_ERROR_CAP
                 ];
         }
 
@@ -395,32 +399,34 @@ class SAS {
 
 ## testing
 
-$sas = new SAS( true );
+if ( isset( $do_testing ) ) {
+    $sas = new SAS( true );
 
-$files = [
-    'waxsis/lyzexp.dat'
-    ,'waxsis/fittedCalcInterpolated_waxsis.fit'
-    ];
+    $files = [
+        'waxsis/lyzexp.dat'
+        ,'waxsis/fittedCalcInterpolated_waxsis.fit'
+        ];
 
-foreach ( $files as $file ) {
-    if ( !($sas->load_file( SAS::PLOT_IQ, basename( $file ), $file )) ) {
-        echo $sas->last_error . "\n";
-        echo "sas loaded failed for $file\n";
-    } else {
-    echo "sas loaded ok for $file\n";
+    foreach ( $files as $file ) {
+        if ( !($sas->load_file( SAS::PLOT_IQ, basename( $file ), $file )) ) {
+            echo $sas->last_error . "\n";
+            echo "sas loaded failed for $file\n";
+        } else {
+            echo "sas loaded ok for $file\n";
+        }
     }
+
+    $plotname = "IQ test";
+    $sas->create_plot(
+        SAS::PLOT_IQ
+        ,$plotname
+        ,array_map( fn($x) => basename( $x ), $files )
+        ,[
+            "title" => "funky"
+            ,"showlegend" => true
+        ]
+        );
+
+    # echo $sas->dump_plots( false );
+    echo "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n";
 }
-
-$plotname = "IQ test";
-$sas->create_plot(
-    SAS::PLOT_IQ
-    ,$plotname
-    ,array_map( fn($x) => basename( $x ), $files )
-    ,[
-        "title" => "funky"
-        ,"showlegend" => true
-    ]
-    );
-
-# echo $sas->dump_plots( false );
-echo "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n";
