@@ -237,6 +237,26 @@ class SAS {
         return true;
     }
 
+    # creates a plot from an existing plot
+    ## N.B. not currently extracting "names" data
+    function create_plot_from_plot( $type, $name, $org_plot ) {
+        $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
+
+        if ( !$this->valid_type( $type ) ) {
+            $this->last_error = "SAS: create_plot_from_plot() Invalid type $type";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( isset( $this->plots->$name ) ) {
+            $this->last_error = "create_plot_from_plot() '$names' already exists\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $this->plots->$name = unserialize( serialize( $org_plot ) );
+
+        return true;
+    }
+
     # creates a plot object containing the specified datanames
     function create_plot( $type, $name, $datanames, $options = null ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
