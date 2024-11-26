@@ -238,7 +238,6 @@ class SAS {
     }
 
     # creates a plot from an existing plot
-    ## N.B. not currently extracting "names" data
     function create_plot_from_plot( $type, $name, $org_plot ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
 
@@ -252,7 +251,28 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
+        ## check for duplicate data names
+
+        foreach( $org_plot->data as $v ) {
+            if ( $this->name_exists( $v->name ) ) {
+                $this->last_error = "create_plot_from_plot() curve '$v->name' already exists as data\n";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+        
         $this->plots->$name = unserialize( serialize( $org_plot ) );
+
+        ## create data
+
+        foreach( $this->plots->$name->data as $v ) {
+            $dataname = $v->name;
+            $this->data->$dataname = (object) [];
+            $this->data->$dataname->x = &$v->x;
+            $this->data->$dataname->y = &$v->y;
+            if ( isset( $this->$dataname->error_y ) ) {
+                $this->$dataname->y = &$v->error_y->array;
+            }
+        }
 
         return true;
     }
@@ -365,9 +385,45 @@ class SAS {
         return $this->error_exit( $this->last_error );
     }
 
-    function interpolate( $toname, $fromname, $destname ) {
-        $this->debug_msg( "SAS::interpolate( '$toname', '$fromname', '$destname' )" );
+    ## interpolate $fromname to $toname's grid resulting in $destname
+    function interpolate( $fromname, $toname, $destname ) {
+        $this->debug_msg( "SAS::interpolate( '$fromname', '$toname', '$destname' )" );
         $this->last_error = "";
+
+        if ( !$this->name_exists( $fromname ) ) {
+            $this->last_error = "SAS: curve name '$fromname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->name_exists( $toname ) ) {
+            $this->last_error = "SAS: curve name '$toname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->name_exists( $destname ) ) {
+            $this->last_error = "SAS: curve name '$destname' already exists";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$fromname->type != $this->data->$toname->type ) {
+            $this->last_error = "SAS: curves named '$fromname' and '$toname' have differing types";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        ## build up interpolate object for us_saxs_cmds_t json usage
+        ## getconf ARG_MAX could be checked for size, but currently 2505728 on a ubuntu 20.04 container
+
+        $cmdarg =
+            '{"iq":"interpolate"'
+                  . ',"from_x":' . json_encode( $this->data->$fromname->x )
+                  . ',"from_y":' . json_encode( $this->data->$fromname->y )
+                  . ( $this->data->$fromname->y ? ',"from_e":' . json_encode( $this->data->$fromname->error_y ) : '' )
+                  . ',"to_x":' . json_encode( $this->data->$toname->x )
+                  . '}'
+                  ;
+        file_put_contents( "temp_cmdarg.txt", $cmdarg );
+
+        return true;
     }
 
     function chi2( $name1, $name2 ) {
