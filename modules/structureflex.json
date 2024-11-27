@@ -143,6 +143,54 @@
                 ]
             }
         }
+        ,{
+            "structure" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "parent" : "body",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        }
+        ,{
+            "resultpanel2" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
     ]
     ,"fields"   : [
         {
@@ -328,7 +376,29 @@
             }
         }
         ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"            : ""
+            ,"type"             : "plotly"
+            ,"id"               : "prplot"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
             "width" : "100%",
+            "height" : "500",
             "label" : "Structure",
             "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
             "role" : "output",
@@ -336,7 +406,7 @@
             "type" : "atomicstructure",
             "labelmargintop" : "1rem"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "structure"
             }
         }
         ,{
@@ -346,7 +416,7 @@
             ,"id"       : "autoflex"
             ,"repeater" : "true"
             ,"layout"   : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
             }
         }
         ,{
@@ -358,7 +428,7 @@
             ,"id"        : "autoflexconfidencelevel"
             ,"repeat"    : "autoflex"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
             }
         }
         ,{
@@ -373,7 +443,7 @@
             ,"hook"        : "structureflex_compute_confidence.php"
             ,"hookdata"    : "autoflex-autoflexconfidencelevel"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
             }
         }
         ,{
@@ -385,7 +455,7 @@
             ,"default"  : 1
             ,"repeater" : "true"
             ,"layout"   : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
             }
         }
         ,{
@@ -395,7 +465,7 @@
             ,"id"       : "flexrange"
             ,"repeat"   : "nflex"
             ,"layout"   : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
             }
         }
     ]
