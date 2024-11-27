@@ -364,6 +364,8 @@ if (
     && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
     && $sas->rmsd( "Exp. I(q)", "WAXSiS", $rmsd )
     && $sas->add_plot( "I(q)", "WAXSiS" )
+    && $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
+    && $sas->add_plot_residuals( "I(q)", "Res./SD" )
     ) {
     $output->iqplot = $sas->plot( "I(q)" );
 } else {
