@@ -14,8 +14,12 @@ class SAS {
     private $debug;
     private $exit_on_error;
 
-    const WIDTH_LINE      = 1;
-    const WIDTH_ERROR_CAP = 1;
+    const WIDTH_LINE            = 1;
+    const WIDTH_ERROR_CAP       = 1;
+    const DOMAIN_YAXIS_RESID    = [ 0.25, 1 ];
+    const DOMAIN_YAXIS2_RESID   = [ 0, 0.21 ];
+    const PLOT_IQ_XAXIS_TITLE   = "q [&#8491;<sup>-1</sup>]";
+    const PLOT_PR_XAXIS_TITLE   = "Frequency a.u.";
 
     ## php 8.1 has enum, should eventually replace
 
@@ -24,6 +28,8 @@ class SAS {
     
     private $plot_tmpl;
     
+    ## n.b. had to remove layout:yaxis:title:standoff:20 as it didn't seem be be honored for the subplot
+
     function __construct( $debug = false, $exit_on_error = true ) {
         $this->debug         = $debug;
         $this->exit_on_error = $exit_on_error;
@@ -54,22 +60,47 @@ class SAS {
                        "gridcolor" : "rgba(111,111,111,0.5)"
                        ,"type" : "linear"
                        ,"title" : {
-                       "text" : "q [&#8491;<sup>-1</sup>]"
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
+                           "text" : "q [&#8491;<sup>-1</sup>]"
+                            ,"font" : {
+                                "color"  : "rgb(0,5,80)"
+                            }
+                       }
+                       ,"showticklabels" : false
                     }
                     ,"yaxis" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
                        ,"type" : "log"
                        ,"title" : {
-                       "text" : "I(q) a.u."
-                       ,"standoff" : 20
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                     }
+                           "text" : "I(q) a.u."
+                           ,"font" : {
+                               "color"  : "rgb(0,5,80)"
+                           }
+                       }
+                    }
+                    ,"xaxis2" : {
+                       "gridcolor" : "rgba(111,111,111,0.5)"
+                       ,"type" : "linear"
+                       ,"title" : {
+                           "text" : ""
+                            ,"font" : {
+                                "color"  : "rgb(0,5,80)"
+                            }
+                       }
+                       ,"showticklabels" : true
+                       ,"visible"        : false
+                       ,"matches"        : "x"
+                       ,"anchor"         : "y2"
+                    }
+                    ,"yaxis2" : {
+                       "gridcolor" : "rgba(111,111,111,0.5)"
+                       ,"type" : "linear"
+                       ,"title" : {
+                           "text" : "Res./SD"
+                           ,"font" : {
+                               "color"  : "rgb(0,5,80)"
+                           }
+                       }
+                       ,"visible"    : false
                     }
                     ,"annotations" : [ 
                      {
@@ -121,7 +152,6 @@ class SAS {
                        "gridcolor" : "rgba(111,111,111,0.5)"
                        ,"title" : {
                        "text" : "Frequency a.u."
-                       ,"standoff" : 20
                         ,"font" : {
                             "color"  : "rgb(0,5,80)"
                         }
@@ -273,8 +303,79 @@ class SAS {
         return true;
     }
 
-    # adds an annotation to a plot
+    # calc_residuals / SD using SD of $targetdata, make as $residualname
+    function calc_residuals( $targetname, $fromname, $residualname ) {
+        $this->debug_msg( "SAS::calc_residuals( '$targetname', '$fromname' )" );
+        $this->last_error = "";
 
+        if ( !$this->data_name_exists( $targetname ) ) {
+            $this->last_error = "SAS::calc_residuals() curve name '$targetname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::calc_residuals() curve name '$fromname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( count( array_diff( $this->data->$targetname->x, $this->data->$fromname->x ) ) ) {
+            $this->last_error = "SAS::calc_residuals() curves named '$targetname' and '$fromname' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$targetname->error_y ) ) {
+            $this->last_error = "SAS::calc_residuals() curve name '$targetname' has no SDs";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$targetname->type != $this->data->$fromname->type ) {
+            $this->last_error = "SAS: curves named '$targetname' and '$fromname' have differing types";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        if ( $this->data_name_exists( $residualname ) ) {
+            $this->last_error = "SAS:calc_residuals() curve name '$residualname' already exists";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $len1 = count( $this->data->$targetname->y );
+        $len2 = count( $this->data->$targetname->error_y );
+        $len3 = count( $this->data->$fromname->y );
+
+        if ( $len1 < 2 ) {
+            $this->last_error = "SAS::calc_residuals() curves have too few points";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::calc_residuals() curve name '$targetname' has an inconsistent number of SDs";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len3 ) {
+            $this->last_error = "SAS::calc_residuals() curves named '$targetname' and '$fromname' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $residuals = [];
+
+        for ( $i = 0; $i < $len1; ++$i ) {
+            if ( $this->data->$targetname->error_y[ $i ] == 0 ) {
+                $this->last_error = "SAS::nchi2() curve named '$targetname' has a zero SD at pos $i";
+                return $this->error_exit( $this->last_error );
+            }                
+            $residuals[ $i ] = ( $this->data->$targetname->y[$i] - $this->data->$fromname->y[$i] ) / $this->data->$targetname->error_y[ $i ];
+        }
+
+        $this->data->$residualname       = (object)[];
+        $this->data->$residualname->type = $this->data->$targetname->type;
+        $this->data->$residualname->x    = unserialize( serialize( $this->data->$targetname->x ) );
+        $this->data->$residualname->y    = $residuals;
+
+        return true;
+    }
+
+    # adds an annotation to a plot
     function annotate_plot( $plotname, $msg ) {
 
         if ( !isset( $this->plots->$plotname ) ) {
@@ -377,12 +478,102 @@ class SAS {
         return true;
     }
 
-    # adds to existing plot object 
-    function add_plot( $name, $dataname ) {
-        $this->debug_msg( "SAS::add_plot( '$name', '$dataname' )" );
+    # adds to existing plot object using 2nd trace (residuals plot)
+    function plot_residuals( $name, $do_plot_residuals = true ) {
+        $this->debug_msg( "SAS::plot_residuals( '$name' )" );
         $this->last_error = "";
 
-        if ( !$this->plots->$name ) {
+        if ( !isset( $this->plots->$name ) ) {
+            $this->last_error = "plot_residuals() name $name is not a plot name\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $do_plot_residuals ) {
+            $this->plots->$name->layout->yaxis->domain  = self::DOMAIN_YAXIS_RESID;
+            $this->plots->$name->layout->yaxis2->domain = self::DOMAIN_YAXIS2_RESID;
+            ## make traces visible
+            foreach ( $this->plots->$name->data as $v ) {
+                if ( $v->xaxis == "x2" ) {
+                    $v->visible = true;
+                }
+            }
+            ## set showticklables
+            $this->plots->$name->layout->xaxis->showticklabels  = false;
+            $this->plots->$name->layout->xaxis2->showticklabels = true;
+            ## set axes visiblity
+            $this->plots->$name->layout->xaxis2->visible = true;
+            $this->plots->$name->layout->yaxis2->visible = true;
+            ## set xaxis titles
+            $this->plots->$name->layout->xaxis->title    = "";
+            switch( $this->plots->$name->type ) {
+                case self::PLOT_IQ : {
+                    $this->plots->$name->layout->xaxis2->title   = self::PLOT_IQ_XAXIS_TITLE;
+                }
+                break;
+                case self::PLOT_PR : {
+                    $this->plots->$name->layout->xaxis2->title   = self::PLOT_PR_XAXIS_TITLE;
+                }
+                break;
+                default : {
+                    $this->last_error = "plot_residuals() name $name has an invalid type\n";
+                    return $this->error_exit( $this->last_error );
+                }
+            }
+        } else {
+            $this->plots->$name->layout->yaxis->domain  = [ 0, 1 ];
+            $this->plots->$name->layout->yaxis2->domain  = [ 0, 0.001 ];
+            ## make traces invisible
+            foreach ( $this->plots->$name->data as $v ) {
+                if ( $v->xaxis == "x2" ) {
+                    $v->visible = false;
+                }
+            }
+            ## set showticklables
+            $this->plots->$name->layout->xaxis->showticklabels  = true;
+            $this->plots->$name->layout->xaxis2->showticklabels = false;
+            ## set axes visiblity
+            $this->plots->$name->layout->xaxis2->visible = false;
+            $this->plots->$name->layout->yaxis2->visible = false;
+
+            ## set xaxis titles
+            $this->plots->$name->layout->xaxis2->title    = "";
+
+            switch( $this->plots->$name->type ) {
+                case self::PLOT_IQ : {
+                    $this->plots->$name->layout->xaxis->title   = self::PLOT_IQ_XAXIS_TITLE;
+                }
+                break;
+                case self::PLOT_PR : {
+                    $this->plots->$name->layout->xaxis->title   = self::PLOT_PR_XAXIS_TITLE;
+                }
+                break;
+                default : {
+                    $this->last_error = "plot_residuals() name $name has an invalid type\n";
+                    return $this->error_exit( $this->last_error );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    # adds to existing plot object using 2nd trace (residuals plot) & turn on residuals plot
+    function add_plot_residuals( $name, $dataname ) {
+        $this->debug_msg( "SAS::add_plot_residuals( '$name', '$dataname' )" );
+        $this->last_error = "";
+
+        if ( $this->add_plot( $name, $dataname, 2 ) ) {
+            return $this->plot_residuals( $name );
+        }
+        return false;
+    }
+
+    # adds to existing plot object 
+    function add_plot( $name, $dataname, $trace = "" ) {
+        $this->debug_msg( "SAS::add_plot( '$name', '$dataname', '$trace' )" );
+        $this->last_error = "";
+
+        if ( !isset( $this->plots->$name ) ) {
             $this->last_error = "add_plot() name $name is not a plot name\n";
             return $this->error_exit( $this->last_error );
         }
@@ -399,14 +590,17 @@ class SAS {
 
         $this->plots->$name->data[] =
             (object)[
-                "x"     => &$this->data->$dataname->x
-                ,"y"    => &$this->data->$dataname->y
-                ,"type" => "scatter"
-                ,"name" => $dataname
-                ,"line" => (object) [
+                "x"        => &$this->data->$dataname->x
+                ,"y"       => &$this->data->$dataname->y
+                ,"type"    => "scatter"
+                ,"name"    => $dataname
+                ,"line"    => (object) [
                     "width" => self::WIDTH_LINE
                     # ,"color"  => "rgb(150,150,222)"
                 ]
+                ,"xaxis"   => "x$trace"
+                ,"yaxis"   => "y$trace"
+                ,"visible" => true
             ]
             ;
 
@@ -755,35 +949,64 @@ class SAS {
 }
 
 ## testing
+# $do_testing = true;
 
 if ( isset( $do_testing ) ) {
     $sas = new SAS( true );
 
-    $files = [
-        'waxsis/lyzexp.dat'
-        ,'waxsis/fittedCalcInterpolated_waxsis.fit'
-        ];
+    $iqfile     = 'waxsis/lyzexp.dat';
+    $waxsisfile = 'waxsis/intensity_waxsis.calc';
+    
+    $chi2  = -1;
+    $rmsd  = -1;
+    $scale = 0;
 
-    foreach ( $files as $file ) {
-        if ( !($sas->load_file( SAS::PLOT_IQ, basename( $file ), $file )) ) {
-            echo $sas->last_error . "\n";
-            echo "sas loaded failed for $file\n";
-        } else {
-            echo "sas loaded ok for $file\n";
-        }
+    if (
+        $sas->load_file( SAS::PLOT_IQ, "Exp. I(q)", $iqfile  )
+        && $sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsisfile  )
+        && $sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
+        && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
+        && $sas->rmsd( "Exp. I(q)", "WAXSiS", $rmsd )
+        ) {
+        echo "ok\n";
+    } else {
+        error_exit( $sas->last_error );
     }
 
-    $plotname = "IQ test";
+    $plotname = "I(q)";
+
     $sas->create_plot(
         SAS::PLOT_IQ
         ,$plotname
-        ,array_map( fn($x) => basename( $x ), $files )
         ,[
-            "title" => "funky"
-            ,"showlegend" => true
+            "Exp. I(q)"
+            ,"WAXSiS"
         ]
         );
 
-    # echo $sas->dump_plots( false );
-    echo "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n";
+    $rmsd = round( $rmsd, 3 );
+    $chi2 = round( $chi2, 3 );
+    $annotate_msg = "";
+    if ( $rmsd != -1 ) {
+        $annotate_msg .= "RMSD $rmsd   ";
+    }
+    if ( $chi2 != -1 ) {
+        $annotate_msg .= "nChi^2 $chi2   ";
+    }
+
+    if ( strlen( $annotate_msg ) ) {
+        $sas->annotate_plot( "I(q)", $annotate_msg );
+    }
+    
+    $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" );
+    $sas->add_plot_residuals( $plotname, "Res./SD" );
+
+    $sas->plot_residuals( $plotname, false );
+    
+    file_put_contents( "dump_data.json", $sas->dump_data() );
+    file_put_contents( "dump_plots.json", json_encode( $sas->plot( $plotname ), JSON_PRETTY_PRINT ) );
+
+    $outfile = "plotout.json";
+    file_put_contents( $outfile, "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n\n" );
+    echo "cat $outfile\n";
 }
