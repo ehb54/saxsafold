@@ -144,6 +144,54 @@
                 ]
             }
         }
+        ,{
+            "structure" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "parent" : "body",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        }
+        ,{
+            "resultpanel2" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
     ]
     ,"fields"   : [
         {
@@ -417,7 +465,8 @@
             }
         }
         ,{
-            "width" : "100%",
+            "width" : "80%",
+            "height" : "500",
             "label" : "Structure",
             "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
             "role" : "output",
@@ -425,7 +474,7 @@
             "type" : "atomicstructure",
             "labelmargintop" : "0.5rem"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "structure"
             }
         }
         ,{
@@ -435,7 +484,7 @@
             ,"id"                : "iqplot"
             ,"labelmargintop"    : "0.5rem"
             ,"layout"           : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
                 ,"data" : [ 1, 1 ]
             }
         }
@@ -445,7 +494,7 @@
             ,"type"             : "plotly"
             ,"id"               : "prplot"
             ,"layout"           : {
-                "parent" : "resultpanel"
+                "parent" : "resultpanel2"
                 ,"data" : [ 0, 2 ]
             }
         }
