@@ -87,6 +87,7 @@ class SAS {
                  ,"config" : {
                     "showLink" : true
                     ,"plotlyServerURL": "https://chart-studio.plotly.com"
+                    ,"responsive" : true
                  }
             }'
         )
@@ -142,6 +143,7 @@ class SAS {
                  ,"config" : {
                     "showLink" : true
                     ,"plotlyServerURL": "https://chart-studio.plotly.com"
+                    ,"responsive" : true
                  }
             }'
         )
@@ -558,7 +560,7 @@ class SAS {
             $this->last_error = "SAS::nchi2() curve name '$fromname' does not exist";
             return $this->error_exit( $this->last_error );
         }
-
+        
         if ( count( array_diff( $this->data->$targetname->x, $this->data->$fromname->x ) ) ) {
             $this->last_error = "SAS::nchi2() curves named '$targetname' and '$fromname' have incompatible grids";
             return $this->error_exit( $this->last_error );
@@ -599,6 +601,111 @@ class SAS {
         }
 
         $chi2 /= $len1 - 1;
+
+        return true;
+    }
+
+    # scale_nchi2 - calculate chi2 & scale, assumes $targetname has the SDs
+    function scale_nchi2( $targetname, $fromname, $destname, &$chi2, &$scale ) {
+        $this->debug_msg( "SAS::scale_nchi2( '$targetname', '$fromname', '$destname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $targetname ) ) {
+            $this->last_error = "SAS::scale_nchi2() curve name '$targetname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::scale_nchi2() curve name '$fromname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data_name_exists( $destname ) ) {
+            $this->last_error = "SAS::scale_nchi2() curve name '$destname' exists";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( count( array_diff( $this->data->$targetname->x, $this->data->$fromname->x ) ) ) {
+            $this->last_error = "SAS::scale_nchi2() curves named '$targetname' and '$fromname' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$targetname->error_y ) ) {
+            $this->last_error = "SAS::scale_nchi2() curve name '$targetname' has no SDs";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $len1 = count( $this->data->$targetname->y );
+        $len2 = count( $this->data->$targetname->error_y );
+        $len3 = count( $this->data->$fromname->y );
+
+        if ( $len1 < 2 ) {
+            $this->last_error = "SAS::scale_nchi2() curves have too few points";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::scale_nchi2() curve name '$targetname' has an inconsistent number of SDs";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $len1 != $len3 ) {
+            $this->last_error = "SAS::scale_nchi2() curves named '$targetname' and '$fromname' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+
+        ## compute scale
+
+        $scale = 0e0;
+
+        $Sxx = 0e0;
+        $Sxy = 0e0;
+
+        $oneoversd2 = [];
+
+        for ( $i = 0; $i < $len1; ++$i ) {
+            if ( $this->data->$targetname->error_y[ $i ] == 0 ) {
+                $this->last_error = "SAS::scale_nchi2() curve named '$targetname' has a zero SD at pos $i";
+                return $this->error_exit( $this->last_error );
+            }                
+            $oneoversd2[ $i ] =  1.0 / pow( $this->data->$targetname->error_y[ $i ], 2 );
+            $Sxx += $this->data->$fromname->y[ $i ] * $this->data->$fromname->y[ $i ] * $oneoversd2[ $i ];
+            $Sxy += $this->data->$fromname->y[ $i ] * $this->data->$targetname->y[ $i ] * $oneoversd2[ $i ];
+        }
+        
+        if ( $Sxx != 0 ) {
+            $scale = $Sxy / $Sxx;
+        } else {
+            $scale = 1e0;
+        }
+        
+        $chi2 = 0;
+        
+        for ( $i = 0; $i < $len1; ++$i ) {
+            $chi2 += $oneoversd2[ $i ] *
+                pow( ( $scale * $this->data->$fromname->y[$i] - $this->data->$targetname->y[$i] ), 2 );
+        }
+
+        $chi2 /= $len1 - 1;
+
+        ## create scaled curve
+
+        $this->data->$destname = (object)[];
+        $this->data->$destname->type = $this->data->$fromname->type;
+        ## do we need this unserialize/serialize ?
+        $this->data->$destname->x    = unserialize( serialize( $this->data->$fromname->x ) );
+        $this->data->$destname->y    = unserialize( serialize( $this->data->$fromname->y ) );
+        if ( isset( $this->data->$fromname->error_y ) ) {
+            $this->data->$destname->error_y    = unserialize( serialize( $this->data->$fromname->error_y ) );
+            for ( $i = 0; $i < $len1; ++$i ) {
+                $this->data->$destname->y[ $i ]       *= $scale;
+                $this->data->$destname->error_y[ $i ] *= $scale;
+            }
+        } else {
+            for ( $i = 0; $i < $len1; ++$i ) {
+                $this->data->$destname->y[ $i ]       *= $scale;
+            }
+        }
 
         return true;
     }
