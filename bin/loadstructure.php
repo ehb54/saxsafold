@@ -195,8 +195,13 @@ if ( !isset( $input->searchkey ) ) {
 
 ## are we ok to run / any pre-run checks
 
-## create the command(s)
+## clear out ultrascan/results
 
+## clear out somo results
+
+run_cmd( "rm ultrascan/results/* > /dev/null 2> /dev/null", false );
+
+## create the command(s)
 
 #$ga->tcpmessage( [ $textarea_key => "base_dir is '$base_dir'\n" ] );
 #$ga->tcpmessage( [ $textarea_key => "fpdb is $fpdb\n" ] );

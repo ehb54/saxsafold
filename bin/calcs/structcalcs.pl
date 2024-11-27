@@ -294,10 +294,6 @@ if ( 0 ) {
     }
 }
 
-## clear out somo results
-
-run_cmd( "rm ultrascan/results/* > /dev/null 2> /dev/null; echo" );
-
 ## run somo
 
 my $prfile    = "ultrascan/somo/saxs/${fpdbnoext}-somo_1b1.sprr_x";
