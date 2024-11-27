@@ -341,11 +341,23 @@ if ( 1 ) {
 
 ## setup Iq/Pr plots
 
-$waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
+# $waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
+$waxsisfile = "waxsis/intensity_waxsis.calc";
+
+if ( !file_exists( $waxsisfile ) ) {
+    error_exit( "WAXSiS output file '$waxsisfile' does not exist" );
+}
+
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
 
 if (
     $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
-    && $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsisfile  )
+    && $sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsisfile  )
+    && $sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
+    && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
+    && $sas->rmsd( "Exp. I(q)", "WAXSiS", $rmsd )
     && $sas->add_plot( "I(q)", "WAXSiS" )
     ) {
     $output->iqplot = $sas->plot( "I(q)" );
@@ -353,35 +365,21 @@ if (
     error_exit( $sas->last_error );
 }
 
-$ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
-
-## test interpolate
-
-if ( !$sas->interpolate( "WAXSiS", "Exp. I(q)", "WAXSiS_interpolated" ) ) {
-    error_exit( $sas->last_error );
-}
-
-
-if ( !$sas->add_plot( "I(q)", "WAXSiS_interpolated" ) ) {
-    error_exit( $sas->last_error );
-}
-
-$rmsd = -1;
-if ( !$sas->rmsd( "Exp. I(q)", "WAXSiS_interpolated", $rmsd ) ) {
-    error_exit( $sas->last_error );
-}
-    
 # $ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
 
-$chi2 = -1;
-if ( !$sas->nchi2( "Exp. I(q)", "WAXSiS_interpolated", $chi2 ) ) {
-   error_exit( $sas->last_error );
-}
-    
 $rmsd = round( $rmsd, 3 );
 $chi2 = round( $chi2, 3 );
+$annotate_msg = "";
+if ( $rmsd != -1 ) {
+    $annotate_msg .= "RMSD $rmsd   ";
+}
+if ( $chi2 != -1 ) {
+    $annotate_msg .= "nChi^2 $chi2   ";
+}
 
-$sas->annotate_plot( "I(q)", "RMSD $rmsd   nChi^2 $chi2 " );
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( "I(q)", $annotate_msg );
+}
 
 $output->prplot = $cgstate->state->output_loadsaxs->prplot;
 
