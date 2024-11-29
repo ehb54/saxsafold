@@ -320,6 +320,17 @@
             }
         }
         ,{
+            "role"        : "output"
+            ,"id"         : "progress_text"
+            ,"type"       : "html"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
             "role" : "output",
             "label" : "Name",
             "type" : "text",

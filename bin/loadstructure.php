@@ -71,23 +71,25 @@ if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
 ## clear output
 $ga->tcpmessage( [
                      'processing_progress' => 0.01
-                     ,"name"               => ""
-                     ,"title"              => ""
-                     ,"warnings"           => ""
-                     ,"afmeanconf"         => ""
-                     ,"source"             => ""
-                     ,"somodate"           => ""
-                     ,"mw"                 => ""
-                     ,"psv"                => ""
-                     ,"hyd"                => ""
-                     ,"Rg"                 => ""
-#                     ,"ExtX"               => ""
-#                     ,"ExtY"               => ""
-#                     ,"ExtZ"               => ""
-                     ,"sheet"              => ""
-                     ,"helix"              => ""
-                     ,"downloads"          => ""
+                     ,"progress_text"      => ''
+                     ,"name"               => ''
+                     ,"title"              => ''
+                     ,"warnings"           => ''
+                     ,"afmeanconf"         => ''
+                     ,"source"             => ''
+                     ,"somodate"           => ''
+                     ,"mw"                 => ''
+                     ,"psv"                => ''
+                     ,"hyd"                => ''
+                     ,"Rg"                 => ''
+#                     ,"ExtX"               => ''
+#                     ,"ExtY"               => ''
+#                     ,"ExtZ"               => ''
+                     ,"sheet"              => ''
+                     ,"helix"              => ''
+                     ,"downloads"          => ''
                  ] );
+
 
 ## process inputs here to produce output
 
@@ -99,7 +101,7 @@ if ( !isset( $input->searchkey ) ) {
         error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
     }
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
-    $is_alphafold = false;
+    $is_alphafold = preg_match( '/^AF-/', $fpdb );
 } else {
     ## alphafold code
     $ga->tcpmessage( [ 'processing_progress' => 0 ] );
@@ -116,7 +118,7 @@ if ( !isset( $input->searchkey ) ) {
         if ( count( $ids ) == $MAX_RESULTS ) {
             $multiple_msg = "<i>Note - results are limited to $MAX_RESULTS, more matches may exist.<br>Use a longer search string to refine the results.</i><br>";
         } else {
-            $multiple_msg = "";
+            $multiple_msg = '';
         }
 
         $response =
@@ -211,6 +213,8 @@ $cmd = "$scriptdir/calcs/structcalcs.pl $fpdb 2>&1 > $logfile";
 
 ## ready to run, fork & execute cmd in child
 
+progress_text( 'Running structural calculations...' );
+
 ## fork ... child will exec
 
 $pid = pcntl_fork();
@@ -290,108 +294,6 @@ foreach ( $logresults as $v ) {
     }
 }
 
-## WAXSiS run
-
-$ga->tcpmessage( [
-                     $textarea_key =>
-                     "WAXSiS computations startings\n"
-                     . "solvent_e_density $input->solvent_e_density\n"
-                     ,'processing_progress' => 0.3
-                 ] );
-
-$waxsis_lc = 0;
-
-$waxsis_cb = function( $line ) {
-    global $ga;
-    global $textarea_key;
-    global $waxsis_lc;
-
-    $waxsis_lc++;
-
-    $ga->tcpmessage( [
-                         $textarea_key => $line
-                         ,'processing_progress' => min(0.3 + 0.6 * ( $waxsis_lc / 118 ), .95 )
-                     ] );
-};
-    
-$waxsis_params = 
-    (object)[
-        'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
-        ,'maxq'               => $cgstate->state->qmax * 1.01  # extend to prevent extrapolation when interpolating
-        ,'convergence'        => 'quick'
-        ,'expfile'            => $cgstate->state->saxsiqfile
-        ,'solvent_e_density'  => (float) $input->solvent_e_density
-    ];
-
-$waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
-
-## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
-
-## for testing expediency, don't run WAXSiS
-if ( 1 ) {
-    run_waxsis(
-        $output->name
-        ,$waxsis_params
-        ,$waxsis_cb
-        );
-}
-
-#$ga->tcpmessage( [
-#                     $textarea_key => "WAXSiS Fitted curve data:\n" . json_encode( $waxsis_fitted_data, JSON_PRETTY_PRINT ) . "\n"
-#                 ] );
-
-## output files?
-
-### waxsis/fittedCalcInterpolated_waxsis.fit
-
-## setup Iq/Pr plots
-
-# $waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
-$waxsisfile = "waxsis/intensity_waxsis.calc";
-
-if ( !file_exists( $waxsisfile ) ) {
-    error_exit( "WAXSiS output file '$waxsisfile' does not exist" );
-}
-
-$chi2  = -1;
-$rmsd  = -1;
-$scale = 0;
-
-if (
-    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
-    && $sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsisfile  )
-    && $sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
-    && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
-    && $sas->rmsd( "Exp. I(q)", "WAXSiS", $rmsd )
-    && $sas->add_plot( "I(q)", "WAXSiS" )
-    && $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
-    && $sas->add_plot_residuals( "I(q)", "Res./SD" )
-    ) {
-    $output->iqplot = $sas->plot( "I(q)" );
-} else {
-    error_exit( $sas->last_error );
-}
-
-# $ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
-
-$rmsd = round( $rmsd, 3 );
-$chi2 = round( $chi2, 3 );
-$annotate_msg = "";
-if ( $rmsd != -1 ) {
-    $annotate_msg .= "RMSD $rmsd   ";
-}
-if ( $chi2 != -1 ) {
-    $annotate_msg .= "nChi^2 $chi2   ";
-}
-
-if ( strlen( $annotate_msg ) ) {
-    $sas->annotate_plot( "I(q)", $annotate_msg );
-}
-
-$output->prplot = $cgstate->state->output_loadsaxs->prplot;
-
-$output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
-
 ### map outputs
 
 #$output->title      = str_replace( 'PREDICTION FOR ', "PREDICTION FOR\n", $found->title );
@@ -454,6 +356,114 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
         ];
 }                
 
+$ga->tcpmessage( $output );
+progress_text( 'Running WAXSiS calculations, this can take some time ...' );
+
+## WAXSiS run
+
+$ga->tcpmessage( [
+                     $textarea_key =>
+                     "WAXSiS computations startings\n"
+                     . "solvent_e_density $input->solvent_e_density\n"
+                     ,'processing_progress' => 0.3
+                 ] );
+
+$waxsis_lc = 0;
+
+$waxsis_cb = function( $line ) {
+    global $ga;
+    global $textarea_key;
+    global $waxsis_lc;
+
+    $waxsis_lc++;
+
+    $ga->tcpmessage( [
+                         $textarea_key => $line
+                         ,'processing_progress' => min(0.3 + 0.6 * ( $waxsis_lc / 118 ), .95 )
+                     ] );
+};
+    
+$waxsis_params = 
+    (object)[
+        'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
+        ,'maxq'               => $cgstate->state->qmax * 1.01  # extend to prevent extrapolation when interpolating
+        ,'convergence'        => 'quick'
+        ,'expfile'            => $cgstate->state->saxsiqfile
+        ,'solvent_e_density'  => (float) $input->solvent_e_density
+    ];
+
+$waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
+
+## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
+
+## for testing expediency, don't run WAXSiS
+if ( 1 ) {
+    run_waxsis(
+        $output->name
+        ,$waxsis_params
+        ,$waxsis_cb
+        );
+}
+
+progress_text( 'Assembling final results ...' );
+
+#$ga->tcpmessage( [
+#                     $textarea_key => "WAXSiS Fitted curve data:\n" . json_encode( $waxsis_fitted_data, JSON_PRETTY_PRINT ) . "\n"
+#                 ] );
+
+## output files?
+
+### waxsis/fittedCalcInterpolated_waxsis.fit
+
+## setup Iq/Pr plots
+
+# $waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
+$waxsisfile = "waxsis/intensity_waxsis.calc";
+
+if ( !file_exists( $waxsisfile ) ) {
+    error_exit( "WAXSiS output file '$waxsisfile' does not exist" );
+}
+
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
+if (
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
+    && $sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsisfile  )
+    && $sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
+    && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
+    && $sas->rmsd( "Exp. I(q)", "WAXSiS", $rmsd )
+    && $sas->add_plot( "I(q)", "WAXSiS" )
+    && $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
+    && $sas->add_plot_residuals( "I(q)", "Res./SD" )
+    ) {
+    $output->iqplot = $sas->plot( "I(q)" );
+} else {
+    error_exit( $sas->last_error );
+}
+
+# $ga->tcpmessage( [ $textarea_key => $sas->dump() ] );
+
+$rmsd = round( $rmsd, 3 );
+$chi2 = round( $chi2, 3 );
+$annotate_msg = "";
+if ( $rmsd != -1 ) {
+    $annotate_msg .= "RMSD $rmsd   ";
+}
+if ( $chi2 != -1 ) {
+    $annotate_msg .= "nChi^2 $chi2   ";
+}
+
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( "I(q)", $annotate_msg );
+}
+
+$output->prplot = $cgstate->state->output_loadsaxs->prplot;
+
+$output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
+
+
 ## log results to textarea
 
 # $output->{$textarea_key} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
@@ -477,6 +487,8 @@ if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
     exit;
 }
+
+progress_text( 'Processing complete', '' );
 
 $output->processing_progress = 0;
 
