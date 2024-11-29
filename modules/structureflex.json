@@ -403,6 +403,7 @@
             "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
             "role" : "output",
             "id" : "struct",
+            "jsmoladd" : "background white",
             "type" : "atomicstructure",
             "labelmargintop" : "1rem"
             ,"layout" : {

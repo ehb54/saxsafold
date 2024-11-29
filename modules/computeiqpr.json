@@ -220,6 +220,7 @@
             "role"              : "output",
             "id"                : "struct",
             "type"              : "atomicstructure",
+            "jsmoladd"          : "background white",
             "labelmargintop"    : "1rem"
             ,"layout" : {
                 "parent" : "resultpanel"

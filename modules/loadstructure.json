@@ -443,42 +443,43 @@
             }
         },
         {
-            "label" : "% Sheet",
-            "role" : "output",
-            "help" : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &beta;-Sheet",
-            "type" : "text",
-            "id" : "sheet",
-            "labelmargintop" : "0.5rem"
+            "label"              : "% Sheet",
+            "role"               : "output",
+            "help"               : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &beta;-Sheet",
+            "type"               : "text",
+            "id"                 : "sheet",
+            "labelmargintop"     : "0.5rem"
             ,"layout" : {
                 "parent" : "resultpanel"
             }
         }
         ,{
-            "label" : "Downloads",
-            "role" : "output",
-            "help" : "",
-            "id" : "downloads",
-            "type" : "html",
-            "labelmargintop" : "0.5rem"
+            "label"              : "Downloads",
+            "role"               : "output",
+            "help"               : "",
+            "id"                 : "downloads",
+            "type"               : "html",
+            "labelmargintop"     : "0.5rem"
             ,"layout" : {
                 "parent" : "resultpanel"
             }
         }
         ,{
-            "width" : "100%",
-            "height" : "500",
-            "label" : "Structure",
-            "help"  : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
-            "role" : "output",
-            "id" : "struct",
-            "type" : "atomicstructure",
-            "labelmargintop" : "0.5rem"
+            "width"              : "100%",
+            "height"             : "500",
+            "label"              : "Structure",
+            "help"               : "Right click on structure for more options<br>For AlphaFold structures only - coloring is by per residue confidence<br>Blues are highest confidence, reds lowest<br>",
+            "role"               : "output",
+            "id"                 : "struct",
+            "type"               : "atomicstructure",
+            "jsmoladd"           : "background white",
+            "labelmargintop"     : "0.5rem"
             ,"layout" : {
                 "parent" : "structure"
             }
         }
         ,{
-            "role"              : "output"
+            "role"               : "output"
             ,"label"             : ""
             ,"type"              : "plotly"
             ,"id"                : "iqplot"
