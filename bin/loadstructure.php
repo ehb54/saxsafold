@@ -356,6 +356,13 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
         ];
 }                
 
+if ( isset( $cgstate->state->output_loadsaxs->iqplot ) ) {
+    $output->iqplot = $cgstate->state->output_loadsaxs->iqplot;
+}
+if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
+    $output->prplot = $cgstate->state->output_loadsaxs->prplot;
+}
+
 $ga->tcpmessage( $output );
 progress_text( 'Running WAXSiS calculations, this can take some time ...' );
 
