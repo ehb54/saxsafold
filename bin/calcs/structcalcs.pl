@@ -316,7 +316,7 @@ $cmd = "$somo $ft $fpdb";
 # run_cmd( $cmd, true, 4 ); # try 2x since very rarely zeno call crashes and/or hangs?
 
 print "command is $cmd\n";
-print "__+somo 0 : hydrodynamic and strucutral calculations starting\n";
+print "__+somo 0 : hydrodynamic and structural calculations starting\n";
 
 open $ch, "$cmd 2>&1 |";
 
