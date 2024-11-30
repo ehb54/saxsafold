@@ -364,7 +364,7 @@ if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
 }
 
 $ga->tcpmessage( $output );
-progress_text( 'Running WAXSiS calculations, this can take some time ...' );
+progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
 
 ## WAXSiS run
 
