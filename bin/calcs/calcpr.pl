@@ -188,7 +188,7 @@ $fpdbnoext = $f;
 $fpdbnoext =~ s/\.pdb$//i;
 $fpdb = $f;
 
-my ( $fh, $ft ) = tempfile( "somocmds.XXXXXX", UNLINK => 0 );
+my ( $fh, $ft ) = tempfile( "somocmds.XXXXXX", UNLINK => 1 );
 print $fh
     "threads $threads\n"
     . "norasmol\n"
@@ -272,12 +272,14 @@ if ( $last_exist_status ) {
 
 error_exit( $errors ) if $errors;
 
-## rename and move p(r)
+print "$prfile\n";
 
-{
-    my $cmd = "mv $prfile ultrascan/results/${fpdbnoext}-pr.dat";
-    run_cmd( $cmd, true );
-    if ( run_cmd_last_error() ) {
-        error_exit(sprintf( "ERROR [%d] - $fpdb mv error $cmd", run_cmd_last_error() ) );
-    }
-}
+### rename and move p(r)
+#
+#{
+#    my $cmd = "mv $prfile ultrascan/results/${fpdbnoext}-pr.dat";
+#    run_cmd( $cmd, true );
+#    if ( run_cmd_last_error() ) {
+#        error_exit(sprintf( "ERROR [%d] - $fpdb mv error $cmd", run_cmd_last_error() ) );
+#    }
+#}

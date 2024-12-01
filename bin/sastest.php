@@ -13,6 +13,8 @@ class SAS {
     private $plots;
     private $debug;
     private $exit_on_error;
+    private $scriptdir;
+
 
     const WIDTH_LINE            = 1;
     const WIDTH_ERROR_CAP       = 1;
@@ -33,7 +35,8 @@ class SAS {
     function __construct( $debug = false, $exit_on_error = true ) {
         $this->debug         = $debug;
         $this->exit_on_error = $exit_on_error;
-
+        $this->scriptdir     = dirname(__FILE__);
+        
         if ( $this->debug ) { echo "SAS::construct()\n"; }
         
         $this->data  = (object) [];
@@ -1000,8 +1003,9 @@ class SAS {
 
     # compute_pr() - call somo to compute p(r)
     function compute_pr( $pdbname, $prname, $binsize = 1 ) {
-        $this->debug_msg( "SAS::compute_pr( '$pdbname', '$destname', $binsize )" );
+        $this->debug_msg( "SAS::compute_pr( '$pdbname', '$prname', $binsize )" );
         $this->last_error = "";
+        global $run_cmd_last_error_code;
 
         if ( $this->data_name_exists( $prname ) ) {
             $this->last_error = "SAS::compute_pr() data name '$prname' already exists";
@@ -1012,9 +1016,28 @@ class SAS {
             $this->last_error = "SAS::compute_pr() file name '$pdbname' does not exist";
             return $this->error_exit( $this->last_error );
         }
-            
-        $this->last_error = "SAS::compute_pr() not fully implemented";
-        return $this->error_exit( $this->last_error );
+
+        if ( $binsize != 1 ) {
+            ## fix this by exposing binsize in calcpr.pl && us_hydrodyn_script.cpp
+            $this->last_error = "SAS::compute_pr() only binsize 1 currently supported";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $cmd = "$this->scriptdir/calcs/calcpr.pl $pdbname 2>&1";
+
+        $res = run_cmd( $cmd, true, true );
+
+        $prfile = end( $res );
+
+        if ( !file_exists( $prfile ) ) {
+            $this->last_error = "SAS::compute_pr() expected file '$prfile' does not exist";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        return $this->load_file( self::PLOT_PR, $prname, $prfile );
+
+        # $this->last_error = "SAS::compute_pr() not fully implemented";
+        # return $this->error_exit( $this->last_error );
     }        
 
     # common_grid() - check for common grid?
@@ -1136,24 +1159,19 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
     
     $prfile     = "lyzexp_ift.sprr";
     $prfilebin1 = "lyzexp_bin1_ift.dat";
-    $pdbfile    = "AF-G0A008-F1-model_v4-somo.pdb";
+    $pdbfile    = "AF-G0A007-F1-model_v4-somo.pdb";
     
     if (
         $sas->load_file( SAS::PLOT_PR, "P(r)-org", $prfile  )
         && $sas->compute_pr( $pdbfile, "P(r)-computed", 1 )
-        && $sas->load_file( SAS::PLOT_PR, "P(r)-org-bin1", $prfilebin1  )
-        && $sas->interpolate( "P(r)-org", "P(r)-org-bin1", "P(r)-org-interp-bin1" )
-        && $sas->norm_pr( "P(r)-org", 14303, "P(r)-normed" )
-        && $sas->norm_pr( "P(r)-org-bin1", 14303, "P(r)-bin1-normed" )
-        && $sas->norm_pr( "P(r)-org-interp-bin1", 14303, "P(r)-interp-bin1-normed" )
+        && $sas->interpolate( "P(r)-org", "P(r)-computed", "P(r)-org-interp" )
+        && $sas->norm_pr( "P(r)-org-interp", 14303, "P(r)-org-interp-norm" )
+        && $sas->norm_pr( "P(r)-computed",   14303, "P(r)-computed-norm" )
         && $sas->create_plot( SAS::PLOT_PR
                               ,$plotname
                               ,[
-#                                  "P(r)-org"
-#                                  "P(r)-org-bin1"
-#                                  "P(r)-normed"
-                                  "P(r)-bin1-normed"
-                                  ,"P(r)-interp-bin1-normed"
+                                  "P(r)-org-interp-norm"
+                                  ,"P(r)-computed-norm"
                               ]
                               )
         ) {
