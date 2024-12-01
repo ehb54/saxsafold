@@ -21,7 +21,8 @@ class SAS {
     const DOMAIN_YAXIS_RESID    = [ 0.25, 1 ];
     const DOMAIN_YAXIS2_RESID   = [ 0, 0.21 ];
     const PLOT_IQ_XAXIS_TITLE   = "q [&#8491;<sup>-1</sup>]";
-    const PLOT_PR_XAXIS_TITLE   = "Frequency a.u.";
+    const PLOT_PR_XAXIS_TITLE   = "Distance [&#8491;]";
+    const PR_MIN_ERRORS_MULT    = 1e-2;
 
     ## php 8.1 has enum, should eventually replace
 
@@ -149,6 +150,7 @@ class SAS {
                         ,"font" : {
                             "color"  : "rgb(0,5,80)"
                         }
+                       ,"showticklabels" : false
                      }
                     }
                     ,"yaxis" : {
@@ -160,13 +162,38 @@ class SAS {
                         }
                      }
                     }
+                    ,"xaxis2" : {
+                       "gridcolor" : "rgba(111,111,111,0.5)"
+                       ,"type" : "linear"
+                       ,"title" : {
+                           "text" : ""
+                            ,"font" : {
+                                "color"  : "rgb(0,5,80)"
+                            }
+                       }
+                       ,"showticklabels" : true
+                       ,"visible"        : false
+                       ,"matches"        : "x"
+                       ,"anchor"         : "y2"
+                    }
+                    ,"yaxis2" : {
+                       "gridcolor" : "rgba(111,111,111,0.5)"
+                       ,"type" : "linear"
+                       ,"title" : {
+                           "text" : "Resid."
+                           ,"font" : {
+                               "color"  : "rgb(0,5,80)"
+                           }
+                       }
+                       ,"visible"    : false
+                    }
                     ,"annotations" : [ 
                      {
                         "xref"       : "paper"
                         ,"yref"      : "paper"
-                        ,"x"         : 0
+                        ,"x"         : -0.1
                         ,"xanchor"   : "left"
-                        ,"y"         : -0.2
+                        ,"y"         : -0.3
                         ,"yanchor"   : "top"
                         ,"text"      : ""
                         ,"showarrow" : false
@@ -223,7 +250,7 @@ class SAS {
         return false;
     }
     
-    function load_file( $type, $name, $file, $tag = "" ) {
+    function load_file( $type, $name, $file, $includeSDs = true, $tag = "" ) {
         $this->debug_msg( "SAS::load_file( $type, '$name', '$file' )" );
         $this->last_error = "";
         if ( strlen( $tag ) ) { $tag = ' ' . $tag; };
@@ -302,9 +329,12 @@ class SAS {
                         $this->data->$name->y[]       = floatval($linevals[1]);
                         $this->data->$name->error_y[] = floatval($linevals[2]);
                     }
+                    if ( !$includeSDs ) {
+                        ## remove SDs ... this is needed for .sprr files which have a nonSD value in the 3rd column
+                        unset( $this->data->$name->error_y );
+                    }
                 }
                 break;
-
             }
         }
         
@@ -646,22 +676,22 @@ class SAS {
         $this->last_error = "";
 
         if ( !$this->data_name_exists( $fromname ) ) {
-            $this->last_error = "SAS: curve name '$fromname' does not exist";
+            $this->last_error = "SAS::interpolate() curve name '$fromname' does not exist";
             return $this->error_exit( $this->last_error );
         }
 
         if ( !$this->data_name_exists( $toname ) ) {
-            $this->last_error = "SAS: curve name '$toname' does not exist";
+            $this->last_error = "SAS::interpolate() curve name '$toname' does not exist";
             return $this->error_exit( $this->last_error );
         }
 
         if ( $this->data_name_exists( $destname ) ) {
-            $this->last_error = "SAS: curve name '$destname' already exists";
+            $this->last_error = "SAS::interpolate() curve name '$destname' already exists";
             return $this->error_exit( $this->last_error );
         }
 
         if ( $this->data->$fromname->type != $this->data->$toname->type ) {
-            $this->last_error = "SAS: curves named '$fromname' and '$toname' have differing types";
+            $this->last_error = "SAS::interpolate() curves named '$fromname' and '$toname' have differing types";
             return $this->error_exit( $this->last_error );
         }
             
@@ -671,10 +701,30 @@ class SAS {
         ## special padding for P(r) curve to allow extrapolation
         if ( $this->data->$toname->type == self::PLOT_PR
              && (
-                 end( $this->data->$fromname->x ) < end( $this->data->$toname->x )
+                 end( $this->data->$fromname->x ) != end( $this->data->$toname->x )
                  || $this->data->$fromname->x[0] > $this->data->$toname->x[0]
                  )
             ) {
+            ## from grid is longer, extend to grid permenantly by its spacing
+            if ( end( $this->data->$fromname->x ) > end( $this->data->$toname->x ) ) {
+                if ( !$this->regular_grid( $toname ) ) {
+                    $this->last_error = "SAS::interpolate() to curve '$toname' has a shorter grid than '$fromname', but doesn't have equal spacing";
+                    return $this->error_exit( $this->last_error );
+                }
+                $spacing = $this->data->$toname->x[1] - $this->data->$toname->x[0];
+                if ( isset( $this->data->$toname->error_y ) ) {
+                    $minerr = min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS;
+                }
+
+                while( end( $this->data->$fromname->x ) > end( $this->data->$toname->x ) ) {
+                    $this->data->$toname->x[] = end( $this->data->$toname->x ) + $spacing;
+                    $this->data->$toname->y[] = 0;
+                    if ( isset( $this->data->$toname->error_y ) ) {
+                        $this->data->$toname->error_y[] = $minerr;
+                    }
+                }
+            }
+
             $from_x = unserialize( serialize( $this->data->$fromname->x ) );
             $from_y = unserialize( serialize( $this->data->$fromname->y ) );
             if ( $this->data->$fromname->error_y ) {
@@ -685,7 +735,7 @@ class SAS {
                 array_unshift( $from_x, 0 );
                 array_unshift( $from_y, 0 );
                 if ( $this->data->$fromname->error_y ) {
-                    array_unshift( $from_e, min( $this->data->$fromname->error_y ) );
+                    array_unshift( $from_e, min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS_MULT );
                 }
             }                    
                     
@@ -693,7 +743,7 @@ class SAS {
                 $from_x[] = end( $this->data->$toname->x );
                 $from_y[] = 0;
                 if ( $this->data->$fromname->error_y ) {
-                    $from_e[] = min( $this->data->$fromname->error_y );
+                    $from_e[] = min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS_MULT;
                 }
             }
             $cmdarg =
@@ -725,12 +775,12 @@ class SAS {
         # file_put_contents( "temp_cmd_result.txt", $res );
 
         if ( null === ( $resobj = json_decode( $res ) ) ) {
-            $this->last_error = "SAS: error interpolating curve '$fromname' to '$toname' - invalid JSON returned";
+            $this->last_error = "SAS::interpolate() error interpolating curve '$fromname' to '$toname' - invalid JSON returned";
             return $this->error_exit( $this->last_error );
         }
 
         if ( isset( $resobj->errors ) ) {
-            $this->last_error = "SAS: error interpolating curve '$fromname' to '$toname' - $resobj->errors";
+            $this->last_error = "SAS::interpolate() error interpolating curve '$fromname' to '$toname' - $resobj->errors";
             return $this->error_exit( $this->last_error );
         }
 
@@ -745,6 +795,83 @@ class SAS {
             $this->data->$destname->error_y    = $resobj->to_e;
         }
 
+        return true;
+    }
+
+    # extend_pr() - extend all P(r) to compatible lengths
+    ## some P(r) might be longer than others, so the idea is to add zeros
+    ## if they all have SDs, then use the self::PR_MIN_ERROR factor and the minimum SD
+    function extend_pr( $prnames ) {
+        $this->debug_msg( "SAS::extend_pr( prnames[] )" );
+        $this->last_error = "";
+
+        if ( !is_array( $prnames ) ) {
+            $this->last_error = "SAS::extend_pr() argument \$prnames is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !count( $prnames ) ) {
+            $this->last_error = "SAS::extend_pr() argument \$prnames is empty";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $gridmaxlen  = 0;
+        $gridmaxname = "";
+
+        foreach ( $prnames as $prname ) {
+            if ( !$this->data_name_exists( $prname ) ) {
+                $this->last_error = "SAS::extend_pr() name '$prname' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+            if ( $this->data->$prname->type != PLOT_PR ) {
+                $this->last_error = "SAS::extend_pr() name '$prname' is not a P(r)";
+                return $this->error_exit( $this->last_error );
+            }
+            $thisgridlen = count( $this->data->$prname->x );
+            if ( $gridmaxlen < $thisgridlen ) {
+                $gridmaxlen  = $thisgridlen;
+                $gridmax     = $this->data->$prname->x;
+                $gridmaxname = $prname;
+            }
+        }
+
+        foreach ( $prnames as $prname ) {
+            $gridlen = count( $this->data->$prname->x );
+            $minlen  = min( $gridmaxlen, $gridlen );
+            if ( array_slice( $this->data->$prname->x, 0, $minlen )
+                 != array_slice( gridmax, 0, $minlen ) ) {
+                $this->last_error = "SAS::extend_pr() name '$prname' has an incompatible grid with '$gridmaxname'";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        ## if we got this far, it should be ok to extend all
+
+        foreach ( $prnames as $prname ) {
+            $thisgridlen = count( $this->data->$prname->x );
+            if ( $thisgridlen < $gridmaxlen ) {
+                $this->data->$prname->x = $this->gridmaxname->x;
+                array_push(
+                    $this->data->$prname->y
+                    ,array_fill(
+                        0
+                        ,$gridmaxlen - $thisgridlen
+                        ,0
+                    )
+                    );
+                            
+                if ( isset( $this->data->$prname->error_y ) ) {
+                    array_push(
+                        $this->data->$prname->error_y
+                        ,array_fill(
+                            0
+                            ,$gridmaxlen - $thisgridlen
+                            ,min( $this->data->$prname->error_y ) * PR_MIN_ERROR_MULT
+                        )
+                        );
+                }
+            }
+        }
         return true;
     }
 
@@ -780,6 +907,55 @@ class SAS {
         
         for ( $i = 0; $i < $len1; ++$i ) {
             $msd += pow( $this->data->$name1->y[$i] - $this->data->$name2->y[$i], 2 );
+        }
+
+        $rmsd = sqrt( $msd );
+        return true;
+    }
+
+    # rmsd_residuals - calculate rmsd & residuals curve
+    function rmsd_residuals( $name1, $name2, $destname, &$rmsd ) {
+        $this->debug_msg( "SAS::rmsd_residuals( '$name1', '$name2', '$destname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name1 ) ) {
+            $this->last_error = "SAS::rmsd_residuals() curve name '$name1' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $name2 ) ) {
+            $this->last_error = "SAS::rmsd_residuals() curve name '$name2' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data_name_exists( $destname ) ) {
+            $this->last_error = "SAS::rmsd_residuals() curve name '$destname' already exists";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( count( array_diff( $this->data->$name1->x, $this->data->$name2->x ) ) ) {
+            $this->last_error = "SAS::rmsd_residuals() curves named '$name1' and '$name2' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $len1 = count( $this->data->$name1->y );
+        $len2 = count( $this->data->$name2->y );
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::rmsd_residuals() curves named '$name1' and '$name2' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $msd = 0;
+        
+        $this->data->$destname       = (object)[];
+        $this->data->$destname->type = $this->data->$name1->type;
+        $this->data->$destname->x    = unserialize( serialize( $this->data->$name1->x ) );
+        $this->data->$destname->y    = [];
+        
+        for ( $i = 0; $i < $len1; ++$i ) {
+            $msd += pow( $this->data->$name1->y[$i] - $this->data->$name2->y[$i], 2 );
+            $this->data->$destname->y[] = $this->data->$name2->y[$i] - $this->data->$name1->y[$i];
         }
 
         $rmsd = sqrt( $msd );
@@ -1034,19 +1210,72 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }            
 
-        return $this->load_file( self::PLOT_PR, $prname, $prfile );
+        ## no SDs in the produced .sprr file, but a 3rd column exists, so need to exclude
+        return $this->load_file( self::PLOT_PR, $prname, $prfile, false );
 
         # $this->last_error = "SAS::compute_pr() not fully implemented";
         # return $this->error_exit( $this->last_error );
     }        
 
-    # common_grid() - check for common grid?
-    # do we need this?
-    function common_grid( $name1, $name2 ) {
-        $this->debug_msg( "SAS::common_grid( '$name1', '$name2' )" );
+    # regular_grid() - checks grid for regular spacing
+    function regular_grid( $name ) {
+        $this->debug_msg( "SAS::regular_grid( '$name' )" );
         $this->last_error = "";
-        $this->last_error = "SAS::common_grid() not yet implemented!";
-        return $this->error_exit( $this->last_error );
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::regular_grid() data name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $len = count( $this->data->$name->x );
+
+        if ( $len < 2 ) {
+            $this->last_error = "SAS::regular_grid() data name '$name' has less than 2 elements";
+            return $this->error_exit( $this->last_error );
+        }
+    
+        $spacing = $this->data->$name->x[1] - $this->data->$name->x[0];
+
+        for ( $i = 2; $i < $len; ++$i ) {
+            if ( $this->data->$name->x[$i] - $this->data->$name->x[$i - 1] != $spacing ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    # common_grids() - check for common grids
+    function common_grids( $names ) {
+        $this->debug_msg( "SAS::common_grids( names[] )" );
+        $this->last_error = "";
+        
+        if ( !is_array( $names ) ) {
+            $this->last_error = "SAS::common_grids() argument \$names is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( count( $names ) < 2 ) {
+            $this->last_error = "SAS::common_grids() nothing to compare, count of \$names < 2";
+            return $this->error_exit( $this->last_error );
+        }
+
+        foreach ( $names as $name ) {
+            if ( !$this->data_name_exists( $name ) ) {
+                $this->last_error = "SAS::common_grids() name '$name' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        $firstarray = $names[0];
+        $refgrid = $this->data->$firstarray->x;
+        foreach ( $names as $name ) {
+            if ( $refgrid != $this->data->$name->x ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     # dump_data() - return data object json encoded
@@ -1089,8 +1318,8 @@ class SAS {
 }
 
 ## testing
-$do_testing_iq = false;
-$do_testing_pr = true;
+#$do_testing_iq = false;
+#$do_testing_pr = true;
 
 if ( isset( $do_testing_iq ) && $do_testing_iq ) {
     $sas = new SAS( true );
@@ -1160,6 +1389,8 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
     $prfile     = "lyzexp_ift.sprr";
     $prfilebin1 = "lyzexp_bin1_ift.dat";
     $pdbfile    = "AF-G0A007-F1-model_v4-somo.pdb";
+
+    $rmsd       = -1;
     
     if (
         $sas->load_file( SAS::PLOT_PR, "P(r)-org", $prfile  )
@@ -1167,19 +1398,43 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         && $sas->interpolate( "P(r)-org", "P(r)-computed", "P(r)-org-interp" )
         && $sas->norm_pr( "P(r)-org-interp", 14303, "P(r)-org-interp-norm" )
         && $sas->norm_pr( "P(r)-computed",   14303, "P(r)-computed-norm" )
+        && $sas->rmsd_residuals( "P(r)-org-interp-norm", "P(r)-computed-norm", "Resid.", $rmsd )
         && $sas->create_plot( SAS::PLOT_PR
                               ,$plotname
                               ,[
                                   "P(r)-org-interp-norm"
                                   ,"P(r)-computed-norm"
                               ]
-                              )
+        )
+        && $sas->add_plot_residuals( $plotname, "Resid." )
         ) {
         echo "ok\n";
     } else {
         error_exit( $sas->last_error );
     }
 
+    $rmsd = round( $rmsd, 3 );
+    $annotate_msg = "";
+    if ( $rmsd != -1 ) {
+        $annotate_msg .= "RMSD $rmsd   ";
+    }
+
+    if ( strlen( $annotate_msg ) ) {
+        $sas->annotate_plot( $plotname, $annotate_msg );
+    }
+
+
+    echo 
+        $sas->common_grids(
+            [
+             "P(r)-org-interp-norm"
+             ,"P(r)-computed-norm"
+            ]
+        )
+        ? "grids match\n"
+        : "grids do NOT match\n"
+        ;
+        
     file_put_contents( "dump_data.json", $sas->dump_data() );
     file_put_contents( "dump_plots.json", json_encode( $sas->plot( $plotname ), JSON_PRETTY_PRINT ) );
 
