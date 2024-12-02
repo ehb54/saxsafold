@@ -359,9 +359,48 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
 if ( isset( $cgstate->state->output_loadsaxs->iqplot ) ) {
     $output->iqplot = $cgstate->state->output_loadsaxs->iqplot;
 }
-if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
-    $output->prplot = $cgstate->state->output_loadsaxs->prplot;
+# if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
+#     $output->prplot = $cgstate->state->output_loadsaxs->prplot;
+# }
+
+## run P(r) rcomputation
+
+$pdb_pr = "$base_name-somo.pdb";
+$rmsd_pr = -1;
+
+if (
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)-tmp", $cgstate->state->output_loadsaxs->prplot )
+    && $sas->compute_pr( $pdb_pr, "Comp. P(r)" )
+    && $sas->interpolate( "Exp. P(r)", "Comp. P(r)", "Exp. P(r)-interp" )
+    && $sas->norm_pr( "Exp. P(r)-interp", $output->mw, "Exp. P(r) " )
+    && $sas->norm_pr( "Comp. P(r)", $output->mw, "Comp." )
+    && $sas->rmsd_residuals( "Exp. P(r) ", "Comp.", "Resid.", $rmsd_pr )
+    && $sas->create_plot( SAS::PLOT_PR
+                          ,"P(r)"
+                          ,[
+                              "Exp. P(r) "
+                              ,"Comp."
+                          ]
+    )
+    && $sas->add_plot_residuals( "P(r)", "Resid." )
+    && $sas->plot_options( "P(r)", [ 'yaxistitle' => 'Norm. Freq. [Da]' ] )
+    ) {
+} else {
+    error_exit( $sas->last_error );
 }
+
+
+$rmsd_pr = round( $rmsd_pr, 3 );
+$annotate_msg = "";
+if ( $rmsd_pr != -1 ) {
+    $annotate_msg .= "RMSD $rmsd_pr   ";
+}
+
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( "P(r)", $annotate_msg );
+}
+
+$output->prplot = $sas->plot( "P(r)" );
 
 $ga->tcpmessage( $output );
 progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
@@ -466,7 +505,7 @@ if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( "I(q)", $annotate_msg );
 }
 
-$output->prplot = $cgstate->state->output_loadsaxs->prplot;
+# $output->prplot = $cgstate->state->output_loadsaxs->prplot;
 
 $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
 

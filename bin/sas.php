@@ -69,7 +69,8 @@ class SAS {
                                 "color"  : "rgb(0,5,80)"
                             }
                        }
-                       ,"showticklabels" : false
+                       ,"showticklabels" : true
+                       ,"showline"       : true
                     }
                     ,"yaxis" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -80,6 +81,7 @@ class SAS {
                                "color"  : "rgb(0,5,80)"
                            }
                        }
+                       ,"showline"       : false
                     }
                     ,"xaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -94,6 +96,7 @@ class SAS {
                        ,"visible"        : false
                        ,"matches"        : "x"
                        ,"anchor"         : "y2"
+                       ,"showline"       : true
                     }
                     ,"yaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -104,7 +107,8 @@ class SAS {
                                "color"  : "rgb(0,5,80)"
                            }
                        }
-                       ,"visible"    : false
+                       ,"visible"        : false
+                       ,"showline"       : false
                     }
                     ,"annotations" : [ 
                      {
@@ -146,21 +150,23 @@ class SAS {
                     ,"xaxis" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
                        ,"title" : {
-                       "text" : "Distance [&#8491;]"
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
-                        }
-                       ,"showticklabels" : false
-                     }
+                           "text" : "Distance [&#8491;]"
+                            ,"font" : {
+                                "color"  : "rgb(0,5,80)"
+                            }
+                       }
+                       ,"showticklabels" : true
+                       ,"showline"       : false
                     }
                     ,"yaxis" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
                        ,"title" : {
-                       "text" : "Frequency a.u."
-                        ,"font" : {
-                            "color"  : "rgb(0,5,80)"
+                           "text" : "Frequency a.u."
+                            ,"font" : {
+                                "color"  : "rgb(0,5,80)"
+                            }
                         }
-                     }
+                       ,"showline"       : false
                     }
                     ,"xaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -175,6 +181,7 @@ class SAS {
                        ,"visible"        : false
                        ,"matches"        : "x"
                        ,"anchor"         : "y2"
+                       ,"showline"       : true
                     }
                     ,"yaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -185,7 +192,8 @@ class SAS {
                                "color"  : "rgb(0,5,80)"
                            }
                        }
-                       ,"visible"    : false
+                       ,"visible"       : false
+                       ,"showline"      : false
                     }
                     ,"annotations" : [ 
                      {
@@ -426,9 +434,49 @@ class SAS {
         return true;
     }
 
+    # plot_options() sets variuos plot options
+    function plot_options( $name, $options ) {
+        $this->debug_msg( "SAS::plot_options( '$name', options[] )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::plot_options() plot name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !is_array( $options ) ) {
+            $this->last_error = "SAS::plot_options() \$options is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        foreach ( $options as $k => $v ) {
+            switch ( $k ) {
+                case "title" :
+                    $this->plots->$name->layout->$k = $v;
+                break;
+
+                case "showlegend" :
+                    $this->plots->$name->layout->$k = $v;
+                break;
+
+                case "yaxistitle" :
+                    $this->plots->$name->layout->yaxis->title->text = $v;
+                break;
+                
+                default :
+                    $this->last_error = "plot_options() unknown option $k";
+                    return $this->error_exit( $this->last_error );
+            }
+        }
+
+        return true;
+
+    }
+
     # creates a plot from an existing plot
-    function create_plot_from_plot( $type, $name, $org_plot ) {
+    function create_plot_from_plot( $type, $name, $org_plot, $options = null ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
+        $this->last_error = "";
 
         if ( !$this->valid_type( $type ) ) {
             $this->last_error = "SAS: create_plot_from_plot() Invalid type $type";
@@ -450,6 +498,13 @@ class SAS {
         }
         
         $this->plots->$name = unserialize( serialize( $org_plot ) );
+
+        if ( is_array( $options ) ) {
+            if ( !$this->plot_options( $name, $options ) ) {
+                unset( $this->plots->$name );
+                return $this->error_exit( $this->last_error );
+            }
+        }
 
         ## create data
 
@@ -490,21 +545,9 @@ class SAS {
         $this->plots->$name = unserialize( serialize( $this->plot_tmpl[ $type ] ) );
 
         if ( is_array( $options ) ) {
-            foreach ( $options as $k => $v ) {
-                switch ( $k ) {
-                    case "title" :
-                        $this->plots->$name->layout->$k = $v;
-                        break;
-
-                    case "showlegend" :
-                        $this->plots->$name->layout->$k = $v;
-                        break;
-
-                    default :
-                        unset( $this->plots->$name );
-                        $this->last_error = "create_plot() unknown option $k";
-                        return $this->error_exit( $this->last_error );
-                }
+            if ( !$this->plot_options( $name, $options ) ) {
+                unset( $this->plots->$name );
+                return $this->error_exit( $this->last_error );
             }
         }
 
@@ -1314,11 +1357,11 @@ class SAS {
             $this->dump_data( $pretty )
             . $this->dump_plots( $pretty )
             ;
-    }
+   }
 }
 
 ## testing
-#$do_testing_iq = false;
+#$do_testing_iq = true;
 #$do_testing_pr = true;
 
 if ( isset( $do_testing_iq ) && $do_testing_iq ) {
@@ -1368,8 +1411,8 @@ if ( isset( $do_testing_iq ) && $do_testing_iq ) {
         $sas->annotate_plot( "I(q)", $annotate_msg );
     }
     
-    $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" );
-    $sas->add_plot_residuals( $plotname, "Res./SD" );
+#    $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" );
+#    $sas->add_plot_residuals( $plotname, "Res./SD" );
 
     $sas->plot_residuals( $plotname, false );
     
@@ -1407,6 +1450,7 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
                               ]
         )
         && $sas->add_plot_residuals( $plotname, "Resid." )
+        && $sas->plot_options( $plotname, [ 'yaxistitle' => 'Freq. Norm. [Da]' ] )
         ) {
         echo "ok\n";
     } else {
@@ -1423,6 +1467,8 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         $sas->annotate_plot( $plotname, $annotate_msg );
     }
 
+
+    $sas->plot_residuals( $plotname, true );
 
     echo 
         $sas->common_grids(
