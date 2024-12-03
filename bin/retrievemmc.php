@@ -1,6 +1,14 @@
 #!/usr/local/bin/php
 <?php
 
+{};
+
+### user defines
+
+$max_frames = 1000;
+
+### end user defines
+
 $self = __FILE__;
 
 if ( count( $argv ) != 2 ) {
@@ -78,6 +86,13 @@ $lresults   = file_exists( $lpath );
 ## perhaps a state variable is better?
 $cgstate->state->mmcstride = $input->mmcstride;
 
+## clear output
+$ga->tcpmessage( [
+                     'processing_progress' => 0.01
+                     ,"progress_text"      => ''
+                 ]);
+
+
 if ( $lresults && $cgstate->state->mmcdownloaded ) {
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 
@@ -88,10 +103,26 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         $tmpout->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
         $res = plotly_hist( $histname, $tmpout, $cgstate->state->mmcstride );
+        $reqframes = count( $tmpout->histplot->data[1]->x );
+        
 
-        $tmpout->_textarea .= "Preparing to extract frames\n";
+        $tmpout->_textarea .= "Preparing to extract $reqframes frames\n";
 
         $ga->tcpmessage( $tmpout );
+
+        if ( $reqframes > $max_frames ) {
+            $ga->tcpmessage( [
+                                 'processing_progress' => 0
+                                 ,"progress_text"      => ''
+                             ]);
+            error_exit( "A maximum of $max_frames frames are currently supported for processing, your stride requests $reqframes" );
+        }
+
+        $ga->tcpmessage( [
+                             'processing_progress' => 0.5
+                         ]);
+
+        progress_text( "Extracting frames" );
 
         sleep(1);
 
@@ -102,7 +133,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
 
         ## how do we define chunk size -c ?
         # $cmd = "cd monomer_monte_carlo && mdconvert -c 1700 -s $input->mmcstride -t $pdbname -o out.pdb $dcdname";
-        $chunk = 2000 * $input->mmcstride;
+        $chunk = $max_frames * $input->mmcstride;
         $cmd = "cd monomer_monte_carlo && rm $mmcextracted 2>/dev/null; grep -Pv '^CRYST1' $pdbname > $pdbname.noCRYST1.pdb && mdconvert -c $chunk -s $input->mmcstride -t $pdbname.noCRYST1.pdb -o $mmcextracted $dcdname";
 
         # $ga->tcpmessage( [ "_textarea" => "cmd $cmd\n" ] );
@@ -140,11 +171,21 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
         exit;
     }
+
+    $ga->tcpmessage( [
+                         'processing_progress' => 0
+                     ]);
+
+    progress_text( 'Processing complete', '' );
+
     echo json_encode( $output );
     exit();
 }
 
 if ( $input->extractframes ) {
+    $ga->tcpmessage( [
+                         'processing_progress' => 0
+                     ]);
     error_exit( "Please successfully retrieve results & validate the Stride before extracting frames" );
 }
 
@@ -158,6 +199,12 @@ $rresults   = count( $cmdres ) == 1 && trim( $cmdres[ 0 ] ) == "$rpath/$statsnam
 if ( !$rresults ) {
     error_exit( "No MMC results found, it may still be running<br>If you are sure MMC completed, try running again using the <b>exact</b> parameters" );
 }
+
+$ga->tcpmessage( [
+                     'processing_progress' => 0.5
+                 ]);
+
+progress_text( "Retrieving results" );
 
 $ga->tcpmessage( [ "_textarea" => "Retrieving results (this may take awhile, esp. for large structures.)\n" ] );
 $cmd        = "timeout 120 rsync -avz --partial jobrunner@zazzie.genapp.rocks:$rpath .";
@@ -191,5 +238,12 @@ if ( !$cgstate->save() ) {
 
 #$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
 #$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
+
+
+$ga->tcpmessage( [
+                     'processing_progress' => 0
+                 ]);
+
+progress_text( 'Processing complete', '' );
 
 echo json_encode( $output );
