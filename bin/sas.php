@@ -491,9 +491,35 @@ class SAS {
         ## check for duplicate data names
 
         foreach( $org_plot->data as $v ) {
-            if ( $this->data_name_exists( $v->name ) ) {
-                $this->last_error = "create_plot_from_plot() curve '$v->name' already exists as data\n";
-                return $this->error_exit( $this->last_error );
+            if ( $this->data_name_exists( $v->name )
+                ) {
+
+                ## check if duplicate data, if so, allow
+                $tmpname = $v->name;
+                if (
+                    $this->data->$tmpname->type == $type
+                    && $this->data->$tmpname->x == $v->x
+                    && $this->data->$tmpname->y == $v->y
+                    &&
+                    (
+                     (
+                      !isset( $this->data->$tmpname->error_y )
+                      && !isset( $v->error_y )
+                     )
+                     ||
+                     (
+                      isset( $this->data->$tmpname->error_y )
+                      && isset( $v->error_y )
+                      && isset( $v->error_y->array )
+                      && $this->data->$tmpname->error_y == $v->error_y->array
+                     )
+                    )
+                    ) {
+                    ## ok to reuse
+                } else {
+                    $this->last_error = "create_plot_from_plot() curve '$v->name' already exists as data\n";
+                    return $this->error_exit( $this->last_error );
+                }
             }
         }
         
@@ -647,6 +673,28 @@ class SAS {
             return $this->plot_residuals( $name );
         }
         return false;
+    }
+
+    # remove data/trace from plot 
+    function remove_plot_data( $name, $dataname ) {
+        $this->debug_msg( "SAS::remove_plot_data( '$name', '$dataname' )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::remove_plot_data() name $name is not a plot name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        foreach ( $this->plots->$name->data as $k => $v ) {
+            if ( $v->name == $dataname ) {
+                unset( $this->plots->$name->data[ $k ] );
+                $this->plots->$name->data = array_values( $this->plots->$name->data );
+                return true;
+            }
+        }
+
+        $this->last_error = "SAS::remove_plot_data() name $dataname not found in plot $plot\n";
+        return $this->error_exit( $this->last_error );
     }
 
     # adds to existing plot object 
@@ -1467,6 +1515,13 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         $sas->annotate_plot( $plotname, $annotate_msg );
     }
 
+    if ( !$sas->remove_plot_data( $plotname, "P(r)-computed-norm") ) {
+        error_exit( $sas->last_error );
+    }
+
+    if ( !$sas->remove_plot_data( $plotname, "Resid." ) ) {
+        error_exit( $sas->last_error );
+    }
 
     $sas->plot_residuals( $plotname, true );
 
