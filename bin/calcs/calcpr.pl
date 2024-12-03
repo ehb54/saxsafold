@@ -186,6 +186,11 @@ if ( 0 ) {
 
 $fpdbnoext = $f;
 $fpdbnoext =~ s/\.pdb$//i;
+$fpdbnoextnopath = $fpdbnoext;
+$fpdbnoextnopath =~ s/^.*\///g;
+( $modelno ) = $fpdbnoextnopath =~ /-m0*(\d+)$/;
+$modelno = 1 if !$modelno;
+
 $fpdb = $f;
 
 my ( $fh, $ft ) = tempfile( "somocmds.XXXXXX", UNLINK => 1 );
@@ -204,7 +209,7 @@ close $fh;
 
 ## run somo
 
-my $prfile    = "ultrascan/somo/saxs/${fpdbnoext}_1b1.sprr_x";
+my $prfile    = "ultrascan/somo/saxs/${fpdbnoextnopath}_${modelno}b1.sprr_x";
 my $hydrofile = "ultrascan/somo/$fpdbnoext.csv";
 
 my @expected_outputs =
