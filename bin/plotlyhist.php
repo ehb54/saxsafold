@@ -17,8 +17,8 @@ function plotly_hist( $histname, $result, $stride = 0 ) {
             $plotin = explode( "\n", $histfiledata );
 
             ## Rg histogram bins
-            $rghisto = (object)[ rgfull => []
-                                 ,rgstride => [] ];
+            $rghisto = (object)[ "rgfull" => []
+                                 ,"rgstride" => [] ];
 
             
             $plot = json_decode(

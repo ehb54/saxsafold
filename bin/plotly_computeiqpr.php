@@ -1,7 +1,39 @@
 <?php
 {};
 
-function plotlycomputeiqpr( $inobj, $outobj ) {
+function setup_computeiqpr_plots( $outobj ) {
+    global $sas;
+    global $cgstate;
+
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_load->iqplot, [ "title" => "I(q)" ] );
+    $outobj->iqplot = $sas->plot( "I(q)" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) all mmc", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q) <br>all computed MMC models" ] );
+    $outobj->iqplotall = $sas->plot( "I(q) all mmc" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) sel", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q) <br>all preselected computed MMC models" ] );
+    $outobj->iqplotsel = $sas->plot( "I(q) sel" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot, [ "title" => "P(r)" ] );
+    $outobj->prplot = $sas->plot( "P(r)" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) all mmc", $cgstate->state->output_load->prplot, [ "title" => "P(r) <br>all computed MMC models" ] );
+    $sas->plot_residuals( "P(r) all mmc", false );
+    $sas->remove_plot_data( "P(r) all mmc", "Comp." );
+    $sas->remove_plot_data( "P(r) all mmc", "Resid." );
+    $sas->annotate_plot( "P(r) all mmc", "" );
+    $outobj->prplotall = $sas->plot( "P(r) all mmc" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) sel", $cgstate->state->output_load->prplot, [ "title" => "P(r) <br>all preselected computed MMC models" ] );
+    $sas->plot_residuals( "P(r) sel", false );
+    $sas->remove_plot_data( "P(r) sel", "Comp." );
+    $sas->remove_plot_data( "P(r) sel", "Resid." );
+    $sas->annotate_plot( "P(r) sel", "" );
+    $outobj->prplotsel = $sas->plot( "P(r) sel" );
+}
+
+/*
+function plotlycomputeiqpr_old( $inobj, $outobj ) {
     $outobj->iqplot                    = unserialize( serialize( $inobj->iqplot ) );
     $outobj->iqplotall                 = unserialize( serialize( $inobj->iqplot ) );
     $outobj->iqplotsel                 = unserialize( serialize( $inobj->iqplot ) );
@@ -23,7 +55,9 @@ function plotlycomputeiqpr( $inobj, $outobj ) {
     $outobj->iqplotsel->data[0]->name  = "Exp. I(q)";
 
 };
+*/
 
+/*
 function plotlyloadcurve( $plot, $filename, $title, $scale = 1 ) {
     if ( $data = file_get_contents( $filename ) ) {
         $plotin  = explode( "\n", $data );
@@ -59,3 +93,4 @@ function plotlyloadcurve( $plot, $filename, $title, $scale = 1 ) {
     }
 }
     
+*/
