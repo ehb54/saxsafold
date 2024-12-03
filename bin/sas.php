@@ -675,6 +675,20 @@ class SAS {
         return false;
     }
 
+    # remove data from plot 
+    function remove_data( $name ) {
+        $this->debug_msg( "SAS::remove_data( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::remove_data() name $name is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        unset( $this->data->$name );
+        return true;
+    }
+
     # remove data/trace from plot 
     function remove_plot_data( $name, $dataname ) {
         $this->debug_msg( "SAS::remove_plot_data( '$name', '$dataname' )" );
@@ -1515,13 +1529,13 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         $sas->annotate_plot( $plotname, $annotate_msg );
     }
 
-    if ( !$sas->remove_plot_data( $plotname, "P(r)-computed-norm") ) {
-        error_exit( $sas->last_error );
-    }
+#    if ( !$sas->remove_plot_data( $plotname, "P(r)-computed-norm") ) {
+#        error_exit( $sas->last_error );
+#    }
 
-    if ( !$sas->remove_plot_data( $plotname, "Resid." ) ) {
-        error_exit( $sas->last_error );
-    }
+#    if ( !$sas->remove_plot_data( $plotname, "Resid." ) ) {
+#        error_exit( $sas->last_error );
+#    }
 
     $sas->plot_residuals( $plotname, true );
 
@@ -1535,7 +1549,19 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         ? "grids match\n"
         : "grids do NOT match\n"
         ;
-        
+
+
+    foreach ( [
+                  "P(r)-org"
+                  ,"P(r)-computed"
+                  ,"P(r)-org-interp"
+                  ,"P(r)-org-interp-norm"
+                  ,"P(r)-computed-norm"
+                  ,"Resid."
+              ] as $v ) {
+        $sas->remove_data( $v );
+    }
+    
     file_put_contents( "dump_data.json", $sas->dump_data() );
     file_put_contents( "dump_plots.json", json_encode( $sas->plot( $plotname ), JSON_PRETTY_PRINT ) );
 
