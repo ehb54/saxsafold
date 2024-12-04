@@ -12,3 +12,4 @@ ultrascan
 *.pdb
 *.PDB
 
+checkphp.sh

@@ -83,6 +83,7 @@ $ga->tcpmessage( [
                  ]);
 
 ## initial plots
+include_once "limits.php";
 require "sas.php";
 $sas = new SAS();
 
@@ -98,12 +99,12 @@ setup_computeiqpr_plots( $plots );
 $tmpout = (object)[];
 
 $tmpout->iqplot       = $plots->iqplot;
-$tmpout->iqplotall    = $plots->iqplotall;
-$tmpout->iqplotsel    = $plots->iqplotsel;
+$tmpout->iqplotall    = $sas->plot( "I(q) all mmc" );
+# $tmpout->iqplotsel    = $plots->iqplotsel;
 
 $tmpout->prplot       = $plots->prplot;
-$tmpout->prplotall    = $plots->prplotall;
-$tmpout->prplotsel    = $plots->prplotsel;
+$tmpout->prplotall    = $sas->plot( "P(r) all mmc" );
+# $tmpout->prplotsel    = $plots->prplotsel;
 
 $ga->tcpmessage( $tmpout );
 
@@ -124,10 +125,102 @@ if ( !count( $pdbs ) ) {
     error_exit( "Hmm. No selected PDBs found!, perhaps retry <i>Retrieve MMC</i>" );
 }
 
-$pos = 0;
-$plot_count = 0;
+$pos           = 0;
+$testing_limit = isset( $test_limit_max_computeiqpr_frames ) ? $test_limit_max_computeiqpr_frames : 0;
+$count_pdbs    = count( $pdbs );
+if ( $count_pdbs > $max_frames ) {
+    error_exit( "Number of Frames ($count_pdbs) to process is greater than the current limit ($max_frames).<br>Rerun <i>Retrieve MMC</i>.<br>Be sure to check <i>Extract Frames</i> and <br>set <i>Stride</i> to ensure the number of Frames subselected is less than the limit." );
+}
     
-progress_text( "Computing I(q) & P(r)" );
+progress_text( "Computing P(r)" );
+
+foreach ( $pdbs as $pdb ) {
+    ++$pos;
+    
+    $prdataname = "P(r) mod. $pos";
+
+    $sas->compute_pr( "preselected/$pdb", "$prdataname comp" );
+    $sas->interpolate( "$prdataname comp", "Comp.", "$prdataname interp" );
+    $sas->norm_pr( "$prdataname interp", floatval( $cgstate->state->output_load->mw ), $prdataname );
+    $sas->add_plot( "P(r) all mmc", $prdataname );
+
+    foreach ( [
+                  "$prdataname comp"
+                  ,"$prdataname interp"
+                  ,$prdataname
+              ] as $v) {
+        $sas->remove_data( $v );
+    }
+
+    if ( !($pos % $plot_freq ) ) {
+        $ga->tcpmessage(
+            [
+             "processing_progress" => .5 * $pos / count( $pdbs )
+             ,"prplotall" => $sas->plot( "P(r) all mmc" )
+            ]
+            );
+
+        progress_text( "Computing P(r) ($pos of $count_pdbs)" );
+        if ( isset( $testing_limit ) && $testing_limit > 1 && $pos > $testing_limit ) {
+            break;
+        }
+    }
+}
+
+progress_text( "Computing I(q)" );
+
+$pos           = 0;
+
+foreach ( $pdbs as $pdb ) {
+    ++$pos;
+
+    # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
+    $cmd    = "cd preselected && Pepsi-SAXS -ms " . $cgstate->state->qmax * 1.01 . " -ns " . $cgstate->state->qpoints . " $pdb";
+    $cmdres = run_cmd( $cmd, false );
+    if ( $run_cmd_last_error_code ) {
+        error_exit( "Error computing I(q) : $cmdres" );
+    }
+    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
+    if ( !file_exists( $iqfile ) ) {
+        error_exit( "Expected Iq file missing : $iqfile" );
+    }
+
+    $chi2  = -1;
+    $rmsd  = -1;
+    $scale = 0;
+    
+    $iqdataname = "I(q) mod. $pos";
+        
+    $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
+    $sas->interpolate( "$iqdataname orig", "Exp. I(q)", "$iqdataname interp" );
+    $sas->scale_nchi2( "Exp. I(q)", "$iqdataname interp", $iqdataname, $chi2, $scale );
+    $sas->add_plot( "I(q) all mmc", $iqdataname );
+    
+    foreach ( [
+                  "$iqdataname orig"
+                  ,"$iqdataname interp"
+                  ,$iqdataname
+              ] as $v) {
+        $sas->remove_data( $v );
+    }
+
+    if ( !($pos % $plot_freq ) ) {
+        $ga->tcpmessage(
+            [
+             "processing_progress" => .5 + .5 * $pos / count( $pdbs )
+             ,"iqplotall" => $sas->plot( "I(q) all mmc" )
+            ]
+            );
+
+        progress_text( "Computing I(q) ($pos of $count_pdbs)" );
+
+        if ( isset( $testing_limit ) && $testing_limit > 1 && $pos > $testing_limit ) {
+            break;
+        }
+    }
+}
+
+/* original
 
 foreach ( $pdbs as $pdb ) {
     ++$pos;
@@ -183,13 +276,14 @@ foreach ( $pdbs as $pdb ) {
              ,"prplotall" => $sas->plot( "P(r) all mmc" )
             ]
             );
-# limit for testing
-#        if ( $plot_count > 100 ) {
-#            break;
-#        }
+ limit for testing
+        if ( $plot_count > 100 ) {
+            break;
+        }
     }
 }
-    
+*/
+
 $output->iqplotall = $sas->plot( "I(q) all mmc" );
 $output->prplotall = $sas->plot( "P(r) all mmc" );
 

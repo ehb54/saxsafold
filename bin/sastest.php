@@ -4,6 +4,7 @@
 ## a class for handling Iq Pr
 
 include_once "common.php";
+include_once "limits.php";
 
 class SAS {
 
@@ -51,7 +52,9 @@ class SAS {
                  ,"data" : [
                  ]
                  ,"layout" : {
-                    "title" : "I(q)"
+                    "title" : {
+                         "text" : "I(q)"
+                    }
                     ,"font" : {
                         "color"  : "rgb(0,5,80)"
                     }
@@ -138,7 +141,9 @@ class SAS {
                 ,"data" : [
                  ]
                  ,"layout" : {
-                    "title" : "P(r)"
+                    "title" : {
+                         "text" : "P(r)"
+                    }
                     ,"font" : {
                         "color"  : "rgb(0,5,80)"
                     }
@@ -258,7 +263,27 @@ class SAS {
         return false;
     }
     
+    function significant_digits( $value ) {
+        global $significant_digits_to_use;
+
+        if ( !$significant_digits_to_use ) {
+            return $value;
+        }
+
+        if ($value == 0) {
+            $decimalPlaces = $significant_digits_to_use - 1;
+        } elseif ($value < 0) {
+            $decimalPlaces = $significant_digits_to_use - floor(log10($value * -1)) - 1;
+        } else {
+            $decimalPlaces = $significant_digits_to_use - floor(log10($value)) - 1;
+        }
+
+        return floatval( ($decimalPlaces > 0)
+                         ? number_format($value, $decimalPlaces, '.', '') : round($value, $decimalPlaces) );
+    }
+
     function load_file( $type, $name, $file, $includeSDs = true, $tag = "" ) {
+
         $this->debug_msg( "SAS::load_file( $type, '$name', '$file' )" );
         $this->last_error = "";
         if ( strlen( $tag ) ) { $tag = ' ' . $tag; };
@@ -320,8 +345,8 @@ class SAS {
                     foreach ( $plotin as $linein ) {
                         $linevals = preg_split( '/\s+/', trim( $linein ) );
 
-                        $this->data->$name->x[] = floatval($linevals[0]);
-                        $this->data->$name->y[] = floatval($linevals[1]);
+                        $this->data->$name->x[] = $this->significant_digits( floatval($linevals[0]) );
+                        $this->data->$name->y[] = $this->significant_digits( floatval($linevals[1]) );
                     }
                 }
                 break;
@@ -333,9 +358,9 @@ class SAS {
                     foreach ( $plotin as $linein ) {
                         $linevals = preg_split( '/\s+/', trim( $linein ) );
 
-                        $this->data->$name->x[]       = floatval($linevals[0]);
-                        $this->data->$name->y[]       = floatval($linevals[1]);
-                        $this->data->$name->error_y[] = floatval($linevals[2]);
+                        $this->data->$name->x[]       = $this->significant_digits( floatval($linevals[0]) );
+                        $this->data->$name->y[]       = $this->significant_digits( floatval($linevals[1]) );
+                        $this->data->$name->error_y[] = $this->significant_digits( floatval($linevals[2]) );
                     }
                     if ( !$includeSDs ) {
                         ## remove SDs ... this is needed for .sprr files which have a nonSD value in the 3rd column
@@ -452,17 +477,30 @@ class SAS {
         foreach ( $options as $k => $v ) {
             switch ( $k ) {
                 case "title" :
-                    $this->plots->$name->layout->$k = $v;
-                break;
+                    if ( !is_object( $this->plots->$name->layout->title ) ) {
+                        $this->plots->$name->layout->title = (object) [];
+                    }
+                    $this->plots->$name->layout->title->text = $v;
+                    break;
 
                 case "showlegend" :
                     $this->plots->$name->layout->$k = $v;
-                break;
+                    break;
 
                 case "yaxistitle" :
                     $this->plots->$name->layout->yaxis->title->text = $v;
-                break;
+                    break;
                 
+                case "titlefontsize" :
+                    if ( !is_object( $this->plots->$name->layout->title ) ) {
+                        $this->plots->$name->layout->title = (object) [ "text" => $this->plots->$name->layout->title ];
+                    }
+                    if ( !isset( $this->plots->$name->layout->title->font ) ) {
+                        $this->plots->$name->layout->title->font = (object)[];
+                    }                        
+                    $this->plots->$name->layout->title->font->size = $v;
+                    break;
+
                 default :
                     $this->last_error = "plot_options() unknown option $k";
                     return $this->error_exit( $this->last_error );
@@ -1060,7 +1098,7 @@ class SAS {
         
         for ( $i = 0; $i < $len1; ++$i ) {
             $msd += pow( $this->data->$name1->y[$i] - $this->data->$name2->y[$i], 2 );
-            $this->data->$destname->y[] = $this->data->$name2->y[$i] - $this->data->$name1->y[$i];
+            $this->data->$destname->y[] =  $this->significant_digits( $this->data->$name2->y[$i] - $this->data->$name1->y[$i] );
         }
 
         $rmsd = sqrt( $msd );
@@ -1268,12 +1306,12 @@ class SAS {
 
         if ( isset( $this->data->$fromname->error_y ) && $len == count( $this->data->$fromname->error_y ) ) {
             for ( $i = 0; $i < $len; ++$i ) {
-                $this->data->$normedname->y[ $i ]       = $this->data->$fromname->y[ $i ] * $scale;
-                $this->data->$normedname->error_y[ $i ] = $this->data->$fromname->error_y[ $i ] * $scale;
+                $this->data->$normedname->y[ $i ]       = $this->significant_digits( $this->data->$fromname->y[ $i ] * $scale );
+                $this->data->$normedname->error_y[ $i ] = $this->significant_digits( $this->data->$fromname->error_y[ $i ] * $scale );
             }
         } else {
             for ( $i = 0; $i < $len; ++$i ) {
-                $this->data->$normedname->y[ $i ] = $this->data->$fromname->y[ $i ] * $scale;
+                $this->data->$normedname->y[ $i ] = $this->significant_digits( $this->data->$fromname->y[ $i ] * $scale );
             }
         }            
 
@@ -1550,7 +1588,6 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
         : "grids do NOT match\n"
         ;
 
-
     foreach ( [
                   "P(r)-org"
                   ,"P(r)-computed"
@@ -1559,9 +1596,16 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
                   ,"P(r)-computed-norm"
                   ,"Resid."
               ] as $v ) {
-        $sas->remove_data( $v );
+        # $sas->remove_data( $v );
     }
     
+    $sas->plot_options( $plotname,
+                        [
+                         "showlegend" => false
+                         ,"titlefontsize" => 12
+                         ,"title" => "P(r)<br>Expt. + all computed on subselected MMC models" 
+                        ] );
+
     file_put_contents( "dump_data.json", $sas->dump_data() );
     file_put_contents( "dump_plots.json", json_encode( $sas->plot( $plotname ), JSON_PRETTY_PRINT ) );
 

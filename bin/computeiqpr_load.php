@@ -85,25 +85,5 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     }
 }
 
-/* 
-$sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_load->iqplot, [ "title" => "I(q)" ] );
-$result->iqplot = $sas->plot( "I(q)" );
-
-$sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) all mmc", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q) <br>all computed MMC models" ] );
-$result->iqplotall = $sas->plot( "I(q) all mmc" );
-
-$sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) sel", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q) <br>all preselected computed MMC models" ] );
-$result->iqplotsel = $sas->plot( "I(q) sel" );
-
-$sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot, [ "title" => "P(r)" ] );
-$result->prplot = $sas->plot( "P(r)" );
-
-$sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) all mmc", $cgstate->state->output_loadsaxs->prplot, [ "title" => "P(r) <br>all computed MMC models" ] );
-$result->prplotall = $sas->plot( "P(r) all mmc" );
-
-$sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) sel", $cgstate->state->output_loadsaxs->prplot, [ "title" => "P(r) <br>all preselected computed MMC models" ] );
-$result->prplotsel = $sas->plot( "P(r) sel" );
-*/
-    
 echo json_encode( $result );
 exit;

@@ -5,7 +5,7 @@
 
 ### user defines
 
-$max_frames = 1000;
+include_once "limits.php";
 
 ### end user defines
 
@@ -92,7 +92,6 @@ $ga->tcpmessage( [
                      ,"progress_text"      => ''
                  ]);
 
-
 if ( $lresults && $cgstate->state->mmcdownloaded ) {
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 
@@ -105,6 +104,11 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         $res = plotly_hist( $histname, $tmpout, $cgstate->state->mmcstride );
         $reqframes = count( $tmpout->histplot->data[1]->x );
         
+        $pdbname          = $cgstate->state->output_load->name;
+
+        if ( !file_exists( "monomer_monte_carlo/$pdbname" ) ) {
+            error_exit( "MMC results for $pdbname not found, did you <i>Run MMC</i> on this structure?" );
+        }
 
         $tmpout->_textarea .= "Preparing to extract $reqframes frames\n";
 
@@ -127,7 +131,6 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         sleep(1);
 
         $dcdname          = $cgstate->state->mmcrunname . ".dcd";
-        $pdbname          = $cgstate->state->output_load->name;
         $mmcextracted     = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name ) . "_extracted.pdb";
         $mmcsplitbasename = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name );
 

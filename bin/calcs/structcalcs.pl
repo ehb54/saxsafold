@@ -316,7 +316,7 @@ $cmd = "$somo $ft $fpdb";
 # run_cmd( $cmd, true, 4 ); # try 2x since very rarely zeno call crashes and/or hangs?
 
 print "command is $cmd\n";
-print "__+somo 0 : hydrodynamic and structural calculations starting\n";
+print "__+somo 0 : Structural calculations starting\n";
 
 open $ch, "$cmd 2>&1 |";
 
@@ -348,7 +348,7 @@ while ( my $l = <$ch> ) {
 close $ch;
 $last_exit_status = $?;
 
-print "__+somo 99999 : hydrodynamic and structural computations complete\n";
+print "__+somo 99999 : Structural computations complete\n";
 print "__+pp 1 : finalizing results\n";
 print sprintf( "__~pgrs al : %s\n", progress( "~pgrs pp : 0" ) );
 

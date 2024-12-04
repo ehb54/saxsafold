@@ -1,0 +1,17 @@
+<?php
+
+{};
+
+## limit # of frames for computations
+$max_frames                = 1100;
+
+## significant digits to keep
+$significant_digits_to_use = 5;
+
+## extend max q for extrapolation issues
+$max_q_multiplier          = 1.01;
+
+## testing limits
+
+$test_limit_max_computeiqpr_frames = 0;
+
