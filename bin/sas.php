@@ -856,7 +856,7 @@ class SAS {
                 }
                 $spacing = $this->data->$toname->x[1] - $this->data->$toname->x[0];
                 if ( isset( $this->data->$toname->error_y ) ) {
-                    $minerr = min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS;
+                    $minerr = min( $this->data->$toname->error_y ) * self::PR_MIN_ERRORS_MULT;
                 }
 
                 while( end( $this->data->$fromname->x ) > end( $this->data->$toname->x ) ) {
@@ -870,7 +870,7 @@ class SAS {
 
             $from_x = unserialize( serialize( $this->data->$fromname->x ) );
             $from_y = unserialize( serialize( $this->data->$fromname->y ) );
-            if ( $this->data->$fromname->error_y ) {
+            if ( isset( $this->data->$fromname->error_y ) ) {
                 $from_e = unserialize( serialize( $this->data->$fromname->error_y ) );
             }
 
@@ -885,7 +885,7 @@ class SAS {
             if ( end( $this->data->$fromname->x ) < end( $this->data->$toname->x ) ) {
                 $from_x[] = end( $this->data->$toname->x );
                 $from_y[] = 0;
-                if ( $this->data->$fromname->error_y ) {
+                if ( isset( $this->data->$fromname->error_y ) ) {
                     $from_e[] = min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS_MULT;
                 }
             }
@@ -1320,6 +1320,71 @@ class SAS {
         return true;
     }
 
+    # compute_pr_many() - call somo to compute p(r) multiple structures
+    function compute_pr_many( $pdbnames, $prnames, $binsize = 1 ) {
+        $this->debug_msg( "SAS::compute_pr_many( pdbnames[], prnames[], $binsize )" );
+        $this->last_error = "";
+        global $run_cmd_last_error_code;
+
+        foreach ( $prnames as $prname ) {
+            if ( $this->data_name_exists( $prname ) ) {
+                $this->last_error = "SAS::compute_pr_many() data name '$prname' already exists";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        $count_names = count( $prnames );
+
+        if ( count( $pdbnames ) != $count_names ) {
+            $this->last_error = "SAS::compute_pr_many() names count does match pdb count";
+            return $this->error_exit( $this->last_error );
+        }
+
+        foreach ( $pdbnames as $pdbname ) {
+            if ( !file_exists( $pdbname ) ) {
+                $this->last_error = "SAS::compute_pr_many() file name '$pdbname' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        if ( $binsize != 1 ) {
+            ## fix this by exposing binsize in calcpr.pl && us_hydrodyn_script.cpp
+            $this->last_error = "SAS::compute_pr_many() only binsize 1 currently supported";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $cmd = "$this->scriptdir/calcs/calcpr.pl " . implode( " ", $pdbnames ) . " 2>&1";
+
+        $res = run_cmd( $cmd, true, true );
+
+        $prfiles = explode( ' ', end( $res ) );
+
+        foreach ( $prfiles as $prfile ) {
+            if ( !file_exists( $prfile ) ) {
+                $this->last_error = "SAS::compute_pr_many() expected file '$prfile' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        if ( count( $prfiles ) != $count_names ) {
+            $this->last_error = "SAS::compute_pr_many() names count does not prfiles count";
+            return $this->error_exit( $this->last_error );
+        }
+            
+
+        ## no SDs in the produced .sprr file, but a 3rd column exists, so need to exclude
+        for ( $i = 0; $i < $count_names; ++$i ) {
+            if ( !$this->load_file( self::PLOT_PR, $prnames[$i], $prfiles[$i], false ) ) {
+                return false;
+            }
+        }
+
+        return true;
+        
+        # $this->last_error = "SAS::compute_pr_many() not fully implemented";
+        # return $this->error_exit( $this->last_error );
+    }        
+
     # compute_pr() - call somo to compute p(r)
     function compute_pr( $pdbname, $prname, $binsize = 1 ) {
         $this->debug_msg( "SAS::compute_pr( '$pdbname', '$prname', $binsize )" );
@@ -1463,6 +1528,7 @@ class SAS {
 ## testing
 #$do_testing_iq = true;
 #$do_testing_pr = true;
+#$do_testing_pr_timing = true;
 
 if ( isset( $do_testing_iq ) && $do_testing_iq ) {
     $sas = new SAS( true );
@@ -1612,4 +1678,73 @@ if ( isset( $do_testing_pr ) && $do_testing_pr ) {
     $outfile = "plotout.json";
     file_put_contents( $outfile, "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n\n" );
     echo "cat $outfile\n";
+}
+
+if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
+    $sas = new SAS( true );
+
+    $plotname = "P(r)";
+
+    $pdbs = [
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0001.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0002.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0003.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0004.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0005.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0006.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0007.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0008.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0009.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0010.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0011.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0012.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0013.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0014.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0015.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0016.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0017.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0018.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0019.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0020.pdb"
+        ];
+
+    $names = [
+        "P(r) mod. 1",
+        "P(r) mod. 2",
+        "P(r) mod. 3",
+        "P(r) mod. 4",
+        "P(r) mod. 5",
+        "P(r) mod. 6",
+        "P(r) mod. 7",
+        "P(r) mod. 8",
+        "P(r) mod. 9",
+        "P(r) mod. 10",
+        "P(r) mod. 11",
+        "P(r) mod. 12",
+        "P(r) mod. 13",
+        "P(r) mod. 14",
+        "P(r) mod. 15",
+        "P(r) mod. 16",
+        "P(r) mod. 17",
+        "P(r) mod. 18",
+        "P(r) mod. 19",
+        "P(r) mod. 20"
+        ];
+
+    $limit = 10;
+    $mw    = 76297;
+    $exppr = "SASDF83-A176_norm.dat";
+    
+    $pdbs  = array_slice( $pdbs, 0, $limit );
+    $names = array_slice( $names, 0, $limit );
+
+    $sas->load_file( SAS::PLOT_PR, "Exp. P(r)-orig", $exppr );
+    $sas->compute_pr_many( $pdbs, $names, 1 );
+    $sas->interpolate( "Exp. P(r)-orig", $names[0], "Exp. P(r)" );
+    foreach ( $names as $name ) {
+        $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
+        $sas->norm_pr( "$name interp", $mw, "$name norm" );
+    }
+
+    file_put_contents( "dump_data.json", $sas->dump_data() );
 }
