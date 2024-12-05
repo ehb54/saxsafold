@@ -717,7 +717,28 @@ class SAS {
         return false;
     }
 
-    # remove data from plot 
+    # rename data 
+    function rename_data( $fromname, $toname ) {
+        $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::rename_data() name $fromname is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data_name_exists( $toname ) ) {
+            $this->last_error = "SAS::rename_data() name $toname already exists\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $this->data->$toname = $this->data->$fromname;
+
+        unset( $this->data->$fromname );
+        return true;
+    }
+
+    # remove data
     function remove_data( $name ) {
         $this->debug_msg( "SAS::remove_data( '$name' )" );
         $this->last_error = "";
@@ -1490,6 +1511,27 @@ class SAS {
         return true;
     }
 
+    # NNLS
+    function nnls( $targetname, $names, &$results ) {
+        $this->debug_msg( "SAS::NNLS( '$targetname', names[], &\$results[] )" );
+        $this->last_error = "";
+
+        if ( !$this->common_grids( array_merge( [ $targetname ], $names ) ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        ## run nnls via us_somo
+        ## support very large output, will need to pipe to stdin or tmpfile
+
+        $results = [];
+
+        foreach ( $names as $name ) {
+            $results[ $name ] = rand( 0, 100 ) / 100;
+        }
+
+        return true;
+    }
+
     # dump_data() - return data object json encoded
     function dump_data( $pretty = true ) {
         $this->debug_msg( "SAS::dump_data()" );
@@ -1533,6 +1575,7 @@ class SAS {
 #$do_testing_iq = true;
 #$do_testing_pr = true;
 #$do_testing_pr_timing = true;
+$do_testing_nnls  = true;
 
 if ( isset( $do_testing_iq ) && $do_testing_iq ) {
     $sas = new SAS( true );
@@ -1749,6 +1792,88 @@ if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
         $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
         $sas->norm_pr( "$name interp", $mw, "$name norm" );
     }
+
+    file_put_contents( "dump_data.json", $sas->dump_data() );
+}
+
+if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
+    $sas = new SAS( true );
+
+    $plotname = "P(r)";
+
+    $pdbs = [
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0001.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0002.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0003.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0004.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0005.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0006.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0007.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0008.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0009.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0010.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0011.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0012.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0013.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0014.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0015.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0016.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0017.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0018.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0019.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0020.pdb"
+        ];
+
+    $names = [
+        "P(r) mod. 1",
+        "P(r) mod. 2",
+        "P(r) mod. 3",
+        "P(r) mod. 4",
+        "P(r) mod. 5",
+        "P(r) mod. 6",
+        "P(r) mod. 7",
+        "P(r) mod. 8",
+        "P(r) mod. 9",
+        "P(r) mod. 10",
+        "P(r) mod. 11",
+        "P(r) mod. 12",
+        "P(r) mod. 13",
+        "P(r) mod. 14",
+        "P(r) mod. 15",
+        "P(r) mod. 16",
+        "P(r) mod. 17",
+        "P(r) mod. 18",
+        "P(r) mod. 19",
+        "P(r) mod. 20"
+        ];
+
+    $limit = 5;
+    $mw    = 76297;
+    $exppr = "SASDF83-A176_norm.dat";
+    
+    $pdbs  = array_slice( $pdbs, 0, $limit );
+    $names = array_slice( $names, 0, $limit );
+
+    $sas->load_file( SAS::PLOT_PR, "Exp. P(r)-orig", $exppr );
+    $sas->compute_pr_many( $pdbs, $names, 1 );
+    $sas->interpolate( "Exp. P(r)-orig", $names[0], "Exp. P(r)-interp" );
+    $sas->norm_pr( "Exp. P(r)-interp", $mw, "Exp. P(r)" );
+    $sas->remove_data( "Exp. P(r)-orig" );
+    $sas->remove_data( "Exp. P(r)-interp" );
+    
+    foreach ( $names as $name ) {
+        $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
+        $sas->norm_pr( "$name interp", $mw, "$name norm" );
+        $sas->remove_data( "$name interp" );
+        $sas->remove_data( $name );
+        $sas->rename_data( "$name norm", $name );
+    }
+
+    $results = [];
+    
+    $sas->nnls( "Exp. P(r)", $names, $results );
+
+    echo "Result:\n----\n" . json_encode( $results, JSON_PRETTY_PRINT ) . "\n";
 
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }
