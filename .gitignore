@@ -11,5 +11,5 @@ results
 ultrascan
 *.pdb
 *.PDB
-
+*.bak
 checkphp.sh
