@@ -487,6 +487,10 @@ class SAS {
                     $this->plots->$name->layout->$k = $v;
                     break;
 
+                case "showeditchart" :
+                    $this->plots->$name->config->showLink = $v;
+                    break;
+
                 case "yaxistitle" :
                     $this->plots->$name->layout->yaxis->title->text = $v;
                     break;
