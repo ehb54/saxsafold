@@ -91,11 +91,7 @@ computes P(r) on pdb
 
 ";
 
-$f = shift || die $notes;
 
-error_exit( "$f does not exist" ) if !-e $f;
-error_exit( "$f is not readable" ) if !-r $f;
-error_exit( "$f does not end with .pdb" ) if $f !~ /\.pdb$/;
 error_exit( "$setupsomodir does not exist" ) if !-e $setupsomodir;
 error_exit( "$setupsomodir is not readable" ) if !-r $setupsomodir;
 error_exit( "$setupsomodir is not executable" ) if !-x $setupsomodir;
@@ -159,7 +155,7 @@ if ( 0 ) {
 
 ## extract 1st model from multi-model pdb
 
-{
+if ( 0 ) {
     my $cmd = "grep -P '^MODEL' $f\n";
     my $res = run_cmd( $cmd, true );
     my @l = split /\n/, $res;
@@ -182,16 +178,28 @@ if ( 0 ) {
 }        
 }
 
+$pos = 0;
+
+while ( $f = shift ) {
+    push @fs, $f;
+
+    error_exit( "$f does not exist" ) if !-e $f;
+    error_exit( "$f is not readable" ) if !-r $f;
+    error_exit( "$f does not end with .pdb" ) if $f !~ /\.pdb$/;
+
+    $fpdbnoext[$pos] = $f;
+    $fpdbnoext[$pos] =~ s/\.pdb$//i;
+    $fpdbnoextnopath[$pos] = $fpdbnoext[$pos];
+    $fpdbnoextnopath[$pos]  =~ s/^.*\///g;
+    ( $modelno[$pos] ) = $fpdbnoextnopath[$pos] =~ /-m0*(\d+)$/;
+    $modelno[$pos] = 1 if !$modelno[$pos];
+    $prfiles[$pos]    = "ultrascan/somo/saxs/${fpdbnoextnopath[$pos]}_${modelno[$pos]}b1.sprr_x";
+    push @expected_outputs, $prfiles[$pos];
+
+    ++$pos;
+}
+
 ## run somo
-
-$fpdbnoext = $f;
-$fpdbnoext =~ s/\.pdb$//i;
-$fpdbnoextnopath = $fpdbnoext;
-$fpdbnoextnopath =~ s/^.*\///g;
-( $modelno ) = $fpdbnoextnopath =~ /-m0*(\d+)$/;
-$modelno = 1 if !$modelno;
-
-$fpdb = $f;
 
 my ( $fh, $ft ) = tempfile( "somocmds.XXXXXX", UNLINK => 1 );
 print $fh
@@ -209,15 +217,7 @@ close $fh;
 
 ## run somo
 
-my $prfile    = "ultrascan/somo/saxs/${fpdbnoextnopath}_${modelno}b1.sprr_x";
-my $hydrofile = "ultrascan/somo/$fpdbnoext.csv";
-
-my @expected_outputs =
-    (
-     $prfile
-    );
-
-$cmd = "$somo $ft $fpdb";
+$cmd = "$somo $ft " . join( " ", @fs );
 
 print "command is $cmd\n";
 
@@ -277,7 +277,7 @@ if ( $last_exist_status ) {
 
 error_exit( $errors ) if $errors;
 
-print "$prfile\n";
+print join( " ", @prfiles ) . "\n";
 
 ### rename and move p(r)
 #
