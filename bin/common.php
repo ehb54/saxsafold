@@ -146,13 +146,20 @@ function tf_str( $flag ) {
     return $flag ? "true" : "false";
 }
 
-function progress_text( $msg, $decor = '&diams;&diams;&diams;' ) {
+function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_string = false ) {
     global $ga;
+
     if ( strlen( $msg ) ) {
-        $ga->tcpmessage( [ 'progress_text' => "<h5 style=\"color:blue\"><center>$decor $msg $decor</center></h5>" ] );
+        $str = "<h5 style=\"color:blue\"><center>$decor $msg $decor</center></h5>";
     } else {
-        $ga->tcpmessage( [ 'progress_text' => '' ] );
-    }        
+        $str = '';
+    }
+
+    if ( $just_return_string ) {
+        return $str;
+    }
+    
+    $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
 ## test
