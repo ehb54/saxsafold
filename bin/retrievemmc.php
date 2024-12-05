@@ -175,11 +175,8 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         exit;
     }
 
-    $ga->tcpmessage( [
-                         'processing_progress' => 0
-                     ]);
-
-    progress_text( 'Processing complete', '' );
+    $output->processing_progress = 0;
+    $output->progress_text = progress_text( 'Processing complete', '', true );
 
     echo json_encode( $output );
     exit();
@@ -242,11 +239,7 @@ if ( !$cgstate->save() ) {
 #$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
 #$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
-
-$ga->tcpmessage( [
-                     'processing_progress' => 0
-                 ]);
-
-progress_text( 'Processing complete', '' );
+$output->processing_progress = 0;
+$output->progress_text = progress_text( 'Processing complete', '', true );
 
 echo json_encode( $output );

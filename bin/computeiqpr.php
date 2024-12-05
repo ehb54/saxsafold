@@ -3,12 +3,6 @@
 
 {};
 
-## user defines
-
-$plot_freq = 5;
-
-## end user defines
-
 $self = __FILE__;
 
 if ( count( $argv ) != 2 ) {
@@ -127,6 +121,10 @@ if ( !count( $pdbs ) ) {
 
 $pos           = 0;
 $testing_limit = isset( $test_limit_max_computeiqpr_frames ) ? $test_limit_max_computeiqpr_frames : 0;
+if ( $testing_limit ) {
+    $pdbs = array_slice( $pdbs, 0, $testing_limit );
+}
+
 $count_pdbs    = count( $pdbs );
 if ( $count_pdbs > $max_frames ) {
     error_exit( "Number of Frames ($count_pdbs) to process is greater than the current limit ($max_frames).<br>Rerun <i>Retrieve MMC</i>.<br>Be sure to check <i>Extract Frames</i> and <br>set <i>Stride</i> to ensure the number of Frames subselected is less than the limit." );
@@ -134,42 +132,68 @@ if ( $count_pdbs > $max_frames ) {
     
 progress_text( "Computing P(r)" );
 
-foreach ( $pdbs as $pdb ) {
-    ++$pos;
-    
-    $prdataname = "P(r) mod. $pos";
+dt_store_now( "P(r) start" );
 
-    $sas->compute_pr( "preselected/$pdb", "$prdataname comp" );
-    $sas->interpolate( "$prdataname comp", "Comp.", "$prdataname interp" );
-    $sas->norm_pr( "$prdataname interp", floatval( $cgstate->state->output_load->mw ), $prdataname );
-    $sas->add_plot( "P(r) all mmc", $prdataname );
+## batch group P(r)
 
-    foreach ( [
-                  "$prdataname comp"
-                  ,"$prdataname interp"
-                  ,$prdataname
-              ] as $v) {
-        $sas->remove_data( $v );
-    }
-
-    if ( !($pos % $plot_freq ) ) {
-        $ga->tcpmessage(
-            [
-             "processing_progress" => .5 * $pos / count( $pdbs )
-             ,"prplotall" => $sas->plot( "P(r) all mmc" )
-            ]
-            );
-
-        progress_text( "Computing P(r) ($pos of $count_pdbs)" );
-        if ( isset( $testing_limit ) && $testing_limit > 1 && $pos > $testing_limit ) {
-            break;
-        }
-    }
+if ( !isset( $batch_run_pr_size ) || $batch_run_pr_size <= 0 ) {
+    error_exit( "Limit \$batch_run_pr_size is not set to a positive number" );
 }
 
-progress_text( "Computing I(q)" );
+if ( !isset( $update_iq_frequency ) || $update_iq_frequency <= 0 ) {
+    error_exit( "Limit \$update_iq_frequency is not set to a positive number" );
+}
+
+for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
+
+    $prpdbs  = array_slice( $pdbs, $pos, $batch_run_pr_size );
+
+    ## last iteration might be short
+    $usecount = min( count( $prpdbs ), $batch_run_pr_size );
+    progress_text( "Computing P(r) (" . ( $pos + 1 ) . "-" . ( $pos + $usecount ) . " of $count_pdbs)" );
+    $ga->tcpmessage(
+        [
+         "processing_progress" => .5 * ( $pos + (.5 * $batch_run_pr_size ) ) / $count_pdbs
+         ,"prplotall" => $sas->plot( "P(r) all mmc" )
+        ]
+        );
+
+    $prnamescomp   = [];
+    $prnamesinterp = [];
+    $prnamesnormed = [];
+    
+    for ( $i = 0; $i < $usecount; ++$i ) {
+        $prnamesnormed[] = "P(r) mod. " . ( $pos + $i + 1 );
+        $prnamescomp[]   = end( $prnamesnormed ) . " comp";
+        $prnamesinterp[] = end( $prnamesnormed ) . " interp";
+        $prpdbs[ $i ] = "preselected/" . $prpdbs[ $i ];
+    }
+
+    $sas->compute_pr_many( $prpdbs, $prnamescomp );
+
+    for ( $i = 0; $i < $usecount; ++$i ) {
+        $sas->interpolate( $prnamescomp[$i], "Comp.", $prnamesinterp[$i] );
+        $sas->norm_pr( $prnamesinterp[$i], floatval( $cgstate->state->output_load->mw ), $prnamesnormed[$i] );
+        $sas->add_plot( "P(r) all mmc", $prnamesnormed[$i] );
+        $sas->remove_data( $prnamescomp[$i] );
+        $sas->remove_data( $prnamesinterp[$i] );
+    }
+
+}
+    
+dt_store_now( "P(r) end" );
+# $ga->tcpmessage( [ "_textarea" => "P(r) time " . dhms_from_minutes( dt_store_duration( "P(r) start", "P(r) end" ) ) . "\n" ] );
+
+dt_store_now( "I(q) start" );
 
 $pos           = 0;
+
+progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
+
+$ga->tcpmessage(
+    [
+     "processing_progress" => .5 + .5 * ( $pos + $update_iq_frequency / 2 ) / $count_pdbs
+    ]);
 
 foreach ( $pdbs as $pdb ) {
     ++$pos;
@@ -204,85 +228,20 @@ foreach ( $pdbs as $pdb ) {
         $sas->remove_data( $v );
     }
 
-    if ( !($pos % $plot_freq ) ) {
+    if ( !($pos % $update_iq_frequency ) ) {
         $ga->tcpmessage(
             [
-             "processing_progress" => .5 + .5 * $pos / count( $pdbs )
+             "processing_progress" => .5 + .5 * ( $pos + $update_iq_frequency / 2 ) / $count_pdbs
              ,"iqplotall" => $sas->plot( "I(q) all mmc" )
             ]
             );
 
-        progress_text( "Computing I(q) ($pos of $count_pdbs)" );
-
-        if ( isset( $testing_limit ) && $testing_limit > 1 && $pos > $testing_limit ) {
-            break;
-        }
+        progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
     }
 }
 
-/* original
-
-foreach ( $pdbs as $pdb ) {
-    ++$pos;
-    $ga->tcpmessage( [
-                         "processing_progress" => $pos / count( $pdbs )
-                     ] );
-    
-    $prdataname = "P(r) mod. $pos";
-
-    $sas->compute_pr( "preselected/$pdb", "$prdataname comp" );
-    $sas->interpolate( "$prdataname comp", "Comp.", "$prdataname interp" );
-    $sas->norm_pr( "$prdataname interp", floatval( $cgstate->state->output_load->mw ), $prdataname );
-    $sas->add_plot( "P(r) all mmc", $prdataname );
-
-    # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
-    $cmd    = "cd preselected && Pepsi-SAXS -ms " . $cgstate->state->qmax * 1.01 . " -ns " . $cgstate->state->qpoints . " $pdb";
-    # $ga->tcpmessage( [ "_textarea" => "$cmd\n" ] );
-    $cmdres = run_cmd( $cmd, false );
-    if ( $run_cmd_last_error_code ) {
-        error_exit( "Error computing I(q) : $cmdres" );
-    }
-    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
-    if ( !file_exists( $iqfile ) ) {
-        error_exit( "Expected Iq file missing : $iqfile" );
-    }
-
-    $chi2  = -1;
-    $rmsd  = -1;
-    $scale = 0;
-    
-    $iqdataname = "I(q) mod. $pos";
-        
-    $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
-    $sas->interpolate( "$iqdataname orig", "Exp. I(q)", "$iqdataname interp" );
-    $sas->scale_nchi2( "Exp. I(q)", "$iqdataname interp", $iqdataname, $chi2, $scale );
-    $sas->add_plot( "I(q) all mmc", $iqdataname );
-    
-    foreach ( [
-                  "$prdataname comp"
-                  ,"$prdataname interp"
-                  ,$prdataname
-                  ,"$iqdataname orig"
-                  ,"$iqdataname interp"
-                  ,$iqdataname
-              ] as $v) {
-        $sas->remove_data( $v );
-    }
-
-    if ( !(++$plot_count % $plot_freq ) ) {
-        $ga->tcpmessage(
-            [
-             "iqplotall" => $sas->plot( "I(q) all mmc" )
-             ,"prplotall" => $sas->plot( "P(r) all mmc" )
-            ]
-            );
- limit for testing
-        if ( $plot_count > 100 ) {
-            break;
-        }
-    }
-}
-*/
+dt_store_now( "I(q) end" );
+# $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
 
 $output->iqplotall = $sas->plot( "I(q) all mmc" );
 $output->prplotall = $sas->plot( "P(r) all mmc" );
@@ -302,6 +261,6 @@ if ( !$cgstate->save() ) {
 # $output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 $output->processing_progress = 0;
-progress_text( 'Processing complete', '' );
+$output->progress_text = progress_text( 'Processing complete', '', true );
 
 echo json_encode( $output );
