@@ -15,6 +15,7 @@ function setup_computeiqpr_plots( $outobj ) {
                         [
                          "showlegend" => false
                          ,"titlefontsize" => $titlefontsize
+                         ,"showeditchart" => false
                         ] );
     $outobj->iqplotall = $sas->plot( "I(q) all mmc" );
 
@@ -37,6 +38,7 @@ function setup_computeiqpr_plots( $outobj ) {
                         [
                          "showlegend" => false
                          ,"titlefontsize" => $titlefontsize
+                         ,"showeditchart" => false
                         ] );
     $outobj->prplotall = $sas->plot( "P(r) all mmc" );
 
