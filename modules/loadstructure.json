@@ -272,7 +272,7 @@
         ,{
             "role"              : "input"
             ,"id"               : "solvent_e_density"
-            ,"label"            : "Solvent electron density"
+            ,"label"            : "Solvent electron density [e/&Aring;<sup>3</sup>]"
             ,"type"             : "float"
             ,"default"          : 0.335
             ,"help"             : "Used for Debye calculations"
