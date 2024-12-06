@@ -590,6 +590,55 @@ class SAS {
         return true;
     }
 
+    # set_pr_error_y_nonzero - what it says ;)
+    function set_pr_error_y_nonzero( $name ) {
+        $this->debug_msg( "SAS::set_pr_error_y_nonzero( '$name' )" );
+        $this->last_error = "";
+        
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::set_pr_error_y_nonzero() name '$name' is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data->$name->type != self::PLOT_PR ) {
+            $this->last_error = "SAS::set_pr_error_y_nonzero() name '$name' is not a PR type\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$name->error_y )
+             || !count( $this->data->$name->error_y )
+            ) {
+            return true; # it's ok, the curve has no errors so nothing to do
+            # $this->last_error = "SAS::set_pr_error_y_nonzero() name '$name' has no SDs";
+            # return $this->error_exit( $this->last_error );
+        }
+
+        $count = count( $this->data->$name->error_y );
+        $min   = 1e99;
+
+        for ( $i = 0; $i < $count; ++$i ) {
+            if ( $this->data->$name->error_y[ $i ] > 0
+                 && $min > $this->data->$name->error_y[ $i ] ) {
+                $min = $this->data->$name->error_y[ $i ];
+            }
+        }
+
+        if ( $min == 1e99 ) {
+            $this->last_error = "SAS::set_pr_error_y_nonzero() name '$name' has no positive SDs";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $newminSD = $min * self::PR_MIN_ERRORS_MULT;
+
+        for ( $i = 0; $i < $count; ++$i ) {
+            if ( $this->data->$name->error_y[ $i ] <= 0 ) {
+                $this->data->$name->error_y[ $i ] = $newminSD;
+            }
+        }
+        
+        return true;
+    }
+
     # creates a plot object containing the specified datanames
     function create_plot( $type, $name, $datanames, $options = null ) {
         $this->debug_msg( "SAS::create_plot( $type, '$name', files )" );
@@ -717,7 +766,28 @@ class SAS {
         return false;
     }
 
-    # remove data from plot 
+    # rename data 
+    function rename_data( $fromname, $toname ) {
+        $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::rename_data() name $fromname is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data_name_exists( $toname ) ) {
+            $this->last_error = "SAS::rename_data() name $toname already exists\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $this->data->$toname = $this->data->$fromname;
+
+        unset( $this->data->$fromname );
+        return true;
+    }
+
+    # remove data
     function remove_data( $name ) {
         $this->debug_msg( "SAS::remove_data( '$name' )" );
         $this->last_error = "";
@@ -860,7 +930,7 @@ class SAS {
                 }
                 $spacing = $this->data->$toname->x[1] - $this->data->$toname->x[0];
                 if ( isset( $this->data->$toname->error_y ) ) {
-                    $minerr = min( $this->data->$toname->error_y ) * self::PR_MIN_ERRORS_MULT;
+                    $minerr = min( $this->data->$toname->error_y );
                 }
 
                 while( end( $this->data->$fromname->x ) > end( $this->data->$toname->x ) ) {
@@ -882,7 +952,7 @@ class SAS {
                 array_unshift( $from_x, 0 );
                 array_unshift( $from_y, 0 );
                 if ( $this->data->$fromname->error_y ) {
-                    array_unshift( $from_e, min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS_MULT );
+                    array_unshift( $from_e, min( $this->data->$fromname->error_y ) );
                 }
             }                    
                     
@@ -890,7 +960,7 @@ class SAS {
                 $from_x[] = end( $this->data->$toname->x );
                 $from_y[] = 0;
                 if ( isset( $this->data->$fromname->error_y ) ) {
-                    $from_e[] = min( $this->data->$fromname->error_y ) * self::PR_MIN_ERRORS_MULT;
+                    $from_e[] = min( $this->data->$fromname->error_y );
                 }
             }
             $cmdarg =
@@ -970,7 +1040,7 @@ class SAS {
                 $this->last_error = "SAS::extend_pr() name '$prname' does not exist";
                 return $this->error_exit( $this->last_error );
             }
-            if ( $this->data->$prname->type != PLOT_PR ) {
+            if ( $this->data->$prname->type != self::PLOT_PR ) {
                 $this->last_error = "SAS::extend_pr() name '$prname' is not a P(r)";
                 return $this->error_exit( $this->last_error );
             }
@@ -986,7 +1056,7 @@ class SAS {
             $gridlen = count( $this->data->$prname->x );
             $minlen  = min( $gridmaxlen, $gridlen );
             if ( array_slice( $this->data->$prname->x, 0, $minlen )
-                 != array_slice( gridmax, 0, $minlen ) ) {
+                 != array_slice( $gridmax, 0, $minlen ) ) {
                 $this->last_error = "SAS::extend_pr() name '$prname' has an incompatible grid with '$gridmaxname'";
                 return $this->error_exit( $this->last_error );
             }
@@ -996,26 +1066,19 @@ class SAS {
 
         foreach ( $prnames as $prname ) {
             $thisgridlen = count( $this->data->$prname->x );
+
             if ( $thisgridlen < $gridmaxlen ) {
-                $this->data->$prname->x = $this->gridmaxname->x;
-                array_push(
-                    $this->data->$prname->y
-                    ,array_fill(
-                        0
-                        ,$gridmaxlen - $thisgridlen
-                        ,0
-                    )
-                    );
+                $add_zeros = $gridmaxlen - $thisgridlen;
+
+                $this->data->$prname->x = $this->data->$gridmaxname->x;
+                for ( $i = 0; $i < $add_zeros; ++$i ) {
+                    $this->data->$prname->y[] = 0;
+                }
                             
                 if ( isset( $this->data->$prname->error_y ) ) {
-                    array_push(
-                        $this->data->$prname->error_y
-                        ,array_fill(
-                            0
-                            ,$gridmaxlen - $thisgridlen
-                            ,min( $this->data->$prname->error_y ) * PR_MIN_ERROR_MULT
-                        )
-                        );
+                    for ( $i = 0; $i < $add_zeros; ++$i ) {
+                        $this->data->$prname->error_y[] = min( $this->data->$prname->error_y ) * PR_MIN_ERROR_MULT;
+                    }
                 }
             }
         }
@@ -1319,7 +1382,7 @@ class SAS {
             }
         }            
 
-        echo "sum $normedname len $len " . array_sum( $this->data->$normedname->y ) . "\n";
+        $this->debug_msg( "sum $normedname len $len " . array_sum( $this->data->$normedname->y ) );
 
         return true;
     }
@@ -1457,6 +1520,54 @@ class SAS {
         return true;
     }
 
+    # data_summary() - data summary info
+    function data_summary( $names ) {
+        $this->debug_msg( "SAS::data_summary( names[] )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $this->last_error = "SAS::data_summary() argument \$names is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $fmt = " %-20s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s\n";
+        $out =
+            sprintf( $fmt
+                     ,"Data name"
+                     ,"x count"
+                     ,"y count"
+                     ,"e count"
+                     ,"sum x"
+                     ,"sum y"
+                     ,"sum e"
+                     ,"min e"
+            );
+        
+        $out .= str_repeat( "-", 99 + 12 ) . "\n";
+
+        foreach ( $names as $name ) {
+            if ( !$this->data_name_exists( $name ) ) {
+                $this->last_error = "SAS::data_summary() name '$name' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+
+            $out .= sprintf( $fmt
+                             ,$name
+                             ,count( $this->data->$name->x )
+                             ,count( $this->data->$name->y )
+                             ,( isset( $this->data->$name->error_y ) ? count( $this->data->$name->error_y ) : 0 )
+                             ,array_sum( $this->data->$name->x )
+                             ,sprintf( "%.2f", array_sum( $this->data->$name->y ) )
+                             ,( isset( $this->data->$name->error_y ) ? sprintf( "%.2g", array_sum( $this->data->$name->error_y ) ) : "n/a" )
+                             ,( isset( $this->data->$name->error_y ) ? min( $this->data->$name->error_y ) : "n/a" )
+                );
+        }
+
+        $out .= str_repeat( "-", 99 + 12 ) . "\n";
+
+        return $out;
+    }
+
     # common_grids() - check for common grids
     function common_grids( $names ) {
         $this->debug_msg( "SAS::common_grids( names[] )" );
@@ -1483,9 +1594,103 @@ class SAS {
         $refgrid = $this->data->$firstarray->x;
         foreach ( $names as $name ) {
             if ( $refgrid != $this->data->$name->x ) {
+                $this->last_error = "SAS::common_grids() '$name' grid does not match grid '$firstarray'";
+                # echo json_encode( $this->data->$name->x, JSON_PRETTY_PRINT ) . "\n";
+                # echo json_encode( $refgrid, JSON_PRETTY_PRINT ) . "\n";
                 return false;
             }
         }
+
+        return true;
+    }
+
+    # NNLS
+    function nnls( $targetname, $names, $combinedname, &$results, $use_errors = true ) {
+        $this->debug_msg( "SAS::NNLS( '$targetname', names[], &\$results[] )" );
+        $this->last_error = "";
+        global $run_cmd_last_error_code;
+
+        ## $combinedname is the sum of the nnls fit curves, good for chi2 if errors used
+
+        if ( strlen( $combinedname ) && $this->data_name_exists( $combinedname ) ) {
+            $this->last_error = "SAS::nnls() data name '$combinedname' already exists";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        ## common_grids() also validates data exists
+        if ( !$this->common_grids( array_merge( [ $targetname ], $names ) ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $use_errors ) {
+            if ( !isset( $this->data->$targetname->error_y )
+                 || count( $this->data->$targetname->error_y ) != count( $this->data->$targetname->y )
+                ) {
+                $this->last_error = "SAS::nnls() fit with SD requested, but SDs do not exist or mismatch for '$targetname'";
+                return $this->error_exit( $this->last_error );
+            }
+            if ( min( $this->data->$targetname->error_y ) <= 0 ) {
+                $this->last_error = "SAS::nnls() fit with SD requested, but not all SDs are positive for '$targetname'";
+                return $this->error_exit( $this->last_error );
+            }
+        }            
+                
+        ## run nnls via us_somo
+        ## support very large datasets, use "nnls.json"
+
+        $nnlsfile = "nnls.json";
+
+        ## create contents
+        $nnlsobj = (object)[
+            'target'      => &$this->data->$targetname  ## note target:x is not needed, but if we unset, it will clear in the reference, not worth deep copy
+            ,'data'       => (object)[]
+            ,'use_errors' => $use_errors ? 1 : 0
+            ];
+
+        foreach ( $names as $name ) {
+            $nnlsobj->data->$name = &$this->data->$name->y;
+        }
+
+        if ( false === file_put_contents( $nnlsfile, json_encode( $nnlsobj ) ) ) {
+            $this->last_error = "SAS::NNLS() - failed to create file '$nnlsfile'";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $cmdarg = '{"nnls":1,"file":"' . $nnlsfile . '"}';
+        
+        $cmd = "/ultrascan3/us_somo/bin64/us_saxs_cmds_t json '$cmdarg' 2>&1";
+
+        $res = run_cmd( $cmd, true, false );
+
+        $resobj = json_decode( $res );
+
+        if ( isset( $resobj->errors ) ) {
+            $this->last_error = "SAS::NNLS() - errors: $resobj->errors";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $resobj->data ) ) {
+            $this->last_error = "SAS::NNLS() - result did not include data";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $resobj->combined_fit_y ) ) {
+            $this->last_error = "SAS::NNLS() - result did not include combined_fit_y";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( strlen( $combinedname ) ) {
+            $firstarray = $names[0];
+            $this->data->$combinedname = (object)[];
+            $this->data->$combinedname->type = self::PLOT_PR;
+            $this->data->$combinedname->x    = $this->data->$firstarray->x;
+            $this->data->$combinedname->y    = $resobj->combined_fit_y;
+        }
+        foreach ( $resobj->data as $k => $v ) {
+            $resobj->data->$k = floatval( $v );
+        }
+
+        $results = $resobj->data;
 
         return true;
     }
@@ -1530,9 +1735,11 @@ class SAS {
 }
 
 ## testing
+
 #$do_testing_iq = true;
 #$do_testing_pr = true;
 #$do_testing_pr_timing = true;
+#$do_testing_nnls  = true;
 
 if ( isset( $do_testing_iq ) && $do_testing_iq ) {
     $sas = new SAS( true );
@@ -1749,6 +1956,98 @@ if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
         $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
         $sas->norm_pr( "$name interp", $mw, "$name norm" );
     }
+
+    file_put_contents( "dump_data.json", $sas->dump_data() );
+}
+
+if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
+    $sas = new SAS( false );
+
+    $plotname = "P(r)";
+
+    $pdbs = [
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0001.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0002.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0003.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0004.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0005.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0006.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0007.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0008.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0009.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0010.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0011.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0012.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0013.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0014.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0015.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0016.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0017.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0018.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0019.pdb",
+        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0020.pdb"
+        ];
+
+    $names = [
+        "P(r) mod. 1",
+        "P(r) mod. 2",
+        "P(r) mod. 3",
+        "P(r) mod. 4",
+        "P(r) mod. 5",
+        "P(r) mod. 6",
+        "P(r) mod. 7",
+        "P(r) mod. 8",
+        "P(r) mod. 9",
+        "P(r) mod. 10",
+        "P(r) mod. 11",
+        "P(r) mod. 12",
+        "P(r) mod. 13",
+        "P(r) mod. 14",
+        "P(r) mod. 15",
+        "P(r) mod. 16",
+        "P(r) mod. 17",
+        "P(r) mod. 18",
+        "P(r) mod. 19",
+        "P(r) mod. 20"
+        ];
+
+    $limit = 20;
+    $mw    = 76297;
+    $exppr = "SASDF83-A176_norm.dat";
+    
+    $pdbs  = array_slice( $pdbs, 0, $limit );
+    $names = array_slice( $names, 0, $limit );
+
+    $sas->load_file( SAS::PLOT_PR, "Exp. P(r)-orig", $exppr );
+    $sas->compute_pr_many( $pdbs, $names, 1 );
+    $sas->interpolate( "Exp. P(r)-orig", $names[0], "Exp. P(r)-interp" );
+    $sas->norm_pr( "Exp. P(r)-interp", $mw, "Exp. P(r)" );
+    $sas->remove_data( "Exp. P(r)-orig" );
+    $sas->remove_data( "Exp. P(r)-interp" );
+    
+    foreach ( $names as $name ) {
+        $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
+        $sas->norm_pr( "$name interp", $mw, "$name norm" );
+        $sas->remove_data( "$name interp" );
+        $sas->remove_data( $name );
+        $sas->rename_data( "$name norm", $name );
+    }
+
+    # echo $sas->data_summary( array_merge( [ "Exp. P(r)" ], $names  ) );
+
+    $results = [];
+    
+    $sas->extend_pr( array_merge( [ "Exp. P(r)" ], $names  ) );
+    $sas->set_pr_error_y_nonzero( "Exp. P(r)" );
+
+    # echo $sas->data_summary( array_merge( [ "Exp. P(r)" ], $names  ) );
+
+    $sas->nnls( "Exp. P(r)", $names, "fit curve", $results, false );
+
+    echo "Result:\n----\n" . json_encode( $results, JSON_PRETTY_PRINT ) . "\n";
+    echo "Sum contributions " . array_sum( (array) $results ) . "\n";
+
+    echo $sas->data_summary( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
 
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }
