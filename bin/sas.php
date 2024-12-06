@@ -65,7 +65,7 @@ class SAS {
                     ,"plot_bgcolor": "white"
                     ,"xaxis" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"type" : "linear"
+                       ,"type" : "log"
                        ,"title" : {
                            "text" : "q [&#8491;<sup>-1</sup>]"
                             ,"font" : {
@@ -88,7 +88,7 @@ class SAS {
                     }
                     ,"xaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
-                       ,"type" : "linear"
+                       ,"type" : "log"
                        ,"title" : {
                            "text" : ""
                             ,"font" : {
