@@ -534,9 +534,8 @@ if ( !$cgstate->save() ) {
     exit;
 }
 
-progress_text( 'Processing complete', '' );
-
 $output->processing_progress = 0;
+$output->progress_text = progress_text( 'Processing complete', '', true );
 
 echo json_encode( $output );
 
