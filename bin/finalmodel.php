@@ -85,8 +85,8 @@ dt_store_now( "plot-0" );
 $plots = (object)[
     "_height" => floatval( $input->_height )
     ,"_width" => floatval( $input->_width )
-    ,"iqplotall" => &$cgstate->state->output_iqpr->iqplotall
-    ,"prplotall" => &$cgstate->state->output_iqpr->prplotall
+    ,"plotlydata" => &$cgstate->state->output_iqpr->iqplotall
+#    ,"plotlydata" => &$cgstate->state->output_iqpr->prplotall
     ];
 
 dt_store_now( "plot-1" );
@@ -126,17 +126,8 @@ $output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output
 $output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 $output->plottest = <<<__EOD
-<div><img style="width:{$plotsobj->width}px;height:{$plotsobj->height}px" src="data:image/png;base64;charset=utf-8, $plotsobj->iqplotall" /></div>
+<div><img style="width:{$plotsobj->width}px;height:{$plotsobj->height}px" src="data:image/png;base64;charset=utf-8, $plotsobj->plotlydata" /></div>
 __EOD;
 
-#$output->plottest = sprintf( "<div><img style=\"width:%dpx;height:%dpx\" src=\"data:image/png;base64;charset=utf-8, %s\" />"
-#                             ,$plotsobj->width
-#                             ,$plotsobj->height
-#                             ,$plotsobj->iqplotall
-#    );
-
-#$output->plottest = <<<__EOD
-#    <div>hi</div>
-#__EOD;
 
 echo json_encode( $output );

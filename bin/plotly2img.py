@@ -23,21 +23,18 @@ try:
 except json.JSONDecodeError:
     sys.exit( "JSON decoding error in file '" + filename + "'" )
         
-for key in [ '_height', '_width', 'iqplotall', 'prplotall' ]:
+for key in [ '_height', '_width', 'plotlydata' ]:
     if key not in data:
         sys.exit( "Required key '" + key + "' not in '" + filename + "'" )
 
 usewidth  = int( float( data[ '_width' ] ) * .475 )
 useheight = int( usewidth * .6 )
 
-data['iqplotall']['layout']['title']['x'] = .5;
-data['iqplotall']['layout']['title']['xanchor'] = 'center';
-data['prplotall']['layout']['title']['x'] = .5;
-data['prplotall']['layout']['title']['xanchor'] = 'center';
+data['plotlydata']['layout']['title']['x'] = .5;
+data['plotlydata']['layout']['title']['xanchor'] = 'center';
 
 output = {
-    'iqplotall' :  base64.b64encode( pio.to_image( go.Figure( data['iqplotall' ] ), format="png", width=usewidth, height=useheight ) ).decode( 'utf-8' )
-    ,'prplotall' :  base64.b64encode( pio.to_image( go.Figure( data['prplotall' ] ), format="png", width=usewidth, height=useheight ) ).decode( 'utf-8' )
+    'plotlydata' :  base64.b64encode( pio.to_image( go.Figure( data['plotlydata' ] ), format="png", width=usewidth, height=useheight ) ).decode( 'utf-8' )
     ,'height' : useheight
     ,'width'  : usewidth
 }
