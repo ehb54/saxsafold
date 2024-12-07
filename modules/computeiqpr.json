@@ -269,8 +269,8 @@
         ,{
             "role"              : "output"
             ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "iqplotall"
+            ,"type"              : "html"
+            ,"id"                : "iqplotallhtml"
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 1, 1 ]
@@ -279,8 +279,8 @@
         ,{
             "role"              : "output"
             ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "prplotall"
+            ,"type"              : "html"
+            ,"id"                : "prplotallhtml"
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 0, 2 ]

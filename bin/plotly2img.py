@@ -27,8 +27,8 @@ for key in [ '_height', '_width', 'plotlydata' ]:
     if key not in data:
         sys.exit( "Required key '" + key + "' not in '" + filename + "'" )
 
-usewidth  = int( float( data[ '_width' ] ) * .475 )
-useheight = int( usewidth * .6 )
+usewidth  = int( float( data[ '_width' ] ) * .465 )
+useheight = int( usewidth * .75 )
 
 data['plotlydata']['layout']['title']['x'] = .5;
 data['plotlydata']['layout']['title']['xanchor'] = 'center';

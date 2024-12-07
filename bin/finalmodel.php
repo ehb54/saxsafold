@@ -100,7 +100,7 @@ dt_store_now( "plot-2" );
 
 ## call python to produce images
 
-$res = run_cmd( "$scriptdir/plotiqprall.py $plotjsonname" );
+$res = run_cmd( "$scriptdir/plotly2img.py $plotjsonname" );
 
 dt_store_now( "plot-3" );
 

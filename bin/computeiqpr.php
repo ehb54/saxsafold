@@ -93,11 +93,11 @@ setup_computeiqpr_plots( $plots );
 $tmpout = (object)[];
 
 $tmpout->iqplot       = $plots->iqplot;
-$tmpout->iqplotall    = $sas->plot( "I(q) all mmc" );
+# $tmpout->iqplotall    = $sas->plot( "I(q) all mmc" );
 # $tmpout->iqplotsel    = $plots->iqplotsel;
 
 $tmpout->prplot       = $plots->prplot;
-$tmpout->prplotall    = $sas->plot( "P(r) all mmc" );
+# $tmpout->prplotall    = $sas->plot( "P(r) all mmc" );
 # $tmpout->prplotsel    = $plots->prplotsel;
 
 $ga->tcpmessage( $tmpout );
@@ -151,10 +151,11 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     ## last iteration might be short
     $usecount = min( count( $prpdbs ), $batch_run_pr_size );
     progress_text( "Computing P(r) (" . ( $pos + 1 ) . "-" . ( $pos + $usecount ) . " of $count_pdbs)" );
+
     $ga->tcpmessage(
         [
          "processing_progress" => .5 * ( $pos + (.5 * $batch_run_pr_size ) ) / $count_pdbs
-         ,"prplotall" => $sas->plot( "P(r) all mmc" )
+         ,"prplotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
         ]
         );
 
@@ -182,6 +183,13 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
 }
     
 dt_store_now( "P(r) end" );
+
+$ga->tcpmessage(
+    [
+     "prplotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
+    ]
+    );
+
 # $ga->tcpmessage( [ "_textarea" => "P(r) time " . dhms_from_minutes( dt_store_duration( "P(r) start", "P(r) end" ) ) . "\n" ] );
 
 dt_store_now( "I(q) start" );
@@ -232,7 +240,7 @@ foreach ( $pdbs as $pdb ) {
         $ga->tcpmessage(
             [
              "processing_progress" => .5 + .5 * ( $pos + $update_iq_frequency / 2 ) / $count_pdbs
-             ,"iqplotall" => $sas->plot( "I(q) all mmc" )
+             ,"iqplotallhtml" => plot_to_image( $sas->plot( "I(q) all mmc" ) )
             ]
             );
 
@@ -243,8 +251,10 @@ foreach ( $pdbs as $pdb ) {
 dt_store_now( "I(q) end" );
 # $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
 
-$output->iqplotall = $sas->plot( "I(q) all mmc" );
-$output->prplotall = $sas->plot( "P(r) all mmc" );
+## rebuild final plots
+
+$output->prplotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
+$output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
 
 ## save state
 

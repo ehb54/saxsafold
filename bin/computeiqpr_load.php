@@ -77,13 +77,17 @@ $sas = new SAS();
 setup_computeiqpr_plots( $result );
 
 if ( isset( $cgstate->state->output_iqpr ) ) {
-    if ( isset( $cgstate->state->output_iqpr->iqplotall ) ) {
-        $result->iqplotall = $cgstate->state->output_iqpr->iqplotall;
+    if ( isset( $cgstate->state->output_iqpr->iqplotallhtml ) ) {
+        $result->iqplotallhtml = &$cgstate->state->output_iqpr->iqplotallhtml;
     }
-    if ( isset( $cgstate->state->output_iqpr->prplotall ) ) {
-        $result->prplotall = $cgstate->state->output_iqpr->prplotall;
+    if ( isset( $cgstate->state->output_iqpr->prplotallhtml ) ) {
+        $result->prplotallhtml = &$cgstate->state->output_iqpr->prplotallhtml;
     }
 }
+
+## unset() below can be removed, but keeping for legacy run testing
+unset( $result->iqplotall );
+unset( $result->prplotall );
 
 echo json_encode( $result );
 exit;
