@@ -372,13 +372,14 @@ if (
     $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)-tmp", $cgstate->state->output_loadsaxs->prplot )
     && $sas->compute_pr( $pdb_pr, "Comp. P(r)" )
     && $sas->interpolate( "Exp. P(r)", "Comp. P(r)", "Exp. P(r)-interp" )
-    && $sas->norm_pr( "Exp. P(r)-interp", $output->mw, "Exp. P(r) " )
+    && $sas->remove_data( "Exp. P(r)" )
+    && $sas->norm_pr( "Exp. P(r)-interp", $output->mw, "Exp. P(r)" )
     && $sas->norm_pr( "Comp. P(r)", $output->mw, "Comp." )
-    && $sas->rmsd_residuals( "Exp. P(r) ", "Comp.", "Resid.", $rmsd_pr )
+    && $sas->rmsd_residuals( "Exp. P(r)", "Comp.", "Resid.", $rmsd_pr )
     && $sas->create_plot( SAS::PLOT_PR
                           ,"P(r)"
                           ,[
-                              "Exp. P(r) "
+                              "Exp. P(r)"
                               ,"Comp."
                           ]
     )
