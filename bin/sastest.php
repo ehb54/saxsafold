@@ -228,6 +228,10 @@ class SAS {
             if ( !strlen( $msg ) ) {
                 $msg = "SAS::Empty error message!";
             }
+            ## replace newline with <br>
+            $msg = str_replace( "\n", "<br>", $msg );
+            ## replace quote with escaped quote
+            $msg = str_replace( '"', "\\\"", $msg );
             echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
             if ( $this->debug ) { echo "\n"; };
             exit;
@@ -838,6 +842,16 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
+        if ( !isset( $this->plots->$name->type ) ) {
+            $this->last_error = "add_plot() plot $name does not have a type defined\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$dataname->type ) ) {
+            $this->last_error = "add_plot() data '$dataname' does not have a type defined\n";
+            return $this->error_exit( $this->last_error );
+        }
+
         if ( $this->plots->$name->type != $this->data->$dataname->type ) {
             $this->last_error = "add_plot() data type does not match plot type\n";
             return $this->error_exit( $this->last_error );
@@ -1077,7 +1091,7 @@ class SAS {
                             
                 if ( isset( $this->data->$prname->error_y ) ) {
                     for ( $i = 0; $i < $add_zeros; ++$i ) {
-                        $this->data->$prname->error_y[] = min( $this->data->$prname->error_y ) * PR_MIN_ERROR_MULT;
+                        $this->data->$prname->error_y[] = min( $this->data->$prname->error_y );
                     }
                 }
             }
@@ -1520,6 +1534,22 @@ class SAS {
         return true;
     }
 
+    # data_names() - names of all data names matching regexp, default all
+    function data_names( $regexp = '//' ) {
+        $this->debug_msg( "SAS::data_names( '$regexp' )" );
+        $this->last_error = "";
+
+        return preg_grep( $regexp, array_keys( (array) $this->data ) );
+    }
+
+    # plot_names() - names of all data names matching regexp, default all
+    function plot_names( $regexp = '//' ) {
+        $this->debug_msg( "SAS::plot_names( '$regexp' )" );
+        $this->last_error = "";
+
+        return preg_grep( $regexp, array_keys( (array) $this->plots ) );
+    }
+
     # data_summary() - data summary info
     function data_summary( $names ) {
         $this->debug_msg( "SAS::data_summary( names[] )" );
@@ -1682,7 +1712,7 @@ class SAS {
         if ( strlen( $combinedname ) ) {
             $firstarray = $names[0];
             $this->data->$combinedname = (object)[];
-            $this->data->$combinedname->type = self::PLOT_PR;
+            $this->data->$combinedname->type = $this->data->$firstarray->type;
             $this->data->$combinedname->x    = $this->data->$firstarray->x;
             $this->data->$combinedname->y    = $resobj->combined_fit_y;
         }
@@ -1961,7 +1991,7 @@ if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
 }
 
 if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
-    $sas = new SAS( false );
+    $sas = new SAS( true );
 
     $plotname = "P(r)";
 
@@ -2011,7 +2041,7 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
         "P(r) mod. 20"
         ];
 
-    $limit = 20;
+    $limit = 5;
     $mw    = 76297;
     $exppr = "SASDF83-A176_norm.dat";
     
@@ -2024,6 +2054,9 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     $sas->norm_pr( "Exp. P(r)-interp", $mw, "Exp. P(r)" );
     $sas->remove_data( "Exp. P(r)-orig" );
     $sas->remove_data( "Exp. P(r)-interp" );
+    
+    echo json_encode( $sas->data_names( '/mod\. 1/' ), JSON_PRETTY_PRINT ) . "\n";
+    echo json_encode( $sas->plot_names( ), JSON_PRETTY_PRINT ) . "\n";
     
     foreach ( $names as $name ) {
         $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
