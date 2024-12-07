@@ -74,6 +74,8 @@ if ( !$cgstate->state->mmcdownloaded || !$cgstate->state->mmcextracted || !strle
 $ga->tcpmessage( [
                      'processing_progress' => 0.01
                      ,"progress_text"      => ''
+                     ,"iqresults"          => ''
+                     ,"prresults"          => ''
                  ]);
 
 ## initial plots
@@ -144,6 +146,8 @@ if ( !isset( $update_iq_frequency ) || $update_iq_frequency <= 0 ) {
     error_exit( "Limit \$update_iq_frequency is not set to a positive number" );
 }
 
+$allprnames = [];
+
 for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
 
     $prpdbs  = array_slice( $pdbs, $pos, $batch_run_pr_size );
@@ -154,7 +158,7 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
 
     $ga->tcpmessage(
         [
-         "processing_progress" => .5 * ( $pos + (.5 * $batch_run_pr_size ) ) / $count_pdbs
+         "processing_progress" => 0 + .4 * ( ( $pos + .5 * $usecount ) / $count_pdbs )
          ,"prplotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
         ]
         );
@@ -165,6 +169,7 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     
     for ( $i = 0; $i < $usecount; ++$i ) {
         $prnamesnormed[] = "P(r) mod. " . ( $pos + $i + 1 );
+        $allprnames[]    = end( $prnamesnormed );
         $prnamescomp[]   = end( $prnamesnormed ) . " comp";
         $prnamesinterp[] = end( $prnamesnormed ) . " interp";
         $prpdbs[ $i ] = "preselected/" . $prpdbs[ $i ];
@@ -200,8 +205,10 @@ progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_
 
 $ga->tcpmessage(
     [
-     "processing_progress" => .5 + .5 * ( $pos + $update_iq_frequency / 2 ) / $count_pdbs
+     "processing_progress" => .4
     ]);
+
+$alliqnames = [];
 
 foreach ( $pdbs as $pdb ) {
     ++$pos;
@@ -221,7 +228,8 @@ foreach ( $pdbs as $pdb ) {
     $rmsd  = -1;
     $scale = 0;
     
-    $iqdataname = "I(q) mod. $pos";
+    $iqdataname   = "I(q) mod. $pos";
+    $alliqnames[] = $iqdataname;
         
     $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
     $sas->interpolate( "$iqdataname orig", "Exp. I(q)", "$iqdataname interp" );
@@ -231,7 +239,6 @@ foreach ( $pdbs as $pdb ) {
     foreach ( [
                   "$iqdataname orig"
                   ,"$iqdataname interp"
-                  ,$iqdataname
               ] as $v) {
         $sas->remove_data( $v );
     }
@@ -239,7 +246,7 @@ foreach ( $pdbs as $pdb ) {
     if ( !($pos % $update_iq_frequency ) ) {
         $ga->tcpmessage(
             [
-             "processing_progress" => .5 + .5 * ( $pos + $update_iq_frequency / 2 ) / $count_pdbs
+             "processing_progress" => .4 + .4 * ( ( $pos + .5 * $update_iq_frequency ) / $count_pdbs )
              ,"iqplotallhtml" => plot_to_image( $sas->plot( "I(q) all mmc" ) )
             ]
             );
@@ -249,7 +256,146 @@ foreach ( $pdbs as $pdb ) {
 }
 
 dt_store_now( "I(q) end" );
+
 # $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
+
+$ga->tcpmessage(
+    [
+     "iqplotallhtml" => plot_to_image( $sas->plot( "I(q) all mmc" ) )
+     ,"processing_progress" => .8
+#     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
+    ]
+    );
+
+## NNLS on P(r)
+
+progress_text( "Running NNLS on P(r)" );
+
+$prresults = [];
+
+$sas->extend_pr( array_merge( [ "Exp. P(r)" ], $allprnames  ) );
+$sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit", $prresults, isset( $input->prerrors ) );
+
+### build up P(r) sel plot
+
+$sas->add_plot( "P(r) sel", "P(r) NNLS fit" );
+
+foreach ( $prresults as $k => $v ) {
+    $sas->add_plot( "P(r) sel", $k );
+}
+
+### residuals
+$rmsd_pr = -1;
+$chi2_pr = -1;
+$scale   = 0;
+
+if ( isset( $input->prerrors ) ) {
+    $sas->scale_nchi2( "Exp. P(r)", "P(r) NNLS fit", "P(r) NNLS fit-rescaled", $chi2_pr, $scale );
+    $sas->rmsd( "Exp. P(r)", "P(r) NNLS fit", $rmsd_pr );
+    $sas->calc_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Res./SD" );
+    $sas->add_plot_residuals( "P(r) sel", "P(r) fit Res./SD" );
+    $sas->plot_options( "P(r) sel", [ "yaxis2title" => "Res./SD" ] );
+} else {
+    $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Resid.", $rmsd_pr );
+    $sas->add_plot_residuals( "P(r) sel", "P(r) fit Resid." );
+    $sas->plot_options( "P(r) sel", [ "yaxis2title" => "Resid." ] );
+}
+
+$rmsd_pr = round( $rmsd_pr, 3 );
+$chi2_pr = round( $chi2_pr, 3 );
+$annotate_msg = "";
+if ( $rmsd_pr != -1 ) {
+    $annotate_msg .= "RMSD $rmsd_pr   ";
+}
+if ( $chi2_pr != -1 ) {
+    $annotate_msg .= "nChi^2 $chi2_pr   ";
+}
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( "P(r) sel", $annotate_msg );
+}
+
+$output->prresults = "";
+foreach ( (array)$prresults as $k => $v ) {
+    $output->prresults .=
+        # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
+        "$k fit contrib. " . sprintf( "%.4g", $v ) . "\n";
+}
+
+### save results to state
+
+$cgstate->state->nnlsprresults = $prresults;
+
+$ga->tcpmessage(
+    [
+     "processing_progress" => .9
+     ,"prplotsel" => $sas->plot( "P(r) sel" )
+#     ,"_textarea" => json_encode( $prresults, JSON_PRETTY_PRINT ) . "\n"
+    ]
+    );
+    
+$output->prplotsel = $sas->plot( "P(r) sel" );
+
+## NNLS on I(q)
+
+progress_text( "Running NNLS on I(q)" );
+
+$iqresults = [];
+
+$sas->nnls( "Exp. I(q)", $alliqnames, "I(q) NNLS fit", $iqresults );
+
+$sas->add_plot( "I(q) sel", "I(q) NNLS fit" );
+
+foreach ( $iqresults as $k => $v ) {
+    $sas->add_plot( "I(q) sel", $k );
+}
+
+### residuals
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
+$sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
+$sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
+$sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
+$sas->add_plot_residuals( "I(q) sel", "I(q) fit Res./SD" );
+
+$rmsd = round( $rmsd, 3 );
+$chi2 = round( $chi2, 3 );
+$annotate_msg = "";
+if ( $rmsd != -1 ) {
+    $annotate_msg .= "RMSD $rmsd   ";
+}
+if ( $chi2 != -1 ) {
+    $annotate_msg .= "nChi^2 $chi2   ";
+}
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( "I(q) sel", $annotate_msg );
+}
+
+$ga->tcpmessage(
+    [
+     "iqplotsel" => $sas->plot( "I(q) sel" )
+#     ,"_textarea" => json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n"
+#     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
+#     . json_encode( $sas->plot_names(), JSON_PRETTY_PRINT ) . "\n"
+#     . $sas->data_summary( $sas->data_names() )
+    ]
+    );
+
+$output->iqplotsel = $sas->plot( "I(q) sel" );
+
+### summary results
+
+$output->iqresults = "";
+foreach ( (array)$iqresults as $k => $v ) {
+    $output->iqresults .=
+        # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
+        "$k fit contrib. " . sprintf( "%.4g", $v ) . "\n";
+}
+
+### save results to state
+
+$cgstate->state->nnlsiqresults = $iqresults;
 
 ## rebuild final plots
 

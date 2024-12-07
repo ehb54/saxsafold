@@ -499,6 +499,10 @@ class SAS {
                     $this->plots->$name->layout->yaxis->title->text = $v;
                     break;
                 
+                case "yaxis2title" :
+                    $this->plots->$name->layout->yaxis2->title->text = $v;
+                    break;
+                
                 case "titlefontsize" :
                     if ( !is_object( $this->plots->$name->layout->title ) ) {
                         $this->plots->$name->layout->title = (object) [ "text" => $this->plots->$name->layout->title ];

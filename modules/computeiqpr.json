@@ -308,6 +308,28 @@
             }
         }
         ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "textarea"
+            ,"id"                : "iqresults"
+            ,"rows"              : 8
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "textarea"
+            ,"id"                : "prresults"
+            ,"rows"              : 8
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
             "role"        : "output"
             ,"id"         : "processing_progress"
             ,"type"       : "progress"
