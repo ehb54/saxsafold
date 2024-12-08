@@ -318,7 +318,7 @@ $output->prresults = "";
 foreach ( (array)$prresults as $k => $v ) {
     $output->prresults .=
         # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
-        "$k fit contrib. " . sprintf( "%.4g", $v ) . "\n";
+        "$k fit contrib. " . sprintf( "%.1f", 100 * $v ) . " % \n";
 }
 
 ### save results to state
@@ -387,10 +387,10 @@ $output->iqplotsel = $sas->plot( "I(q) sel" );
 ### summary results
 
 $output->iqresults = "";
-foreach ( (array)$iqresults as $k => $v ) {
+foreach ( $iqresults as $k => $v ) {
     $output->iqresults .=
         # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
-        "$k fit contrib. " . sprintf( "%.4g", $v ) . "\n";
+        "$k fit contrib. " . sprintf( "%.1f", 100 * $v ) . " % \n";
 }
 
 ### save results to state
