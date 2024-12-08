@@ -162,7 +162,35 @@ function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_str
     $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
-## test
+function nnls_results_to_html( $obj ) {
+    $res =
+        "<div style='font-family:monospace;width=100%'><small>"
+        . "<table>"
+        . "<tr><th style='padding:0 15px 0 15px;text-align:center'>Model</th><th style='padding:0 15px 0 15px'>Fit contrib. %</th></tr>"
+        ;
+
+    foreach ( $obj as $k => $v ) {
+
+        $res .=
+            "<tr><td style='padding:0 15px 0 15px'>$k</td><td style='padding:0 15px 0 15px;text-align:center'>"
+            . sprintf( "%.1f", 100 * $v )
+            . "</td></tr>"
+            ;
+    }
+    $res .= "</table></small></div>";
+    return $res;
+}
+
+## tests
+/* 
+$nnlsres = [
+    "mod 1" => .5
+    ,"mod 2" => .3
+    ,"mod 27" => .2
+    ];
+
+echo nnls_results_to_html( $nnlsres ) . "\n";
+*/    
 
 /*
 $cgstate = new cgrun_state();
