@@ -314,12 +314,7 @@ if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( "P(r) sel", $annotate_msg );
 }
 
-$output->prresults = "";
-foreach ( (array)$prresults as $k => $v ) {
-    $output->prresults .=
-        # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
-        "$k fit contrib. " . sprintf( "%.1f", 100 * $v ) . " % \n";
-}
+$output->prresults = nnls_results_to_html( $prresults );
 
 ### save results to state
 
@@ -386,12 +381,7 @@ $output->iqplotsel = $sas->plot( "I(q) sel" );
 
 ### summary results
 
-$output->iqresults = "";
-foreach ( $iqresults as $k => $v ) {
-    $output->iqresults .=
-        # "$k fit contrib. " . sprintf( "%.5f", $v * 100 ) . "% \n";
-        "$k fit contrib. " . sprintf( "%.1f", 100 * $v ) . " % \n";
-}
+$output->iqresults = nnls_results_to_html( $iqresults );
 
 ### save results to state
 

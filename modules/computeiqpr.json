@@ -310,9 +310,8 @@
         ,{
             "role"              : "output"
             ,"label"             : ""
-            ,"type"              : "textarea"
+            ,"type"              : "html"
             ,"id"                : "iqresults"
-            ,"rows"              : 8
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 1, 1 ]
@@ -321,9 +320,8 @@
         ,{
             "role"              : "output"
             ,"label"             : ""
-            ,"type"              : "textarea"
+            ,"type"              : "html"
             ,"id"                : "prresults"
-            ,"rows"              : 8
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 0, 2 ]
