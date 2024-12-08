@@ -1638,8 +1638,8 @@ class SAS {
         return true;
     }
 
-    # NNLS
-    function nnls( $targetname, $names, $combinedname, &$results, $use_errors = true ) {
+    # NNLS - 
+    function nnls( $targetname, $names, $combinedname, &$results, $use_errors = true, $cutthreshhold = 0.0045, $normalize = true ) {
         $this->debug_msg( "SAS::NNLS( '$targetname', names[], &\$results[] )" );
         $this->last_error = "";
         global $run_cmd_last_error_code;
@@ -1720,11 +1720,43 @@ class SAS {
             $this->data->$combinedname->x    = $this->data->$firstarray->x;
             $this->data->$combinedname->y    = $resobj->combined_fit_y;
         }
+        
+        $sum = 0;
+
+        $procobj = (object)[];
+        
         foreach ( $resobj->data as $k => $v ) {
-            $resobj->data->$k = floatval( $v );
+            if ( $resobj->data->$k > $cutthreshhold ) {
+                $procobj->$k = floatval( $v );
+                $sum += $procobj->$k;
+            }
         }
 
-        $results = $resobj->data;
+        if ( $normalize && $sum > 0 ) {
+            foreach ( $procobj as &$v ) {
+                $v /= $sum;
+            }
+        }
+
+        ## sort by model #
+
+        $procarray = array_keys( (array) $procobj );
+
+        usort( $procarray, fn( $a, $b ) => 
+               preg_replace( '/.*(\d+)/', '$1', $a )
+               > preg_replace( '/.*(\d+)/', '$1', $b ) );
+
+        $finalarray = [];
+
+        ## somehow procobj is funky ... json looks good but values can be the keys?
+        ## recreating it seems to fix
+        $procobj = unserialize( serialize( $procobj ) );
+
+        foreach ( $procarray as $v ) {
+            $finalarray[ $v ] = $procobj->$v;
+        }
+
+        $results = $finalarray;
 
         return true;
     }
@@ -1995,7 +2027,7 @@ if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
 }
 
 if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
-    $sas = new SAS( true );
+    $sas = new SAS( false );
 
     $plotname = "P(r)";
 
@@ -2045,7 +2077,7 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
         "P(r) mod. 20"
         ];
 
-    $limit = 5;
+    $limit = 20;
     $mw    = 76297;
     $exppr = "SASDF83-A176_norm.dat";
     
@@ -2059,8 +2091,8 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     $sas->remove_data( "Exp. P(r)-orig" );
     $sas->remove_data( "Exp. P(r)-interp" );
     
-    echo json_encode( $sas->data_names( '/mod\. 1/' ), JSON_PRETTY_PRINT ) . "\n";
-    echo json_encode( $sas->plot_names( ), JSON_PRETTY_PRINT ) . "\n";
+    echo "data names\n" . json_encode( $sas->data_names( '/mod\. 1/' ), JSON_PRETTY_PRINT ) . "\n";
+    echo "plot names\n" . json_encode( $sas->plot_names( ), JSON_PRETTY_PRINT ) . "\n";
     
     foreach ( $names as $name ) {
         $sas->interpolate( $name, "Exp. P(r)", "$name interp" );
