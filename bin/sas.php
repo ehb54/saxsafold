@@ -2032,54 +2032,44 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     $plotname = "P(r)";
 
     $pdbs = [
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0001.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0002.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0003.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0004.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0005.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0006.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0007.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0008.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0009.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0010.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0011.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0012.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0013.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0014.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0015.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0016.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0017.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0018.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0019.pdb",
-        "preselected/AF-Q06187-F1-model_v4-somo-somo-m0020.pdb"
+        "preselected/AF-G0A007-F1-model_v4-somo-m0000000.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000100.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000200.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000300.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000400.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000500.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000600.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000700.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000800.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000900.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001000.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001100.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001200.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001300.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001400.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001500.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001600.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001700.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001800.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001900.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002000.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002100.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002200.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002300.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002400.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002500.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002600.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0002700.pdb"
         ];
 
-    $names = [
-        "P(r) mod. 1",
-        "P(r) mod. 2",
-        "P(r) mod. 3",
-        "P(r) mod. 4",
-        "P(r) mod. 5",
-        "P(r) mod. 6",
-        "P(r) mod. 7",
-        "P(r) mod. 8",
-        "P(r) mod. 9",
-        "P(r) mod. 10",
-        "P(r) mod. 11",
-        "P(r) mod. 12",
-        "P(r) mod. 13",
-        "P(r) mod. 14",
-        "P(r) mod. 15",
-        "P(r) mod. 16",
-        "P(r) mod. 17",
-        "P(r) mod. 18",
-        "P(r) mod. 19",
-        "P(r) mod. 20"
-        ];
+    $names = [];
+    foreach ( $pdbs as $k => $v ) {
+        $names[ $k ] = "P(r) mod. " . model_no_from_pdb_name( $v );
+    }
 
-    $limit = 20;
-    $mw    = 76297;
-    $exppr = "SASDF83-A176_norm.dat";
+    $limit = min( 100, count( $names ) );
+    $mw    = 14301;
+    $exppr = "lyzexp_ift.sprr";
     
     $pdbs  = array_slice( $pdbs, 0, $limit );
     $names = array_slice( $names, 0, $limit );
