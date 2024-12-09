@@ -89,6 +89,12 @@ require "$scriptdir/plotly_computeiqpr.php";
 
 setup_computeiqpr_plots( $plots );
 
+if ( isset( $input->prerrors ) ) {
+    if ( !$sas->data_has_errors( 'Exp. P(r)' ) ) {
+        error_exit( "<i>Use Errors in P(r) fitting</i> requested, but the Experimenal P(r) data has no defined SDs" );
+    }
+}
+        
 ## plotlycomputeiqpr( $cgstate->state->output_loadsaxs, $plots );
 
 ## initial message 
@@ -273,7 +279,7 @@ progress_text( "Running NNLS on P(r)" );
 $prresults = [];
 
 $sas->extend_pr( array_merge( [ "Exp. P(r)" ], $allprnames  ) );
-$sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit", $prresults, isset( $input->prerrors ) );
+$sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit", $prresults, false );
 
 ### build up P(r) sel plot
 
@@ -288,17 +294,9 @@ $rmsd_pr = -1;
 $chi2_pr = -1;
 $scale   = 0;
 
-if ( isset( $input->prerrors ) ) {
-    $sas->scale_nchi2( "Exp. P(r)", "P(r) NNLS fit", "P(r) NNLS fit-rescaled", $chi2_pr, $scale );
-    $sas->rmsd( "Exp. P(r)", "P(r) NNLS fit", $rmsd_pr );
-    $sas->calc_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Res./SD" );
-    $sas->add_plot_residuals( "P(r) sel", "P(r) fit Res./SD" );
-    $sas->plot_options( "P(r) sel", [ "yaxis2title" => "Res./SD" ] );
-} else {
-    $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Resid.", $rmsd_pr );
-    $sas->add_plot_residuals( "P(r) sel", "P(r) fit Resid." );
-    $sas->plot_options( "P(r) sel", [ "yaxis2title" => "Resid." ] );
-}
+$sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Resid.", $rmsd_pr );
+$sas->add_plot_residuals( "P(r) sel", "P(r) fit Resid." );
+$sas->plot_options( "P(r) sel", [ "yaxis2title" => "Resid." ] );
 
 $rmsd_pr = round( $rmsd_pr, 3 );
 $chi2_pr = round( $chi2_pr, 3 );
@@ -386,6 +384,66 @@ $output->iqresults = nnls_results_to_html( $iqresults );
 
 $cgstate->state->nnlsiqresults = $iqresults;
 
+
+## NNLS on P(r) we
+if ( isset( $input->prerrors ) ) {
+
+    progress_text( "Running NNLS on P(r) with SDs" );
+
+    $prweresults = [];
+
+    $sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit w/SDs", $prweresults, true );
+
+    ### build up P(r)-we sel plot
+
+    $sas->add_plot( "P(r) we sel", "P(r) NNLS fit w/SDs" );
+
+    foreach ( $prweresults as $k => $v ) {
+        $sas->add_plot( "P(r) we sel", $k );
+    }
+
+    ### residuals
+    $rmsd_prwe = -1;
+    $chi2_prwe = -1;
+    $scale   = 0;
+
+#    $sas->scale_nchi2( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) NNLS fit w/SDs-rescaled", $chi2_prwe, $scale );
+    $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) fit w/SDs Resid.", $rmsd_prwe );
+#    $sas->rmsd( "Exp. P(r)", "P(r) NNLS fit w/SDs", $rmsd_prwe );
+#    $sas->calc_residuals( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) fit w/SDs Resid." );
+    $sas->add_plot_residuals( "P(r) we sel", "P(r) fit w/SDs Resid." );
+    $sas->plot_options( "P(r) we sel", [ "yaxis2title" => "Resid." ] );
+
+    $rmsd_prwe = round( $rmsd_prwe, 3 );
+    $chi2_prwe = round( $chi2_prwe, 3 );
+    $annotate_msg = "";
+    if ( $rmsd_prwe != -1 ) {
+        $annotate_msg .= "RMSD $rmsd_prwe   ";
+    }
+    if ( $chi2_prwe != -1 ) {
+        $annotate_msg .= "nChi^2 $chi2_prwe   ";
+    }
+    if ( strlen( $annotate_msg ) ) {
+        $sas->annotate_plot( "P(r) we sel", $annotate_msg );
+    }
+
+    $output->prweresults = nnls_results_to_html( $prweresults );
+
+    ### save results to state
+
+    $cgstate->state->nnlsprweresults = $prweresults;
+
+    $ga->tcpmessage(
+        [
+         "processing_progress" => .95
+         ,"prweplotsel" => $sas->plot( "P(r) we sel" )
+     #     ,"_textarea" => json_encode( $prweresults, JSON_PRETTY_PRINT ) . "\n"
+    ]
+    );
+
+    $output->prweplotsel = $sas->plot( "P(r) we sel" );
+}
+
 ## rebuild final plots
 
 $output->prplotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
@@ -394,6 +452,7 @@ $output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
 ## save state
 
 $cgstate->state->output_iqpr  = $output;
+$cgstate->state->computeiqpr_prerrors  = isset( $input->prerrors ) ? true : false;
 
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';

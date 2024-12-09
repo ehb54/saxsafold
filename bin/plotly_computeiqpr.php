@@ -19,7 +19,7 @@ function setup_computeiqpr_plots( $outobj ) {
                         ] );
     $outobj->iqplotall = $sas->plot( "I(q) all mmc" );
 
-    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) sel", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q) <br>Expt. + NNLS selected/reconstructed<br>from all computed on subselected MMC models" ] );
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) sel", $cgstate->state->output_loadsaxs->iqplot, [ "title" => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on subselected MMC models" ] );
     $sas->plot_options( "I(q) sel",
                         [
                          "titlefontsize" => $titlefontsize - 1
@@ -29,7 +29,7 @@ function setup_computeiqpr_plots( $outobj ) {
     $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot, [ "title" => "P(r)" ] );
     $outobj->prplot = $sas->plot( "P(r)" );
 
-    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) all mmc", $cgstate->state->output_load->prplot, [ "title" => "P(r) <br>Expt. + all computed on subselected MMC models" ] );
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) all mmc", $cgstate->state->output_load->prplot, [ "title" => "P(r)<br>Expt. + all computed on subselected MMC models" ] );
     $sas->plot_residuals( "P(r) all mmc", false );
     $sas->remove_plot_data( "P(r) all mmc", "Comp." );
     $sas->remove_plot_data( "P(r) all mmc", "Resid." );
@@ -42,7 +42,7 @@ function setup_computeiqpr_plots( $outobj ) {
                         ] );
     $outobj->prplotall = $sas->plot( "P(r) all mmc" );
 
-    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) sel", $cgstate->state->output_load->prplot, [ "title" => "P(r) <br>Expt. + NNLS selected/reconstructed<br>from all computed on subselected MMC models" ] );
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) sel", $cgstate->state->output_load->prplot, [ "title" => "P(r) [fit without using SDs]<br>Expt. + NNLS selected/reconstructed<br>from all computed on subselected MMC models" ] );
     $sas->plot_residuals( "P(r) sel", false );
     $sas->remove_plot_data( "P(r) sel", "Comp." );
     $sas->remove_plot_data( "P(r) sel", "Resid." );
@@ -52,6 +52,18 @@ function setup_computeiqpr_plots( $outobj ) {
                          "titlefontsize" => $titlefontsize - 1
                         ] );
     $outobj->prplotsel = $sas->plot( "P(r) sel" );
+
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r) we sel", $cgstate->state->output_load->prplot, [ "title" => "P(r) [fit using SDs]<br>Expt. NNLS selected/reconstructed<br>from all computed on subselected MMC models" ] );
+    $sas->plot_residuals( "P(r) we sel", false );
+    $sas->remove_plot_data( "P(r) we sel", "Comp." );
+    $sas->remove_plot_data( "P(r) we sel", "Resid." );
+    $sas->annotate_plot( "P(r) we sel", "" );
+    $sas->plot_options( "P(r) we sel",
+                        [
+                         "titlefontsize" => $titlefontsize - 1
+                        ] );
+    $outobj->prweplotsel = $sas->plot( "P(r) we sel" );
+
 }
 
 function plot_to_image( $plotobj ) {

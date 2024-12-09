@@ -198,7 +198,7 @@
             ,"label"            : "I(q) computation method"
             ,"type"             : "listbox"
             ,"help"             : "Select I(q) computation method"
-            ,"values"           : "PEPSI-SAXS~pepsi~FoXS~foxs~CRYSOL 3~crysol3~CRYSOL 2.8~crysol28"
+            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3~crysol3~CRYSOL 2.8~crysol28"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
@@ -208,7 +208,7 @@
             ,"id"               : "prerrors"
             ,"label"            : "Use Errors in P(r) fitting"
             ,"type"             : "checkbox"
-            ,"help"             : "For model preselection, P(r) can be fit with or without P(r) SDs"
+            ,"help"             : "For model preselection, P(r) can additionaly be fit with P(r) SDs"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
@@ -325,6 +325,26 @@
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "prweplotsel"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "prweresults"
+            ,"layout"           : {
+                "parent" : "resultpanel"
             }
         }
         ,{

@@ -95,7 +95,19 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     if ( isset( $cgstate->state->output_iqpr->prresults ) ) {
         $result->prresults = &$cgstate->state->output_iqpr->prresults;
     }
+    if ( isset( $cgstate->state->computeiqpr_prerrors ) &&
+         $cgstate->state->computeiqpr_prerrors ) {
+        if ( isset( $cgstate->state->output_iqpr->prweplotsel ) ) {
+            $result->prweplotsel = &$cgstate->state->output_iqpr->prweplotsel;
+        }
+        if ( isset( $cgstate->state->output_iqpr->prweresults ) ) {
+            $result->prweresults = &$cgstate->state->output_iqpr->prweresults;
+        }
+    } else {
+        unset( $result->prweplotsel );
+    }
 }
+
 
 ## unset() below can be removed, but keeping for legacy run testing
 unset( $result->iqplotall );
