@@ -26,3 +26,9 @@ $update_iq_frequency                    = 50;
 ## testing limits
 $test_limit_max_computeiqpr_frames      = 0;
 
+## waxsis mode quick, normal, thourough
+# $waxsis_converegence_mode               = 'normal';
+$waxsis_convergence_mode                = 'quick';
+
+
+
