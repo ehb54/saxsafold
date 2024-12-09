@@ -1,0 +1,507 @@
+#!/opt/anaconda2/bin/python
+
+import json,sys,os,shutil,locale
+from StringIO import StringIO
+import multiprocessing,time,string,socket
+
+import sassie.simulate.monte_carlo.monomer.dihedral_monte_carlo as dihedral_monte_carlo
+import sassie.interface.input_filter as input_filter
+import sassie.interface.generate_filter as generate_filter
+import sassie.sasconfig as sasconfig
+
+class Generate_Drv():
+
+   module = 'monomer_monte_carlo'
+
+   def message_box(self,text,icon):
+
+        _message = {}
+        _message['icon'] = icon
+        _message['text'] = text
+
+        UDP_IP = json_variables['_udphost']
+        UDP_PORT = json_variables['_udpport']
+        sock = socket.socket(socket.AF_INET, # Internet
+                socket.SOCK_DGRAM) # UDP
+
+        socket_dict={}
+        socket_dict['_uuid'] = json_variables['_uuid']
+        socket_dict['_message'] = _message
+
+        doc_string = json.dumps(socket_dict)
+        sock.sendto(doc_string,(UDP_IP,UDP_PORT))
+
+        return
+
+   def background_job(self,process,txtQueue,json_variables):
+
+        total_string = ''
+
+        UDP_IP = json_variables['_udphost']
+        UDP_PORT = json_variables['_udpport']
+        sock = socket.socket(socket.AF_INET, # Internet
+             socket.SOCK_DGRAM) # UDP
+
+        socket_dict={}
+        socket_dict['_uuid'] = json_variables['_uuid']
+	first = True
+
+        while process.is_alive():
+                try:
+                        if(first):
+                                socket_dict['progress_html'] = '<center>starting job</center>'
+                                socket_dict['_progress'] = 0.01
+                                doc_string = json.dumps(socket_dict)
+                                sock.sendto(doc_string,(UDP_IP,UDP_PORT))
+                                first = False
+                        this_text = txtQueue.get(True, timeout=0.01)
+                        text_split=string.split(this_text)
+                        if(text_split[0]=='STATUS'):
+                                value = locale.atof(text_split[1])
+                                svalue = str(round(100*value,2))
+                                socket_dict['progress_output'] = value
+                                socket_dict['_progress'] = value
+                                socket_dict['progress_html'] = '<center>'+svalue+'</center>'
+                                if "_textarea" in socket_dict:
+                                        del socket_dict["_textarea"]
+                                if socket_dict:
+                                        doc_string = json.dumps(socket_dict)
+                                        sock.sendto(doc_string,(UDP_IP,UDP_PORT))
+                        else:
+                                socket_dict["_textarea"] = this_text
+                                if socket_dict:
+                                        doc_string = json.dumps(socket_dict)
+                                        sock.sendto(doc_string,(UDP_IP,UDP_PORT))
+                                total_string += this_text
+                except:
+                        if not process.is_alive():
+
+                                return total_string
+
+                time.sleep(0.01)
+        else:
+                return total_string
+
+        return total_string
+
+   def read_file(self,filename,dvar):
+
+        try:
+                data = [] ; error = []
+                data_file = open(filename,'r').readlines()
+                nl = len(data_file)
+
+                for i in xrange(nl):
+                        lin = string.split(data_file[i])
+        
+                        if(lin[0] != '#'):
+                                this_x = lin[dvar[0]]
+                                this_y = lin[dvar[1]]
+                        #       this_z = lin[2]
+                                data.append([this_x,this_y])
+                        #       error.append([this_x,this_z])   
+
+                if(dvar[0] == 0):
+
+                        this_data = {
+                                        'lines' : { "show": "false" },
+                                        'points' : { "show" : "true", "radius" : "4" },
+                                        'color' : 'red',
+                                        'label' : 'all structures',
+                                        'data': data
+                                }
+                        self.flot_data["data"].append(this_data)
+
+                else:
+                        this_data = {
+                                        'lines' : { "show": "true", "lineWidth" : "3.0" },
+                                        'points' : { "show" : "true", "radius" : "2" },
+                                        'color' : 'green',
+                                        'label' : 'accepted structures',
+                                        'data': data
+                                }
+                        self.flot_data["data"].append(this_data)
+
+        
+#                data_file.close()
+
+        except:
+        #        print 'ERROR READING PLOT DATA FILE'
+        #        print 'ERROR READING PLOT DATA FILE'
+        #        print 'ERROR READING PLOT DATA FILE'
+                self.flot_data = "error reading file and making plot"
+
+        return
+
+   def get_data_from_disk(self,file1,file2):
+
+	self.flot_data = {
+                                        "options": {
+                                                "title"  : "Rg Results",
+                                                "xlabel"  : "Structure Number",
+                                                "ylabel"  : "Rg (Angstrom)",
+
+
+                                                "legend": {
+# "position" can be "ne" or "nw" or "se" or "sw"
+                                                        "position"           : "ne"
+# add a margin by number of pixels
+                                                        ,"margin"            : 5
+# "backgroundOpacity" is a number between 0 and 1
+                                                        ,"backgroundOpacity" : 0.7
+# "container" puts the legend to the right of the plot
+                                                        ,"container"         : "false"
+# "sorted" orders the legend entries can be "ascending" or "descending"
+                                                        ,"sorted"            : "ascending"
+                                                }
+
+                                        },
+ 
+					"data": []
+			}       
+        dvar=[0,1]
+        self.read_file(file1,dvar)
+        dvar=[2,1]
+        self.read_file(file2,dvar)
+
+        return 
+
+
+   def convert_residue_ranges(self,original_reslow):
+
+	r = string.split(original_reslow,',')
+	number_of_pairs = 0
+
+	lowres = ''; numcont = ''
+	for pair in r:
+		this_pair = string.split(pair,'-')
+		lowres += this_pair[0]+','
+		numcont += (str(locale.atoi(this_pair[1]) - locale.atoi(this_pair[0])))+','
+		number_of_pairs += 1
+
+	lowres = lowres[:-1]
+	numcont = numcont[:-1]
+
+	print 'lowres = ',lowres
+	print 'numcont = ',numcont
+	
+	return lowres, numcont
+
+   def run_me(self,json_flag,json_variables,input_string):
+
+         output_dict = {}
+
+         if not json_flag:
+
+                #### BEGIN USER EDIT
+                #### BEGIN USER EDIT
+                #### BEGIN USER EDIT
+
+                runname='run_0'
+                dcdfile='run_0.dcd'
+                path=''
+                pdbfile='c2.pdb'
+                trials='50'
+                goback='10'
+                temp='300.0'
+                moltype = 'protein'
+                numranges='5'
+                dtheta='30.0,30.0,30.0,30.0,30.0'
+                original_reslow='123-144,278-283,354-378,378-389,408-412'
+                #numcont='21,5,24,11,4'
+                lowres1='284'
+                highres1='350'
+                residue_alignment='284-350'
+                basis='CA'
+                cutoff='3.0'
+                lowrg='0.0'
+                highrg='400.0'
+                zflag='0'
+                zcutoff='0.0'
+                cflag='0'
+                confile = 'constraints.txt'
+                nonbondflag='0'                
+                nonbondscale='1.0'
+                psffilepath='./'
+                psffilename='refgag.psf'
+	 	parmfilepath = sasconfig._bin_path+'toppar/'
+                parmfilename='par_all27_prot_na.inp'
+                plotflag = '0'
+                directedmc = '0'
+                seed = '0,123'        
+
+        
+                path='./'
+
+                #### END USER EDIT
+                #### END USER EDIT
+                #### END USER EDIT
+         else:
+
+                runname = json_variables['runname']
+        
+                base_directory = json_variables['_base_directory']
+
+                path = base_directory.replace('\/','/') + "/"
+
+                os.chdir(path)
+                data_path = path
+                path = ''
+
+#                pdbfile = json_variables['pdbfile'][0]
+                pdbfile = json_variables['pdbfile']
+
+                dcdfile = json_variables['dcdfile']
+                trials = json_variables['trials']
+                goback = json_variables['goback']
+                temp = json_variables['temp']
+                numranges = json_variables['numranges']
+                dtheta = json_variables['dtheta']
+                original_reslow = json_variables['reslow']
+                residue_alignment = json_variables['residue_alignment']
+                #numcont = json_variables['numcont']
+                #lowres1 = json_variables['lowres1']
+                #highres1 = json_variables['highres1']
+
+		overlap_list_box = json_variables['overlap_list_box']
+
+		if(overlap_list_box == "c1"):
+			basis = 'heavy'
+			cutoff = '0.8'
+		elif(overlap_list_box == "c2"):
+			basis = 'all'
+			cutoff = '0.8'
+		elif(overlap_list_box == "c3"):
+			basis = 'backbone'
+			cutoff = '1.0'
+		elif(overlap_list_box == "c4"):
+	                basis = json_variables['basis']
+	                cutoff = json_variables['cutoff']
+ 
+                try:
+                        advanced_input = json_variables['advanced_input']
+                except:
+                        advanced_input = 'off'
+
+                nonbondscale = "1.0"
+                cflag = "0"
+                if(advanced_input == "on"):
+                
+                        lowrg = json_variables['lowrg']
+                        highrg = json_variables['highrg']
+                        try:
+                                nonbondflag_check_box = json_variables['nonbondflag_check_box']
+                        except:
+                                nonbondflag_check_box = "off"
+
+                        if(nonbondflag_check_box == "on"):        
+                                 nonbondscale = json_variables['nonbondscale']
+
+                        directedmc = json_variables['directedmc']
+                        
+                        try:
+                        	zflag_check_box = json_variables['zflag_check_box']
+                        except:
+                                zflag_check_box = "off"
+
+                        try:
+                                cflag_check_box = json_variables['cflag_check_box']
+                        except:
+                                cflag_check_box = "off"
+
+                        #plotflag_list_box = json_variables['plotflag_list_box']
+
+                else:
+                        lowrg = "0.0"
+                        highrg = "300.0"
+                        zcutoff = "0.0"
+                        nonbondscale = "1.0"
+                        directedmc = "0"
+                        zflag_check_box = "off"
+                        cflag_check_box = "off"
+                        cflag = "0"
+                        nonbondflag_check_box = "off"
+                        #plotflag_list_box = "c1"
+
+                moltype_list_box = json_variables['moltype_list_box']
+                if(moltype_list_box == 'c1'):
+                        moltype = 'protein' 
+                elif(moltype_list_box == 'c2'):
+                        moltype = 'rna' 
+                 
+                if(zflag_check_box == 'off'):
+                        zflag = '0' # NO
+                        zcutoff = '0'
+                elif(zflag_check_box == 'on'):
+                        zflag = '1' # YES
+                        zcutoff = json_variables['zcutoff']
+
+                if(cflag_check_box == 'off'):
+                        cflag = '0' # NO
+                        confile = 'constraints.txt'
+                elif(cflag_check_box == 'on'):
+                        cflag = '1' # YES
+                        confile = json_variables['confile'][0]
+
+                if(nonbondflag_check_box == 'off'):
+                        nonbondflag = '0' # NO
+                        psffilepath='./'
+                        psffilename='refgag.psf'
+                elif(nonbondflag_check_box == 'on'):
+                        nonbondflag = '1' # YES
+                        temp_psffilename = json_variables['psffilename'][0]
+                        psffilepath, psffilename = os.path.split(temp_psffilename[0])
+
+                #if(plotflag_list_box == 'c1'):
+                #        plotflag = '0' # NO
+                #elif(plotflag_list_box == 'c2'):
+                #        plotflag = '1' # YES
+		plotflag = '0'
+
+                path = ''
+
+	 try:
+	 	reslow, numcont = self.convert_residue_ranges(original_reslow)
+	 except:
+		error = 'unable to parse residue range for flexible regions: check your input values\n'
+		error += 'it should consist of a pair of hyphenated integers separated by commas\n'
+		error += 'the number of pairs should equal the number of flexible regions'
+ 		self.message_box(error,'warning.png')
+		output_dict['error'] = error
+        	output_dict['sasoutput2'] = 'run failed'
+        	print json.dumps( output_dict )
+        	return
+
+	 #if True:
+	 try:
+		residue_alignment = string.split(residue_alignment,'-')
+	 	lowres1 = residue_alignment[0]
+	 	highres1 = residue_alignment[1]
+	 	print 'lowres1 = ',lowres1
+	 	print 'highres1 = ',highres1
+	 except:
+	 #else:
+		error = 'unable to parse residue range for alignment : check your input values\n'
+		error += 'it should consist of a pair of hyphenated integers separated by commas\n'
+		error += 'the number of pairs should equal the number of flexible regions'
+ 		self.message_box(error,'warning.png')
+		output_dict['error'] = error
+        	output_dict['sasoutput2'] = 'run failed'
+        	print json.dumps( output_dict )
+        	return
+
+#residue_alignment
+	 parmfilepath = sasconfig._bin_path+'toppar/'
+         parmfilename = 'par_all27_prot_na.inp'
+
+         svariables={}
+
+         svariables['runname'] = (str(runname),'string')
+
+         svariables['dcdfile']                = (str(dcdfile),'string')
+         svariables['path']                = (str(path),'string')
+         svariables['pdbfile']                = (str(pdbfile),'string')
+         svariables['trials']                = (str(trials),'int')
+         svariables['goback']                = (str(goback),'int')
+         svariables['temp']                = (str(temp),'float')
+         svariables['moltype']                = (str(moltype),'string')
+         svariables['numranges']                = (str(numranges),'int')
+         svariables['dtheta']                = (str(dtheta),'float_array')
+         svariables['reslow']                = (str(reslow),'int_array')
+         svariables['numcont']                = (str(numcont),'int_array')
+         svariables['lowres1']                = (str(lowres1),'int')
+         svariables['highres1']                = (str(highres1),'int')
+         svariables['basis']                = (str(basis),'string')
+         svariables['cutoff']                = (str(cutoff),'float')
+         svariables['lowrg']                = (str(lowrg),'float')
+         svariables['highrg']                = (str(highrg),'float')
+         svariables['zflag']                = (str(zflag),'int')
+         svariables['zcutoff']                = (str(zcutoff),'float')
+         svariables['cflag']                = (str(cflag),'int')
+         svariables['confile']                = (str(confile),'string')
+         svariables['nonbondflag']        = (str(nonbondflag),'int')
+         svariables['nonbondscale']        = (str(nonbondscale),'float')
+         svariables['psffilepath']        = (str(psffilepath),'string')
+         svariables['psffilename']        = (str(psffilename),'string')
+         svariables['parmfilepath']        = (str(parmfilepath),'string')
+         svariables['parmfilename']        = (str(parmfilename),'string')
+         svariables['plotflag']                = (str(plotflag),'int')
+         svariables['directedmc']        = (str(directedmc),'float')
+         svariables['seed']                = ('0,123', 'int_array') # set this to '1,123' if you want to set the seed or '0,123' if not
+
+         svariables['path']    = (path,'string')
+
+         error = []
+         error,self.variables=input_filter.type_check_and_convert(svariables)
+
+         if(len(error)>0):
+
+                self.message_box(error,'skull.png')
+#               warning.png, information.png, skull.png, toast.png
+
+                output_dict['error'] = 'Error in input variables'
+                output_dict['sasoutput2'] = 'run failed'
+                print json.dumps( output_dict )
+                return
+         else:
+		monflag=1 ; eflag = 0
+                error=generate_filter.check_protein(self.variables,eflag,monflag,no_file_check="true")
+                if(len(error) != 0):
+                        self.message_box(error,'warning.png')
+                        output_dict['error'] = 'Error in monomer monte carlo variables'
+                        output_dict['sasoutput2'] = 'run failed'
+                        print json.dumps( output_dict )
+                        return
+
+                runname=self.variables['runname'][0]
+
+                if os.path.exists(runname+'/'+self.module):
+                        shutil.rmtree(runname+'/'+self.module)
+
+                txtQueue=multiprocessing.JoinableQueue()
+
+                process=multiprocessing.Process(target=dihedral_monte_carlo.dihedralgenerate,args=(self.variables,txtQueue))
+                process.start()
+
+                total_string = self.background_job(process,txtQueue,json_variables)
+
+#		output_dict['sasoutput2'] = total_string
+
+                accepted_rg_file = data_path+runname+'/monomer_monte_carlo/'+dcdfile+'.accepted_rg_results_data.txt'
+                all_rg_file = data_path+runname+'/monomer_monte_carlo/'+dcdfile+'.all_rg_results_data.txt'
+
+                print 'acc rg file = ', accepted_rg_file        
+                print 'all_rg_file = ', all_rg_file
+
+                self.get_data_from_disk(all_rg_file,accepted_rg_file)
+
+                if(isinstance(self.flot_data, basestring)):
+                        print 'error reading data'
+                        output_dict['plot_error'] = self.flot_data
+                else:
+                        output_dict['plotout4'] = self.flot_data
+
+         if output_dict:
+                print json.dumps( output_dict )
+         else:
+                error_string = 'Exception encountered executing '+self.module+' program: please submit feedback and attach run log'
+                output_dict['error'] = error_string
+                print json.dumps( output_dict )
+                
+if __name__=='__main__':
+
+        json_flag = True
+        #json_flag = False
+
+        if (len(sys.argv) < 1):
+                print "\{\"error\":\"monomer monte carlo called with no arguments\"\}\n";
+#                 print 'exiting now'
+
+        elif len(sys.argv) > 1:
+                json_variables = " "
+                if(json_flag):
+                        argv_io_string = StringIO(sys.argv[1])
+                        json_variables = json.load(argv_io_string)
+                a=Generate_Drv()
+                a.run_me(json_flag,json_variables,sys.argv[1])
+

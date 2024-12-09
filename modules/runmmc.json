@@ -1,20 +1,10 @@
+# this is a module file, any module specific info belongs here
 {
     "moduleid"    : "runmmc"
     ,"label"      : "Run MMC"
     ,"help"       : "Run Monomer Monte Carlo on selected structures"
-    ,"executable" : "runmmc.php"
-#    ,"resource"   : "docker-local"
-#    ,"dependencies" : [ 
-#        { "base" : "python" }
-#        ,{ "file" : "mass_load.py" }
-# comment above 2 lines and uncomment 2 lines below for perl executable
-#        { "base" : "perl" }
-#        ,{ "cpan" : "JSON" }
-#    ]
-    ,"requireproject"  : "true"
-    ,"loadfields"      : "runmmc_load.php"
-    ,"noreset"         : "true"
-    ,"nosubmit"        : "true"
+    ,"executable" : "monomer_monte_carlo"
+    ,"loadfields" : "runmmc_load.php"
     ,"panels" : [
         {
             "root" : {
@@ -220,118 +210,213 @@
             }
         }
         ,{
-            "role"       : "output"
-            ,"label"      : " "
-            ,"type"       : "html"
-            ,"id"         : "instructions"
-            ,"layout" : {
-                "parent" : "infopanel"
-            }
-        }
-        ,{
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "runname",
             "label"    : "run name",
-            "type"     : "text"
+            "type"     : "text",
+            "default"  : "run_0",
+            "readonly" : "true",
+            "required" : "true",
+            "help"     : "results will be placed in a folder called monte_carlo/ in the directory name you enter here"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "pdbfile",
             "label"   : "reference pdb",
-            "type"     : "text"
+            "type"     : "text",
+            "required" : "true",
+            "help"     : "PDB file containing initial coordinates",
+            "norow"    : "false",
+            "readonly" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "dcdfile",
             "label"    : "output file name (dcd)",
-            "type"     : "text"
+            "type"     : "text",
+            "readonly" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "trials",
             "label"    : "number of trial attempts",
-            "type"     : "text"
+            "type"     : "text",
+            "help"     : "enter number of Monte Carlo move attempts",
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "goback",
             "label"    : "return to previous structure",
-            "type"     : "text"
+            "readonly" : "true",
+            "type"     : "text",
+            "default"  : "20",
+            "help"     : "after this number of failed Monte Carlo steps, the program will reset the current coordinates to a previously accepted structure",
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "temp",
             "label"    : "temperature (K)",
-            "type"     : "text"
+            "type"     : "text",
+            "default"  : "300.0",
+            "readonly" : "true",
+            "help"  : "enter run temperature in Kelvin",
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
-        {
-            "role"    : "output",
+	{
+            "role"    : "input",
             "id"      : "moltype_list_box",
+            "name"    : "moltype_list_box",
             "label"    : "molecule type",
-            "type"    : "text"
+            "type"    : "listbox",
+#            "values"  : "protein~c1~rna~c2",
+            "values"  : "protein~c1",
+            "default" : "c1",
+            "help" : "choose the molecule type"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "numranges",
             "label"    : "number of flexible regions to vary",
-            "type"     : "text"
+            "readonly" : "true",
+            "type"     : "text",
+            "help"  : "enter the number of regions that have residues to sample",
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "reslow",
             "label"    : "residue range for each flexible region",
-            "type"     : "text"
+            "type"     : "text",
+            "readonly" : "true",
+            "help"  : "enter residue range for each flexible region: pairs of hyphenated integers separated by commas",
+            "size"	:40,
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "dtheta",
             "label"    : "maximum angle(s)",
-            "type"     : "text"
+            "type"     : "text",
+            "readonly" : "true",
+            "default"  : "30.0,30.0,30.0,30.0,30.0",
+            "size"	:40,
+            "help"  : "(degrees): enter the maximum angle that each torsion in each of the flexible regions can sample in a single move",
+            "required" : "true"
             ,"layout" : {
-                "parent" : "resultpanel"
+                "parent" : "inputpanel"
             }
         },
         {
-            "role"     : "output",
+            "role"     : "input",
             "id"       : "residue_alignment",
             "label"    : "structure alignment range",
-            "type"     : "text"
+            "type"     : "text",
+            "default"  : "284-350",
+            "help"  : "select the residue range used for structural alignment, this should be in a rigid/non-flexible region",
+            "required" : "true"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        },
+        {
+            "role"    : "input",
+            "id"      : "overlap_list_box",
+            "name"    : "overlap_list_box",
+            "label"    : "overlap basis",
+            "type"    : "listbox",
+            "values"  : "heavy atoms~c1~all~c2~backbone~c3~enter atom name~c4",
+            "default" : "c1",
+	    "repeater" : "yes",
+            "help" : "choose the type of overlap check you wish to use"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        },
+        {
+            "role"     : "input",
+            "id"       : "basis",
+            "label"    : "overlap basis",
+            "type"     : "text",
+            "default"  : "CA",
+            "help"  : "select the atom name used to check for overlap",
+            "repeat" : "overlap_list_box:c4",
+            "required" : "true"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        },
+        {
+            "role"     : "input",
+            "id"       : "cutoff",
+            "label"    : "overlap cutoff (angstroms)",
+            "type"     : "float",
+            "default"  : 3.0,
+            "help"  : "enter distance for overlap check",
+	    "step"     : 0.01,
+            "repeat" : "overlap_list_box:c4",
+            "required" : "true"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        },
+        {
+            "role"    : "output",
+            "id"      : "progress_output",
+            "label"   : "progress: ",
+            "type"    : "progress",
+            "max"     : 1.0
             ,"layout" : {
                 "parent" : "resultpanel"
             }
         },
         {
             "role"    : "output",
-            "id"      : "overlap_list_box",
-            "label"    : "overlap basis",
-            "type"    : "text"
+            "id"      : "progress_html",
+            "name"    : "progress_html",
+            "label"   : "percent done: ",
+            "type"    : "html"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
+            "role"    : "output",
+            "id"      : "plotout4",
+            "label"   : "all rg and accepted rg data",
+            "type"    : "plot2d",
+            "pan"     : "true",
+            "zoom"    : "true",
+            "hover"   : "true",
+            "help"    : "drag to pan, double click to zoom, to reset zoom and pan: click on title, axis labels or live coordinates box"
             ,"layout" : {
                 "parent" : "resultpanel"
             }
