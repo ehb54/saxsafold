@@ -194,7 +194,7 @@ while ( $f = shift ) {
     #( $modelno[$pos] ) = $fpdbnoextnopath[$pos] =~ /-m0*(\d+)$/;
     # $modelno[$pos] = 1 if !$modelno[$pos];
     # $prfiles[$pos]    = "ultrascan/somo/saxs/${fpdbnoextnopath[$pos]}_${modelno[$pos]}b1.sprr_x";
-    $prfiles[$pos]    = "ultrascan/somo/saxs/${fpdbnoextnopath[$pos]}_0b1.sprr_x";
+    $prfiles[$pos]    = "ultrascan/somo/saxs/${fpdbnoextnopath[$pos]}_1b1.sprr_x";
     push @expected_outputs, $prfiles[$pos];
 
     ++$pos;

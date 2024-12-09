@@ -84,7 +84,7 @@ class SAS {
                                "color"  : "rgb(0,5,80)"
                            }
                        }
-                       ,"showline"       : false
+                       ,"showline"       : true
                     }
                     ,"xaxis2" : {
                        "gridcolor" : "rgba(111,111,111,0.5)"
@@ -111,7 +111,7 @@ class SAS {
                            }
                        }
                        ,"visible"        : false
-                       ,"showline"       : false
+                       ,"showline"       : true
                     }
                     ,"annotations" : [ 
                      {

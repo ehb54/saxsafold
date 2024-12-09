@@ -60,6 +60,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0 ) {
                                 "color"  : "rgb(0,5,80)"
                             }
                          }
+                           ,"showline"       : true
                         }
                         ,"yaxis" : {
                            "gridcolor" : "rgba(111,111,111,0.5)"
@@ -70,6 +71,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0 ) {
                                 "color"  : "rgb(0,5,80)"
                             }
                          }
+                           ,"showline"       : true
                         }
                      }
                 }'
@@ -116,6 +118,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0 ) {
                                 "color"  : "rgb(0,5,80)"
                             }
                          }
+                           ,"showline"       : true
                         }
                         ,"yaxis" : {
                            "gridcolor" : "rgba(111,111,111,0.5)"
@@ -126,6 +129,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0 ) {
                                 "color"  : "rgb(0,5,80)"
                             }
                          }
+                           ,"showline"       : true
                         }
                      }
                 }'

@@ -481,6 +481,12 @@ class Generate_Drv():
                 else:
                         output_dict['plotout4'] = self.flot_data
 
+         output_dict[ '_progress' ]       = 0
+         output_dict[ 'progress_output' ] = 0
+         output_dict[ 'progress_html'   ] = "<center>100</center>"
+
+         time.sleep( 5 )
+
          if output_dict:
                 print json.dumps( output_dict )
          else:

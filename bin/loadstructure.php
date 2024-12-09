@@ -390,7 +390,6 @@ if (
     error_exit( $sas->last_error );
 }
 
-
 $rmsd_pr = round( $rmsd_pr, 3 );
 $annotate_msg = "";
 if ( $rmsd_pr != -1 ) {

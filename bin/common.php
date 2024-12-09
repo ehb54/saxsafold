@@ -224,7 +224,7 @@ function extract_dcd_frame( $frame, $pdb, $dcd, $outdir, $skipifexists = false )
         error_exit( "could not make directory $outdir" );
     }
     
-    $cmd = "mdconvert -i $frame -t $pdbuse -o $outname $dcd";
+    $cmd = "mdconvert -i $frame -t $pdbuse -o $outname.tmp.pdb $dcd && grep -Pv '^(MODEL|ENDMDL)' $outname.tmp.pdb > $outname && rm $outname.tmp.pdb";
 
     run_cmd( $cmd );
 

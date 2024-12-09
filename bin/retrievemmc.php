@@ -102,7 +102,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
 
     if ( $input->extractframes ) {
         $tmpout = (object)[];
-        $tmpout->_textarea = "MMC results already retrieved\n";
+        $tmpout->_textarea = "MMC results available\n";
         $statsname         = $cgstate->state->mmcrunname . ".dcd.stats";
         $tmpout->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
@@ -195,7 +195,20 @@ if ( $input->extractframes ) {
     error_exit( "Please successfully retrieve results & validate the Stride before extracting frames" );
 }
 
+if ( !file_exists( $cgstate->state->mmcrunname . "/monomer_monte_carlo/$statsname" ) ) {
+    error_exit( "<i>Run MMC</i> results not found, try running <i>Run MMC</i> again" );
+}
+
+if ( is_dir( "monomer_monte_carlo" ) ) {
+    run_cmd( "rm -fr monomer_monte_carlo" );
+}
+
+run_cmd( "ln -s " . $cgstate->state->mmcrunname . "/monomer_monte_carlo monomer_monte_carlo" );
+
+/*
+### no longer using remote!
 ### !!!!!remote & path should be in a config file
+
 
 ## do we have results on the remote?
 $rpath      = "/opt/genapp/sassie2/results/users/$input->_logon/no_project_specified/" . $cgstate->state->mmcrunname . "/monomer_monte_carlo";
@@ -223,6 +236,7 @@ if ( $run_cmd_last_error_code ) {
 }
 
 $output->_textarea = "Results downloaded\n";
+*/
 
 $output->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
