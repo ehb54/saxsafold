@@ -77,6 +77,10 @@ if ( !$cgstate->state->mmcrunname ) {
     error_exit( "No MMC run name found, did you <i>Run MMC</i>?" );
 }
 
+if ( $input->mmcoffset >= $input->mmcstride ) {
+    error_exit( "The <i>Offset</i> must be less than the <i>Stride</i>" ); 
+}
+
 $statsname = $cgstate->state->mmcrunname . ".dcd.stats";
 
 ## do we have results locally?
@@ -85,6 +89,7 @@ $lresults   = file_exists( $lpath );
 
 ## perhaps a state variable is better?
 $cgstate->state->mmcstride = $input->mmcstride;
+$cgstate->state->mmcoffset = $input->mmcoffset;
 
 ## clear output
 $ga->tcpmessage( [
@@ -101,7 +106,9 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         $statsname         = $cgstate->state->mmcrunname . ".dcd.stats";
         $tmpout->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
-        $res = plotly_hist( $histname, $tmpout, $cgstate->state->mmcstride );
+        $res = plotly_hist( $histname, $tmpout, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
+        
+        $totframes = count( $tmpout->histplot->data[0]->x );
         $reqframes = count( $tmpout->histplot->data[1]->x );
         
         $pdbname          = $cgstate->state->output_load->name;
@@ -110,7 +117,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
             error_exit( "MMC results for $pdbname not found, did you <i>Run MMC</i> on this structure?" );
         }
 
-        $tmpout->_textarea .= "Preparing to extract $reqframes frames\n";
+        # $tmpout->_textarea .= "Preparing to extract $reqframes frames\n";
 
         $ga->tcpmessage( $tmpout );
 
@@ -123,7 +130,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         }
 
         $ga->tcpmessage( [
-                             'processing_progress' => 0.5
+                             'processing_progress' => 0.1
                          ]);
 
         progress_text( "Extracting frames" );
@@ -131,41 +138,40 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         sleep(1);
 
         $dcdname          = $cgstate->state->mmcrunname . ".dcd";
-        $mmcextracted     = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name ) . "_extracted.pdb";
-        $mmcsplitbasename = preg_replace( '/\.(pdb|PDB)$/', '', $cgstate->state->output_load->name );
 
-        ## how do we define chunk size -c ?
-        # $cmd = "cd monomer_monte_carlo && mdconvert -c 1700 -s $input->mmcstride -t $pdbname -o out.pdb $dcdname";
-        $chunk = $max_frames * $input->mmcstride;
-        $cmd = "cd monomer_monte_carlo && rm $mmcextracted 2>/dev/null; grep -Pv '^CRYST1' $pdbname > $pdbname.noCRYST1.pdb && mdconvert -c $chunk -s $input->mmcstride -t $pdbname.noCRYST1.pdb -o $mmcextracted $dcdname";
-
-        # $ga->tcpmessage( [ "_textarea" => "cmd $cmd\n" ] );
-        $cmdres     = run_cmd( $cmd, false, false );
-        $ga->tcpmessage( [ "_textarea" =>
-                           "$cmdres\n"
-                           . "creating individual model files\n\n"
-                         ] );
-        if ( $run_cmd_last_error_code ) {
-            error_exit( "Error extracting MMC frames : $cmdres\n" );
+        ## create ref pdb
+        
+        ## just a cleanup from legacy runs
+        if ( file_exists( "monomer_monte_carlo/$mmcextracted" ) ) {
+            unlink( "monomer_monte_carlo/$mmcextracted" );
         }
 
-        $cmd = "rm -rf preselected; mkdir preselected && cd monomer_monte_carlo && $scriptdir/calcs/splitmodels.pl $mmcextracted ../preselected/$mmcsplitbasename";
-        #$ga->tcpmessage( [ "_textarea" => "$cmd\n" ] );
-        $cmdres     = run_cmd( $cmd, false, false );
-        #$ga->tcpmessage( [ "_textarea" => "$cmdres\n" ] );
-        if ( $run_cmd_last_error_code ) {
-            error_exit( "Error extracting MMC frames : $cmdres\n" );
+        $extracted = 0;
+
+        if ( is_dir( "preselected" ) ) {
+            run_cmd( "rm -fr preselected; mkdir preselected" );
         }
 
+        for ( $frame = $input->mmcoffset; $frame < $totframes; $frame += $input->mmcstride ) {
+            extract_dcd_frame( $frame, $pdbname, "monomer_monte_carlo/$dcdname", "preselected" );
+            if ( !($extracted++ % $update_mmc_extract_frequency ) ) {
+                $ga->tcpmessage( [
+                                     'processing_progress' => $extracted / $reqframes
+                                 ]);
+                progress_text( "Extracting frames " . sprintf( "%.1f", 100 * $frame / $totframes ) . " % " );
+                # $frame $extracted (Mod. " . ( 0 + $frame ) . ") of $reqframes" );
+            }
+        }
+            
         $output->_textarea = "MMC frames at stride $input->mmcstride extracted\n";
 
-        $cgstate->state->mmcextracted = "monomer_monte_carlo/$mmcextracted";
+        $cgstate->state->mmcextracted = "done";
         
     } else {
         $output->_textarea = "MMC results already retrieved\n";
         $statsname         = $cgstate->state->mmcrunname . ".dcd.stats";
         $output->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
-        $res = plotly_hist( $histname, $output, $cgstate->state->mmcstride );
+        $res = plotly_hist( $histname, $output, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
         if ( strlen( $res ) ) {
             $output->_textarea .= $res;
         }
@@ -221,7 +227,7 @@ $output->_textarea = "Results downloaded\n";
 $output->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
 $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
-$res = plotly_hist( $histname, $output, $cgstate->state->mmcstride );
+$res = plotly_hist( $histname, $output, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
 if ( strlen( $res ) ) {
     $output->_textarea .= $res;
 }

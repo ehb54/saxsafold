@@ -50,6 +50,7 @@ $result->downloads            = $cgstate->state->output_load->downloads;
 $result->mmcstride            = $cgstate->state->mmcstride;
 
 if ( $cgstate->state->mmcdownloaded ) {
+
     $result->_textarea        = "MMC results already retrieved\n\n";
     $statsname                = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.stats";
     if ( !file_exists( $statsname ) ) {
@@ -61,7 +62,7 @@ if ( $cgstate->state->mmcdownloaded ) {
     ## histogram
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
     require_once "plotlyhist.php";
-    $res = plotly_hist( $histname, $result, $cgstate->state->mmcstride );
+    $res = plotly_hist( $histname, $result, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
     if ( strlen( $res ) ) {
         $result->_textarea .= $res;
     }

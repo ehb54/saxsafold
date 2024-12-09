@@ -229,6 +229,18 @@
             }
         }
         ,{
+            "label"             : "Offset"
+            ,"role"              : "input"
+            ,"help"              : "Offset defines the starting extraction frame"
+            ,"id"                : "mmcoffset"
+            ,"type"              : "integer"
+            ,"minimum"           : 0
+            ,"default"           : 0
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
             "label"             : "Extract frames"
             ,"role"              : "input"
             ,"help"              : "Extract frames once you accept the given Stride"
