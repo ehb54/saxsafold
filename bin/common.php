@@ -187,7 +187,7 @@ function nnls_results_to_html( $obj ) {
             . "</td></tr>"
             ;
     }
-    $res .= "</table></small></div>";
+    $res .= "</table></small><br></div>";
     return $res;
 }
 
