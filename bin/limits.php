@@ -3,7 +3,10 @@
 {};
 
 ## limit # of frames for computations
-$max_frames                             = 1100;
+$max_frames                             = 5000;
+
+### $max_frame_digits should not be changed unless we are going to support 10M models or more
+$max_frame_digits                       = 7; 
 
 ## significant digits to keep
 $significant_digits_to_use              = 5;
@@ -11,15 +14,15 @@ $significant_digits_to_use              = 5;
 ## extend max q for extrapolation issues
 $max_q_multiplier                       = 1.01;
 
-## batch run p(r)
+## update extract mmc frequency
+$update_mmc_extract_frequency           = 10;
 
-$batch_run_pr_size                      = 50; # 200;
+## batch run p(r)
+$batch_run_pr_size                      = 50;
 
 ## update i(q) frequency
-
-$update_iq_frequency                    = 50; # 250;
+$update_iq_frequency                    = 50;
 
 ## testing limits
-
-$test_limit_max_computeiqpr_frames      = 100;
+$test_limit_max_computeiqpr_frames      = 0;
 
