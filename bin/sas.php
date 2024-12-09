@@ -251,6 +251,28 @@ class SAS {
         }
     }
 
+
+    # does the data have errors
+    function data_has_errors( $name ) {
+        $this->debug_msg( "SAS::data_has_errors( '$name' )" );
+        return isset( $this->data->$name );
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::data_has_errors() name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$name->error_y ) ) {
+            return false;
+        }
+
+        if ( max( $this->data->$name->error_y ) == 0 ) {
+            return false;
+        }
+
+        return true;
+    }
+
     function data_name_exists( $name ) {
         $this->debug_msg( "SAS::data_name_exists( '$name' )" );
         return isset( $this->data->$name );
