@@ -4,7 +4,7 @@
 
 $plotly_hist_bin_count = 100;
 
-function plotly_hist( $histname, $result, $stride = 0 ) {
+function plotly_hist( $histname, $result, $stride = 0, $offset = 0 ) {
     global $papercolors;
     global $plotly_hist_bin_count;
 
@@ -135,7 +135,7 @@ function plotly_hist( $histname, $result, $stride = 0 ) {
             array_shift( $plotin );
 
             if ( $stride ) {
-                $plot->data[1]->name = "Stride $stride";
+                $plot->data[1]->name = "Stride $stride<br>Offset $offset";
             }
 
             $line = 0;
@@ -147,7 +147,7 @@ function plotly_hist( $histname, $result, $stride = 0 ) {
                 if ( count( $linevals ) >= 2 ) {
                     $plot->data[0]->x[] = floatval($linevals[0]);
                     $plot->data[0]->y[] = floatval($linevals[1]);
-                    if ( $stride && !($line % $stride )) {
+                    if ( $stride && !(( $line + $offset ) % $stride )) {
                         $plot->data[1]->x[] = floatval($linevals[0]);
                         $plot->data[1]->y[] = floatval($linevals[1]);
                     }                        
@@ -188,8 +188,12 @@ function plotly_hist( $histname, $result, $stride = 0 ) {
             if ( $stride ) {
                 $plot->data[1]->name  = "Stride $stride<br>" . count( $plot->data[1]->x ) . " Frames";
                 $plot2->data[1]->name = "Stride $stride<br>" . count( $plot->data[1]->x ) . " Frames";
+                if ( $offset ) {
+                    $plot->data[1]->name  = "Stride $stride<br>Offset $offset<br>" . count( $plot->data[1]->x ) . " Frames";
+                    $plot2->data[1]->name = "Stride $stride<br>Offset $offset<br>" . count( $plot->data[1]->x ) . " Frames";
+                }
             }
-            
+
             if ( isset( $papercolors ) && $papercolors ) {
                 $plot->data[0]->line->color               = "rgb(50,50,122)";
                 $plot->data[1]->line->color               = "rgb(122,50,50)";
