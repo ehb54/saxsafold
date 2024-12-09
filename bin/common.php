@@ -1,6 +1,8 @@
 <?php
 {};
 
+include_once "limits.php";
+
 class cgrun_state {
     private $statefile;
 
@@ -134,7 +136,15 @@ function error_exit( $msg ) {
     if ( !strlen( $msg ) ) {
         $msg = "Empty error message!";
     }
-    echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
+    $msgobj = (object) [
+        "_message" => (object) [
+            "icon" => "toast.png"
+            ,"text" => $msg
+        ]
+        ];
+
+    echo json_encode( $msgobj );
+#    echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
     exit;
 }
 function error_exit_admin( $msg ) {
@@ -181,7 +191,58 @@ function nnls_results_to_html( $obj ) {
     return $res;
 }
 
+function extract_dcd_frame( $frame, $pdb, $dcd, $outdir, $skipifexists = false ) {
+    global $max_frame_digits;
+
+    if ( !file_exists( $pdb ) ) {
+        error_exit( "extract_dcd_frame() : $pdb does not exist" );
+    }
+        
+    if ( !file_exists( $dcd ) ) {
+        error_exit( "extract_dcd_frame() : $dcd does not exist" );
+    }
+
+    $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+    $outname = "$outdir/" . preg_replace( '/\.pdb$/', '', $pdb ) . "-m$frame_padded.pdb";
+
+    if ( file_exists( $outname ) ) {
+        if ( $skipifexists ) {
+            return $outname;
+        }
+        unlink( $outname );
+    }
+        
+    $pdbuse = "$pdb.noCRYST1.pdb";
+
+    if ( !file_exists( $pdbuse ) ) {
+        $cmd = "grep -Pv '^CRYST1' $pdb > $pdbuse";
+        run_cmd( $cmd );
+    }
+
+    mkdir_if_needed( $outdir );
+    if ( !is_dir( $outdir ) ) {
+        error_exit( "could not make directory $outdir" );
+    }
+    
+    $cmd = "mdconvert -i $frame -t $pdbuse -o $outname $dcd";
+
+    run_cmd( $cmd );
+
+    return $outname;
+}
+
+function model_no_from_pdb_name( $pdb ) {
+    $model = preg_replace( '/^.*-m(\d+)\.pdb$/', '$1', $pdb );
+    $model = preg_replace( '/^0+/', '', $model );
+    return intval( $model );
+}
+
 ## tests
+
+/*
+    extract_dcd_frame( 14400, "AF-G0A007-F1-model_v4-somo.pdb", "monomer_monte_carlo/run_G0A007.dcd", "preselectedtest" );
+extract_dcd_frame( 14400, "AF-G0A007-F1-model_v4-somo.pdb", "monomer_monte_carlo/run_G0A007.dcd", "preselectedtest", true );
+*/
 /* 
 $nnlsres = [
     "mod 1" => .5
