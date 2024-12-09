@@ -168,7 +168,7 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     $prnamesnormed = [];
     
     for ( $i = 0; $i < $usecount; ++$i ) {
-        $prnamesnormed[] = "P(r) mod. " . ( $pos + $i + 1 );
+        $prnamesnormed[] = "P(r) mod. " . model_no_from_pdb_name( $prpdbs[ $i ] );
         $allprnames[]    = end( $prnamesnormed );
         $prnamescomp[]   = end( $prnamesnormed ) . " comp";
         $prnamesinterp[] = end( $prnamesnormed ) . " interp";
@@ -184,9 +184,8 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
         $sas->remove_data( $prnamescomp[$i] );
         $sas->remove_data( $prnamesinterp[$i] );
     }
-
 }
-    
+
 dt_store_now( "P(r) end" );
 
 $ga->tcpmessage(
@@ -228,7 +227,7 @@ foreach ( $pdbs as $pdb ) {
     $rmsd  = -1;
     $scale = 0;
     
-    $iqdataname   = "I(q) mod. $pos";
+    $iqdataname   = "I(q) mod. " . model_no_from_pdb_name( $pdb );
     $alliqnames[] = $iqdataname;
         
     $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
