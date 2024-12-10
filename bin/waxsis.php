@@ -14,7 +14,7 @@ $waxsis_defaults =
         ,'qpoints'           => 501
         ,'solvent_e_density' => .334
         ,'hostpath'          => '/genappdata/container_mounts/saxsafold'
-        ,'threads'           => 10
+        ,'threads'           => $waxsis_threads
         ,'subdir'            => 'waxsis'
         ,'convergence'       => $waxsis_convergence_mode
         ,'random_seed'       => 'no'
@@ -65,10 +65,11 @@ function waxis_load_data( $file, $data_struct ) {
     }
 }
 
-function run_waxsis( $pdb, $config, $cb_on_write ) {
+function run_waxsis( $pdb, $config, $cb_on_write, $exit_waxsis_error = true ) {
     global $ga;
     global $waxsis_defaults;
     global $waxsis_fitted_data;
+    global $waxsis_retries;
     global $run_cmd_last_error_code;
 
     waxsis_fitted_data_initval( $waxsis_fitted_data );
@@ -124,16 +125,26 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
         . " 2>&1" # expose error output
         ;
 
-    echo "$cmd\n";
+    # $cb_on_write( "$cmd\n" );
 
-    run_streaming_cmd( $cmd, $cb_on_write, false, false, 'waxsis/last_run_errors.txt' );
-    if ( $run_cmd_last_error_code ) {
-        error_exit( "Error running WAXSiS on structure" );
+    for ( $retries = 0; $retries < $waxsis_retries; ++$retries ) {
+        # $cb_on_write( "Calling WAXSiS run\n" );
+        run_streaming_cmd( $cmd, $cb_on_write, false, false, 'waxsis/last_run_errors.txt' );
+        # $cb_on_write( "WAXSiS run returned code $run_cmd_last_error_code\n" );
+        if ( !$run_cmd_last_error_code ) {
+            break;
+        }
+        $cb_on_write( "Retrying failed WAXSiS run " . ( $retries + 1 ) . "\n" );
     }
 
-    ### disabled
-    #    ## load waxsis_fitted_curve
-    #    waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
+    if ( $run_cmd_last_error_code ) {
+        if ( $exit_on_waxsis_error ) {
+            error_exit( "Error running WAXSiS on structure" );
+        }
+        return false;
+    }
+
+    return true;
 }
 
 ## testing

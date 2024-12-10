@@ -13,3 +13,5 @@ ultrascan
 *.PDB
 *.bak
 checkphp.sh
+*.pyc
+*.save

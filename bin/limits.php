@@ -26,9 +26,11 @@ $update_iq_frequency                    = 50;
 ## testing limits
 $test_limit_max_computeiqpr_frames      = 0;
 
+## global waxsis configs
+
 ## waxsis mode quick, normal, thourough
 # $waxsis_converegence_mode               = 'normal';
 $waxsis_convergence_mode                = 'quick';
 
-
-
+$waxsis_threads                         = 15;
+$waxsis_retries                         = 3;

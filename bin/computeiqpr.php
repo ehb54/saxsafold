@@ -451,6 +451,45 @@ if ( isset( $input->prerrors ) ) {
 $output->prplotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
 $output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
 
+## setup csvdownloads
+
+$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
+$sasprname = $bname . "_pr.csv";
+$sasiqname = $bname . "_iq.csv";
+
+if ( $input->prerrors ) {
+    $sas->save_data_csv(
+        array_merge( [ "Exp. P(r)", "P(r) NNLS fit", "P(r) NNLS fit w/SDs" ], $allprnames )
+        ,$sasprname
+        ,$cgstate->state->output_load->mw
+        ,'/P\(r\) /'
+        ,"$bname "
+        );
+} else {
+    $sas->save_data_csv(
+        array_merge( [ "Exp. P(r)", "P(r) NNLS fit" ], $allprnames )
+        ,$sasprname
+        ,$cgstate->state->output_load->mw
+        ,'/P\(r\) /'
+        ,"$bname "
+        );
+}
+
+$sas->save_data_csv(
+    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqnames )
+    ,$sasiqname
+    ,1
+    ,'/I\(q\) /'
+    ,"$bname "
+    );
+   
+$output->csvdownloads =
+    "<div>"
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasprname )
+    . "</div>"
+    ;
+
 ## save state
 
 $cgstate->state->output_iqpr  = $output;

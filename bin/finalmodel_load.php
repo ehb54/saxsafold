@@ -68,6 +68,9 @@ if ( isset( $cgstate->state->output_final ) ) {
     if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
         $result->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
     }
+    if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
+        $result->csvdownloads = &$cgstate->state->output_final->csvdownloads;
+    }
 }
 
 

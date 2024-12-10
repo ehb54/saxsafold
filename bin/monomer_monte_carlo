@@ -8,10 +8,18 @@ import sassie.simulate.monte_carlo.monomer.dihedral_monte_carlo as dihedral_mont
 import sassie.interface.input_filter as input_filter
 import sassie.interface.generate_filter as generate_filter
 import sassie.sasconfig as sasconfig
+sys.path.append('./')
+from genapp import genapp
 
 class Generate_Drv():
 
    module = 'monomer_monte_carlo'
+
+
+   def __init__(self): #, json_variables):
+
+        self.ga = genapp(json_variables)
+
 
    def message_box(self,text,icon):
 
@@ -33,56 +41,60 @@ class Generate_Drv():
 
         return
 
-   def background_job(self,process,txtQueue,json_variables):
+   def background_job(self,process,txtQueue,json_variables,json_flag):
 
         total_string = ''
 
-        UDP_IP = json_variables['_udphost']
-        UDP_PORT = json_variables['_udpport']
-        sock = socket.socket(socket.AF_INET, # Internet
-             socket.SOCK_DGRAM) # UDP
-
-        socket_dict={}
-        socket_dict['_uuid'] = json_variables['_uuid']
-	first = True
+        if json_flag:
+            socket_dict = {}
+            socket_dict['_uuid'] = json_variables['_uuid']
+            first = True
 
         while process.is_alive():
-                try:
-                        if(first):
-                                socket_dict['progress_html'] = '<center>starting job</center>'
-                                socket_dict['_progress'] = 0.01
-                                doc_string = json.dumps(socket_dict)
-                                sock.sendto(doc_string,(UDP_IP,UDP_PORT))
-                                first = False
-                        this_text = txtQueue.get(True, timeout=0.01)
-                        text_split=string.split(this_text)
-                        if(text_split[0]=='STATUS'):
-                                value = locale.atof(text_split[1])
-                                svalue = str(round(100*value,2))
-                                socket_dict['progress_output'] = value
-                                socket_dict['_progress'] = value
-                                socket_dict['progress_html'] = '<center>'+svalue+'</center>'
-                                if "_textarea" in socket_dict:
-                                        del socket_dict["_textarea"]
-                                if socket_dict:
-                                        doc_string = json.dumps(socket_dict)
-                                        sock.sendto(doc_string,(UDP_IP,UDP_PORT))
-                        else:
-                                socket_dict["_textarea"] = this_text
-                                if socket_dict:
-                                        doc_string = json.dumps(socket_dict)
-                                        sock.sendto(doc_string,(UDP_IP,UDP_PORT))
-                                total_string += this_text
-                except:
-                        if not process.is_alive():
+            try:
+                if first:
+                    socket_dict['progress_html'] = 0.01
+                    socket_dict['_progress'] = 0.01
+                    socket_dict['progress_html'] = '<center>starting job</center>'
+                    self.ga.tcpmessage(socket_dict)
+                    first = False
 
-                                return total_string
+                this_text = txtQueue.get(True, timeout=0.1)
+                text_split = this_text.split()
 
-                time.sleep(0.01)
+                if text_split[0] == 'STATUS':
+                    value = locale.atof(text_split[1])
+                    svalue = str(round(100 * value, 2))
+                    socket_dict['progress_output'] = value
+                    socket_dict['_progress'] = value
+                    socket_dict['progress_html'] = '<center>' + svalue + '</center>'
+                    if "_textarea" in socket_dict:
+                        del socket_dict["_textarea"]
+                    self.ga.tcpmessage(socket_dict)
+                else:
+                    socket_dict["_textarea"] = this_text
+                    self.ga.tcpmessage(socket_dict)
+                    total_string += this_text
+            except Exception as e:
+                if not process.is_alive():
+                    value = 100
+                    svalue = str(value)
+                    socket_dict['progress_output'] = value
+                    socket_dict['_progress'] = value
+                    socket_dict['progress_html'] = '<center>' + svalue + '</center>'
+                    self.ga.tcpmessage(socket_dict)
+                    return total_string
+
+            #time.sleep(0.5)
         else:
-                return total_string
-
-        return total_string
+            #time.sleep(0.5)
+            value = 100
+            svalue = str(value)
+            socket_dict['progress_output'] = value
+            socket_dict['_progress'] = value
+            socket_dict['progress_html'] = '<center>' + svalue + '</center>'
+            self.ga.tcpmessage(socket_dict)
+            return total_string
 
    def read_file(self,filename,dvar):
 
@@ -463,7 +475,8 @@ class Generate_Drv():
                 process=multiprocessing.Process(target=dihedral_monte_carlo.dihedralgenerate,args=(self.variables,txtQueue))
                 process.start()
 
-                total_string = self.background_job(process,txtQueue,json_variables)
+                total_string = self.background_job(
+                    process, txtQueue, json_variables, json_flag)                
 
 #		output_dict['sasoutput2'] = total_string
 

@@ -348,6 +348,15 @@
             }
         }
         ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "csvdownloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
             "role"        : "output"
             ,"id"         : "processing_progress"
             ,"type"       : "progress"

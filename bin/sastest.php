@@ -1578,6 +1578,113 @@ class SAS {
         return preg_grep( $regexp, array_keys( (array) $this->plots ) );
     }
 
+    # save_data_csv() save the data to a csv suitable for loading in us_somo
+    function save_data_csv( $names, $csvname = 'sasdata.csv', $mw = 1, $namefromregexp = '', $nameto = '' ) {
+        $this->debug_msg( "SAS::save_data_csv( names[], '$csvname' )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $this->last_error = "SAS::save_data_csv() argument \$names is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !count( $names ) ) {
+            $this->last_error = "SAS::save_data_csv() array \$names is empty";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $type = $this->data->{ $names[0] }->type;
+
+        foreach ( $names as $name ) {
+            if ( $this->data->$name->type != $type ) {
+                $this->last_error = "SAS::save_data_csv() data must all be the same type";
+                return $this->error_exit( $this->last_error );
+            }
+                
+            if ( !$this->data_name_exists( $name ) ) {
+                $this->last_error = "SAS::save_data_csv() name '$name' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        if ( !$this->common_grids( $names ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        $iqpr =
+            $type == self::PLOT_IQ
+            ? "I(q)"
+            : "P(r)"
+            ;
+
+        $output =
+            $type == self::PLOT_IQ
+            ? '"Name","Type; q:",'
+            : '"Name","MW (Daltons)","Area","Type; r:",'
+            ;
+
+        $output .=
+            implode( ',', $this->data->{ $names[0] }->x )
+            . ",,\"Plotted $iqpr curves\"\n\n"
+            ;
+        
+        foreach ( $names as $name ) {
+            if ( strlen( $namefromregexp ) ) {
+                $usename = preg_replace( $namefromregexp, $nameto, $name );
+            } else {
+                $usename = $name;
+            }
+
+            if ( $type == self::PLOT_IQ ) {
+                $output .=
+                    "\"$usename\",\"$iqpr\","
+                    . implode( ',', $this->data->$name->y )
+                    . "\n"
+                    . "\n"
+                    ;
+
+                if ( isset( $this->data->$name->error_y ) ) {
+                    $output .=
+                        "\"$usename\",\"$iqpr sd\","
+                        . implode( ',', $this->data->$name->error_y )
+                        . "\n"
+                        . "\n"
+                        ;
+                }
+            } else {
+
+                $output .=
+                    "\"$usename\",$mw,"
+                    . array_sum( $this->data->$name->y )
+                    . ','
+                    . "\"$iqpr\","
+                    . implode( ',', $this->data->$name->y )
+                    . "\n"
+                    . "\n"
+                    ;
+
+                if ( isset( $this->data->$name->error_y ) ) {
+                    $output .=
+                        "\"$usename\",$mw,"
+                        . array_sum( $this->data->$name->y )
+                        . ','
+                        . "\"$iqpr sd\","
+                        . implode( ',', $this->data->$name->error_y )
+                        . "\n"
+                        . "\n"
+                        ;
+                }
+            }
+        }
+                
+        if ( !file_put_contents( $csvname, $output ) ) {
+            $this->last_error = "SAS::save_data_csv() error trying to create output file '$csvname'";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        return false;
+    }
+
     # data_summary() - data summary info
     function data_summary( $names ) {
         $this->debug_msg( "SAS::data_summary( names[] )" );
@@ -2069,213 +2176,61 @@ if ( isset( $do_testing_pr_timing ) && $do_testing_pr_timing ) {
 }
 
 if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
-    $sas = new SAS( false );
+    $sas = new SAS( true );
 
     $plotname = "P(r)";
 
     $pdbs = [
-        "preselected/AF-G0A007-F1-model_v4-somo-m0001290.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000660.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000000.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000010.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000020.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000030.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000040.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000050.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000060.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000070.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000080.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000090.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000100.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000110.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000120.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000130.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000140.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000150.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000160.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000170.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000180.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000190.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000200.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000210.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000220.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000230.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000240.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000250.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000260.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000270.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000280.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000290.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000300.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000310.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000320.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000330.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000340.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000350.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000360.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000370.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000380.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000390.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000400.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000410.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000420.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000430.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000440.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000450.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000460.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000470.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000480.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000490.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000500.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000510.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000520.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000530.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000540.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000550.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000560.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000570.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000580.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000590.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000600.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000610.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000620.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000630.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000640.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000650.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000660.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000670.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000680.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000690.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000700.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000710.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000720.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000730.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000740.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000750.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000760.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000770.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000780.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000790.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000800.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000810.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000820.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000830.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000840.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000850.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000860.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000870.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000880.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000890.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000900.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000910.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000920.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000930.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000940.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000950.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000960.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000970.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000980.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000990.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001000.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001010.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001020.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001030.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001040.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001050.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001060.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001070.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001080.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001090.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001100.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001110.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001120.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001130.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001140.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001150.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001160.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001170.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001180.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001190.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001200.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001210.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001220.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001230.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001240.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001250.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001260.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001270.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001280.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001290.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001300.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001310.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001320.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001330.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001340.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001350.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001360.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001370.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001380.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001390.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001400.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001410.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001420.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001430.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001440.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001450.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001460.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001470.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001480.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001490.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001500.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001510.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001520.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001530.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001540.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001550.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001560.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001570.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001580.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001590.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001600.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001610.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001620.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001630.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001640.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001650.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001660.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001670.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001680.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001690.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001700.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001710.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001720.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001730.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001740.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001750.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001760.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001770.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001780.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001790.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001800.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001810.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001820.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001830.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001840.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001850.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001860.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001870.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001880.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001890.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001900.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001910.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001920.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001930.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001940.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001950.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001960.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001970.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001980.pdb"
-        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001990.pdb"
+        "preselected/AF-G0A007-F1-model_v4-somo-m0000003.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000028.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000053.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000078.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000103.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000128.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000153.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000178.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000203.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000228.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000253.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000278.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000303.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000328.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000353.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000378.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000403.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000428.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000453.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000478.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000503.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000528.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000553.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000578.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000603.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000628.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000653.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000678.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000703.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000728.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000753.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000778.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000803.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000828.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000853.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000878.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000903.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000928.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000953.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0000978.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001003.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001028.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001053.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001078.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001103.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001128.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001153.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001178.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001203.pdb"
+        ,"preselected/AF-G0A007-F1-model_v4-somo-m0001228.pdb"
         ];
 
     $names = [];
@@ -2297,7 +2252,7 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     $sas->remove_data( "Exp. P(r)-orig" );
     $sas->remove_data( "Exp. P(r)-interp" );
     
-    echo "data names\n" . json_encode( $sas->data_names( '/mod\. 1/' ), JSON_PRETTY_PRINT ) . "\n";
+    echo "data names\n" . json_encode( $sas->data_names( '//' ), JSON_PRETTY_PRINT ) . "\n";
     echo "plot names\n" . json_encode( $sas->plot_names( ), JSON_PRETTY_PRINT ) . "\n";
     
     foreach ( $names as $name ) {
@@ -2324,6 +2279,8 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
 
     echo $sas->data_summary( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
 
+    $sas->save_data_csv( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
+    
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }
 

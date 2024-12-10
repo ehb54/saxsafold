@@ -95,6 +95,9 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     if ( isset( $cgstate->state->output_iqpr->prresults ) ) {
         $result->prresults = &$cgstate->state->output_iqpr->prresults;
     }
+    if ( isset( $cgstate->state->output_iqpr->csvdownloads ) ) {
+        $result->csvdownloads = &$cgstate->state->output_iqpr->csvdownloads;
+    }
     if ( isset( $cgstate->state->computeiqpr_prerrors ) &&
          $cgstate->state->computeiqpr_prerrors ) {
         if ( isset( $cgstate->state->output_iqpr->prweplotsel ) ) {

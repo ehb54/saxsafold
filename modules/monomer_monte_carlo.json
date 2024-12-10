@@ -1,0 +1,312 @@
+# this is a module file, any module specific info belongs here
+{
+    "moduleid" : "monomer_monte_carlo",
+    "label"    : "Monomer Monte Carlo",
+    "fields"   : [
+                   {
+                   "role"       : "input",
+                   "id"       : "module_header",
+                   "label"    : "Monomer Monte Carlo",
+                   "type"     : "label",
+                   "default"  : "header4",
+                   "prehline"  : "true",
+                   "posthline"  : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "runname",
+                   "label"    : "run name",
+                   "type"     : "text",
+                   "default"  : "run_0",
+                   "required" : "true",
+                   #"help"     : "results will be placed in a folder called generate/ in the directory name you enter here"
+                   "help"     : "results will be placed in a folder called monte_carlo/ in the directory name you enter here"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "pdbfile",
+                   "label"   : "reference pdb",
+                   "type"     : "lrfile",
+                   "required" : "true",
+                   "help"     : "PDB file containing initial coordinates",
+                   "norow"    : "false"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "dcdfile",
+                   "label"    : "output file name (dcd)",
+                   "type"     : "text",
+                   "help"     : "enter name of file that will contain coordinates for accepted structures",
+                   "default"  : "run_0.dcd",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "trials",
+                   "label"    : "number of trial attempts",
+                   "type"     : "text",
+                   "default"  : "100",
+                   "help"     : "enter number of Monte Carlo move attempts",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "goback",
+                   "label"    : "return to previous structure",
+                   "type"     : "text",
+                   "default"  : "20",
+                   "help"     : "after this number of failed Monte Carlo steps, the program will reset the current coordinates to a previously accepted structure",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "temp",
+                   "label"    : "temperature (K)",
+                   "type"     : "text",
+                   "default"  : "300.0",
+                   "help"  : "enter run temperature in Kelvin",
+                   "required" : "true"
+                   },
+		  {
+                   "role"    : "input",
+                   "id"      : "moltype_list_box",
+                   "name"    : "moltype_list_box",
+                   "label"    : "molecule type",
+                   "type"    : "listbox",
+                   "values"  : "protein~c1~rna~c2",
+                   "default" : "c1",
+                   "help" : "choose the molecule type"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "numranges",
+                   "label"    : "number of flexible regions to vary",
+                   "type"     : "text",
+                   "default"  : "5",
+                   "help"  : "enter the number of regions that have residues to sample",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "reslow",
+                   "label"    : "residue range for each flexible region",
+                   "type"     : "text",
+                   "default"  : "123-144,277-282,354-374,378-389,408-412",
+                   "help"  : "enter residue range for each flexible region: pairs of hyphenated integers separated by commas",
+                   "size"	:40,
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "dtheta",
+                   "label"    : "maximum angle(s)",
+                   "type"     : "text",
+                   "default"  : "30.0,30.0,30.0,30.0,30.0",
+                   "size"	:40,
+                   "help"  : "(degrees): enter the maximum angle that each torsion in each of the flexible regions can sample in a single move",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "residue_alignment",
+                   "label"    : "structure alignment range",
+                   "type"     : "text",
+                   "default"  : "284-350",
+                   "help"  : "select the residue range used for structural alignment, this should be in a rigid/non-flexible region",
+                   "required" : "true"
+                   },
+                  {
+                   "role"    : "input",
+                   "id"      : "overlap_list_box",
+                   "name"    : "overlap_list_box",
+                   "label"    : "overlap basis",
+                   "type"    : "listbox",
+                   "values"  : "heavy atoms~c1~all~c2~backbone~c3~enter atom name~c4",
+                   "default" : "c1",
+		   "repeater" : "yes",
+                   "help" : "choose the type of overlap check you wish to use"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "basis",
+                   "label"    : "overlap basis",
+                   "type"     : "text",
+                   "default"  : "CA",
+                   "help"  : "select the atom name used to check for overlap",
+                   "repeat" : "overlap_list_box:c4",
+                   "required" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "cutoff",
+                   "label"    : "overlap cutoff (angstroms)",
+                   "type"     : "float",
+                   "default"  : 3.0,
+                   "help"  : "enter distance for overlap check",
+		   "step"     : 0.01,
+                   "repeat" : "overlap_list_box:c4",
+                   "required" : "true"
+                   },
+                   {
+                   "role"       : "input",
+                   "id"       : "advanced_input_header",
+                   "label"    : "Advanced Input",
+                   "type"     : "label",
+                   "default"  : " ",
+                   "prehline"  : "true",
+                   "posthline"  : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "advanced_input",
+                   "label"    : "Check Box for Advanced Input",
+                   "type"     : "checkbox",
+                   "checked"  : "false",
+                   "help"  : "click this box for extra options for the run",
+                   "repeater" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "lowrg",
+                   "label"    : "low Rg cutoff",
+                   "type"     : "float",
+                   "default"  : 0.0,
+                   "min"      : 0.0,
+	           "step"     : 0.01,
+                   "required" : "true",
+                   "help" : "discard all accepted structures with a Rg less than this value",
+                   "repeat"  : "advanced_input"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "highrg",
+                   "label"    : "high Rg cutoff",
+                   "type"     : "float",
+                   "default"  : 300.0,
+	           "step"     : 0.01,
+                   "required" : "true",
+                   "help" : "discard all accepted structures with a Rg greater than this value",
+                   "repeat"  : "advanced_input"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "directedmc",
+                   "label"    : "directed Monte Carlo (0==no or Rg value)",
+                   "type"     : "text",
+                   "default"  : "0",
+                   "required" : "true",
+                   "help" : "enter a non-zero value to guide the Rg value of the Monte Carlo run to the desired value",
+                   "repeat"  : "advanced_input"
+                   },
+		  {
+                   "role"    : "input",
+                   "id"      : "zflag_check_box",
+                   "name"    : "zflag_check_box",
+                   "label"    : "check box to use Z coordinate filter", 
+                   "type"    : "checkbox",
+                   "checked" : "false",
+                   "help" : "check box to discard all accepted structures with any atomic coordinates (in the z-axis) less than the Z cutoff value below", 
+                   "repeater"  : "true",
+                   "repeat"  : "advanced_input"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "zcutoff",
+                   "label"    : "Z cutoff (angstroms)",
+                   "type"     : "text",
+                   "default"  : "0.0",
+                   "required" : "true",
+                   "help" : "discard all accepted structures with any atomic coordinates (in the z-axis) less than this value",
+                   "repeat"  : "zflag_check_box"
+                   },
+		  #{
+                  # "role"    : "input",
+                  # "id"      : "plotflag_list_box",
+                  # "name"    : "plotflag_list_box",
+                  # "label"    : "plot Rg during run",
+                  # "type"    : "listbox",
+                  # "values"  : "no~c1~yes~c2",
+                  # "default" : "c1",
+                  # "help" : "not implemented: future -> choose to display Rg values during Monte Carlo run",
+                  # "repeat"  : "advanced_input"
+                  # },
+		  {
+                   "role"    : "input",
+                   "id"      : "cflag_check_box",
+                   "name"    : "cflag_check_box",
+                   "label"    : "check box to use atomic constraints",
+                   "type"    : "checkbox",
+                   "checked" : "false",
+                   "repeat"  : "advanced_input",
+                   "help"  : "check this box if you wish to enable atomic constraints",
+		   "repeater" : "true"
+                   },
+                  {
+                   "role"     : "input",
+                   "id"       : "confile",
+                   "label"    : "constraint file name",
+                   "type"     : "lrfile",
+                   "required" : "true",
+		   "help"  : "enter name of constaint file",
+                   "repeat"  : "cflag_check_box",
+                   "norow"    : "false"
+                   },
+		  #{
+                  # "role"    : "input",
+                  # "id"      : "nonbondflag_check_box",
+                  # "name"    : "nonbondflag_check_box",
+                  # "label"    : "check box to use non-bonding energies",
+                  # "type"    : "checkbox",
+		  # "required" : "true",
+                  # "checked" : "false",
+                  # "repeat"  : "advanced_input",
+                  # "help"  : "not currently implmented",
+                  # "repeater"  : "true"
+                  # },
+                  #{
+                  # "role"     : "input",
+                  # "id"       : "nonbondscale",
+                  # "label"    : "non-bonding scale factor",
+                  # "type"     : "text",
+                  # "default"  : "1.0",
+                  # "required" : "true",
+                  # "help"  : "not currently implmented",
+                  # "repeat"  : "nonbondflag_check_box"
+                  # },
+                  #{
+                  # "role"     : "input",
+                  # "id"       : "psffilename",
+                  # "label"    : "psf file name",
+                  # "type"     : "lrfile",
+                  # "required" : "false",
+                  # "help"  : "not currently implmented",
+                  # "repeat"  : "nonbondflag_check_box",
+                  # "norow"    : "false"
+                  # },
+                  {
+                   "role"    : "output",
+                   "id"      : "progress_output",
+                   "label"   : "progress: ",
+                   "type"    : "progress",
+                   "max"     : 1.0
+                   },
+                  {
+                    "role"    : "output",
+                    "id"      : "progress_html",
+                    "name"    : "progress_html",
+                    "label"   : "percent done: ",
+                    "type"    : "html"
+                   },
+                   {
+                   "role"    : "output",
+                   "id"      : "plotout4",
+                   "label"   : "all rg and accepted rg data",
+                   "type"    : "plot2d",
+                   "pan"     : "true",
+                   "zoom"    : "true",
+                   "hover"   : "true",
+                   "help"    : "drag to pan, double click to zoom, to reset zoom and pan: click on title, axis labels or live coordinates box"
+                   }
+                  ],
+    "executable" : "monomer_monte_carlo"
+}

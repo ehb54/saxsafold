@@ -157,10 +157,11 @@ if ( $response->_response->button == "cancelfornow" ) {
 $procdir = "waxsissets";
 
 if ( !$do_testing ) {
-    if ( is_dir( $procdir ) ) {
+## why should we clear the directory?
+    if ( !is_dir( $procdir ) ) {
         run_cmd( "rm -fr $procdir; mkdir $procdir" );
-    } else {
-        run_cmd( "mkdir $procdir" );
+#    } else {
+#        run_cmd( "mkdir $procdir" );
     }    
 }
 
@@ -204,7 +205,7 @@ if ( !$count ) {
 $plotname = "I(q) waxsis nnls";
 $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_loadsaxs->iqplot
                              ,[
-                                 'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected  models"
+                                 'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected models"
                                  ,'titlefontsize' => 14
                              ]);
 
@@ -220,16 +221,17 @@ $waxsis_cb = function( $line ) {
 
     $waxsis_lc++;
 
-    if ( preg_match( '/(Running yasara|Yasara MD|mdrun)/i', $line ) ) {
+    if ( preg_match( '/(Running yasara|Yasara MD|mdrun|Retrying)/i', $line ) ) {
         $ga->tcpmessage( [
                              $textarea_key => $line
                          ] );
     }
 };
 
-$waxsisiqfile = $waxsis_params->subdir . "/intensity_waxsis.calc";
-$iqfiles = [];
-$alliqframes = [];
+$waxsisiqfile    = $waxsis_params->subdir . "/intensity_waxsis.calc";
+$iqfiles         = [];
+$alliqframes     = [];
+$waxsis_failures = [];
 
 $chi2  = -1;
 $rmsd  = -1;
@@ -249,40 +251,50 @@ foreach ( $names as $name ) {
     
     $ga->tcpmessage( [ 'processing_progress' => $pos_frac ] );
 
-    progress_text( "Running WAXSiS calculations on model $frame<br>Estimated $estimated_time_to_completion remaining" );
+    progress_text( "Running WAXSiS calculations on frame $frame<br>Estimated $estimated_time_to_completion remaining" );
+
+    $ok = false;
 
     if ( !$do_testing ) {
         $time_start = dt_now();
-        run_waxsis(
-            "$procdir/$name"
-            ,$waxsis_params
-            ,$waxsis_cb
+        $ok =
+            run_waxsis(
+                "$procdir/$name"
+                ,$waxsis_params
+                ,$waxsis_cb
+                ,false
             );
         $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
 
-        if ( !file_exists( $waxsisiqfile ) ) {
-            error_exit( "WAXSiS did not produce the expected I(q) file" );
-        }
+        if ( $ok ) {
+            if ( !file_exists( $waxsisiqfile ) ) {
+                error_exit( "WAXSiS did not produce the expected I(q) file" );
+            }
 
-        $iqfile = "$procdir/$pdbnoext-waxsis.dat";
-        run_cmd( "mv $waxsisiqfile $iqfile" );
-        $iqfiles[] = $iqfile;
+            $iqfile = "$procdir/$pdbnoext-waxsis.dat";
+            run_cmd( "mv $waxsisiqfile $iqfile" );
+            $iqfiles[] = $iqfile;
+        } else {
+            $waxsis_failures[] = $frame;
+        }
     } else {
         $iqfiles[] = "$procdir/$pdbnoext-waxsis.dat";
     }
     
-    $thisiqframe   = "I(q) WAXSiS mod. $frame";
-    $alliqframes[] = $thisiqframe;
-    $ga->tcpmessage( [
-                         "_textarea" =>
-                         "thisiqframe $thisiqframe\n"
-                     ] );
-    
-    $sas->load_file( SAS::PLOT_IQ, "$thisiqframe org", end( $iqfiles ) );
-    $sas->interpolate( "$thisiqframe org", "Exp. I(q)", "$thisiqframe interp" );
-    $sas->scale_nchi2( "Exp. I(q)", "$thisiqframe interp", $thisiqframe, $chi2, $scale );
-    $sas->remove_data( "$thisiqframe org" );
-    $sas->remove_data( "$thisiqframe interp" );
+    if ( $ok ) {
+        $thisiqframe   = "I(q) WAXSiS mod. $frame";
+        $alliqframes[] = $thisiqframe;
+        #    $ga->tcpmessage( [
+        #                         "_textarea" =>
+        #                         "thisiqframe $thisiqframe\n"
+        #                     ] );
+        
+        $sas->load_file( SAS::PLOT_IQ, "$thisiqframe org", end( $iqfiles ) );
+        $sas->interpolate( "$thisiqframe org", "Exp. I(q)", "$thisiqframe interp" );
+        $sas->scale_nchi2( "Exp. I(q)", "$thisiqframe interp", $thisiqframe, $chi2, $scale );
+        $sas->remove_data( "$thisiqframe org" );
+        $sas->remove_data( "$thisiqframe interp" );
+    }
 
     ++$pos;
 }
@@ -300,7 +312,7 @@ $ga->tcpmessage( [
 
 $iqresults = [];
 
-$sas->nnls( "Exp. I(q)", $alliqframes, "I(q) NNLS fit", $iqresults, true, 0 );
+$sas->nnls( "Exp. I(q)", $alliqframes, "I(q) NNLS fit", $iqresults, true );
 
 $sas->add_plot( $plotname, "I(q) NNLS fit" );
 
@@ -346,6 +358,25 @@ $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 ### save results to state
 
 $cgstate->state->nnlsiqresultswaxsis = $iqresults;
+
+## setup csvdownloads
+
+$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
+$sasiqname = $bname . "_waxsis_iq.csv";
+
+$sas->save_data_csv(
+    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqframes )
+    ,$sasiqname
+    ,1
+    ,'/I\(q\) /'
+    ,"$bname "
+    );
+   
+$output->csvdownloads =
+    "<div>"
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
+    . "</div>"
+    ;
 
 ## save state
 

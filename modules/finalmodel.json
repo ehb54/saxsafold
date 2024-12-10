@@ -12,6 +12,8 @@
 #        ,{ "cpan" : "JSON" }
 #    ]
     ,"loadfields"      : "finalmodel_load.php"
+# hold off until we can provide a email decision state
+#    ,"notify"          : "email"
     ,"panels" : [
         {
             "root" : {
@@ -235,6 +237,15 @@
             ,"layout"           : {
                 "parent" : "resultpanel"
 #                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "csvdownloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
             }
         }
         ,{
