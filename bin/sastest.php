@@ -482,7 +482,7 @@ class SAS {
     function annotate_plot( $plotname, $msg ) {
 
         if ( !isset( $this->plots->$plotname ) ) {
-            $this->last_error = "annotate_plot() '$names' does not exist\n";
+            $this->last_error = "annotate_plot() plot '$plotname' does not exist\n";
             return $this->error_exit( $this->last_error );
         }
 
@@ -1588,7 +1588,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        $fmt = " %-20s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s | %-10s\n";
+        $fmt = " %-25s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s\n";
         $out =
             sprintf( $fmt
                      ,"Data name"
@@ -1601,7 +1601,7 @@ class SAS {
                      ,"min e"
             );
         
-        $out .= str_repeat( "-", 99 + 12 ) . "\n";
+        $out .= str_repeat( "-", 124 ) . "\n";
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
@@ -1621,7 +1621,7 @@ class SAS {
                 );
         }
 
-        $out .= str_repeat( "-", 99 + 12 ) . "\n";
+        $out .= str_repeat( "-", 124 ) . "\n";
 
         return $out;
     }

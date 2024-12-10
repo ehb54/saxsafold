@@ -50,6 +50,27 @@ if ( !isset( $cgstate->state->mmcdownloaded )
     error_exit_hook( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
+if ( !isset( $cgstate->state->nnlsiqresults )
+    || !isset( $cgstate->state->nnlsprresults ) ) {
+    error_exit_hook( "No preselected results found, Please run <i>Compute I(q)/P(r)</i> first" );
+}
+
+if ( isset( $cgstate->state->output_load ) ) {
+    if ( isset( $cgstate->state->output_load->iqplot ) ) {
+        $result->iqplot = &$cgstate->state->output_load->iqplot;
+    }
+}
+
+if ( isset( $cgstate->state->output_final ) ) {
+    if ( isset( $cgstate->state->output_final->iqplotwaxsis ) ) {
+        $result->iqplotwaxsis = &$cgstate->state->output_final->iqplotwaxsis;
+    }
+    if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
+        $result->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
+    }
+}
+
+
 $result->desc                      = $cgstate->state->description;
 $result->pname                     = $request->_project;
 $result->downloads                 = $cgstate->state->output_load->downloads;

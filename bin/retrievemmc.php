@@ -110,6 +110,8 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         
         $totframes = count( $tmpout->histplot->data[0]->x );
         $reqframes = count( $tmpout->histplot->data[1]->x );
+
+        $cgstate->state->mmcframecount = $totframes;
         
         $pdbname          = $cgstate->state->output_load->name;
 
@@ -150,6 +152,8 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
 
         if ( is_dir( "preselected" ) ) {
             run_cmd( "rm -fr preselected; mkdir preselected" );
+        } else {
+            run_cmd( "mkdir preselected" );
         }
 
         for ( $frame = $input->mmcoffset; $frame < $totframes; $frame += $input->mmcstride ) {

@@ -392,6 +392,8 @@ if ( isset( $input->prerrors ) ) {
 
     $prweresults = [];
 
+    $sas->set_pr_error_y_nonzero( "Exp. P(r)" );
+
     $sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit w/SDs", $prweresults, true );
 
     ### build up P(r)-we sel plot

@@ -432,8 +432,8 @@ $waxsis_cb = function( $line ) {
 $waxsis_params = 
     (object)[
         'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
-        ,'maxq'               => $cgstate->state->qmax * 1.01  # extend to prevent extrapolation when interpolating
-        ,'convergence'        => 'quick'
+        ,'maxq'               => $cgstate->state->qmax * $max_q_multiplier  # extend to prevent extrapolation when interpolating
+        ,'convergence'        => $waxsis_convergence_mode
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => (float) $input->solvent_e_density
     ];
@@ -444,11 +444,15 @@ $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
 
 ## for testing expediency, don't run WAXSiS
 if ( 1 ) {
+   
+    $time_start = dt_now();
     run_waxsis(
         $output->name
         ,$waxsis_params
         ,$waxsis_cb
         );
+    $time_end   = dt_now();
+    $cgstate->state->waxsis_last_run_time_minutes = dt_duration_minutes( $time_start, $time_end );
 }
 
 progress_text( 'Assembling final results ...' );
@@ -519,9 +523,10 @@ $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check th
 
 ## save state
 
-$cgstate->state->loaded       = true;
-$cgstate->state->output_load  = $output;
-$cgstate->state->is_alphafold = $is_alphafold;
+$cgstate->state->loaded            = true;
+$cgstate->state->output_load       = $output;
+$cgstate->state->is_alphafold      = $is_alphafold;
+$cgstate->state->solvent_e_density = floatval( $input->solvent_e_density );
 
 if ( isset( $input->refpdb ) ) {
     $cgstate->state->refpdb = $input->refpdb;

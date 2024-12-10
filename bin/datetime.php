@@ -40,10 +40,10 @@ function dhms_from_minutes( $time ) {
     $time  -= $hours * 60;
 
     if ( $days ) {
-        return sprintf( "%sd %sh %.2fm", $days, $hours, $time );
+        return sprintf( "%sd %sh %.0fm", $days, $hours, $time );
     }
     if ( $hours ) {
-        return sprintf( "%sh %.2fm", $hours, $time );
+        return sprintf( "%sh %.0fm", $hours, $time );
     }
-    return sprintf( "%.2fm", $time );
+    return sprintf( "%.1fm", $time );
 }

@@ -182,23 +182,81 @@
             }
         }
         ,{
-            "label" : "Downloads",
-            "role" : "output",
-            "help" : "",
-            "id" : "downloads",
-            "type" : "html",
-            "labelmargintop" : "0.5rem"
+            "label"             : "Downloads",
+            "role"              : "output",
+            "help"              : "",
+            "id"                : "downloads",
+            "type"              : "html",
+            "labelmargintop"    : "0.5rem"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "label"             : "Additional adjacent frame count",
+            "role"              : "input",
+            "help"              : "",
+            "id"                : "adjacent_frames",
+            "min"               : 0,
+            "default"           : 0,
+            "type"              : "integer",
+            "help"              : "This will include additional frames from the full MMC run adjacent to the preselected frames<br>It can not be greater that half the stride" 
             ,"layout" : {
                 "parent" : "resultpanel"
             }
         }
         ,{
             "role"              : "output"
-            ,"id"               : "plottest"
-            ,"label"            : "Image for testing"
-            ,"type"             : "html"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplotwaxsis"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iqresultswaxsis"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+#                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "processing_progress"
+            ,"type"       : "progress"
+            ,"label"      : " "
             ,"layout"     : {
-                "parent" : "inputpanel"
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "progress_text"
+            ,"type"       : "html"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
             }
         }
     ]

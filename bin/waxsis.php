@@ -16,7 +16,7 @@ $waxsis_defaults =
         ,'hostpath'          => '/genappdata/container_mounts/saxsafold'
         ,'threads'           => 10
         ,'subdir'            => 'waxsis'
-        ,'convergence'       => 'normal'
+        ,'convergence'       => $waxsis_convergence_mode
         ,'random_seed'       => 'no'
     ];
 
@@ -89,6 +89,8 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
         error_exit( "could not create subdir '$config->subdir'" );
     }
 
+    $pdbnopath = preg_replace( '/^.*\//', '', $pdb );
+
     run_cmd( "rm -f $config->subdir/$pdb $config->subdir/intensity_waxsis.calc $config->subdir/fittedCalcInterpolated_waxsis.fit 2>/dev/null;"
              . " ln -f $pdb"
              . ( strlen( $config->expfile ) ? " " . $config->expfile : "" )
@@ -103,7 +105,7 @@ function run_waxsis( $pdb, $config, $cb_on_write ) {
         . " -i --rm"
         . " -v $cwd/$config->subdir:/genapp/run genapp_alphamultisaxshub:Calculations-waxsis_0827_2"
         . " waxsis"
-        . " -s $pdb"
+        . " -s $pdbnopath"
         . ( strlen( $config->expfile ) ? " -expfile " . basename( $config->expfile ) : "" )
         . " -q $config->maxq"
         . " -nq $config->qpoints"

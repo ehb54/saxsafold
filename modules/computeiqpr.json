@@ -181,17 +181,17 @@
                 "parent" : "inputpanel"
             }
         }
-        ,{
-            "label" : "Downloads",
-            "role" : "output",
-            "help" : "",
-            "id" : "downloads",
-            "type" : "html",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
-                "parent" : "resultpanel"
-            }
-        }
+#        ,{
+#            "label" : "Downloads",
+#            "role" : "output",
+#            "help" : "",
+#            "id" : "downloads",
+#            "type" : "html",
+#            "labelmargintop" : "0.5rem"
+#            ,"layout" : {
+#                "parent" : "resultpanel"
+#            }
+#        }
         ,{
             "role"              : "input"
             ,"id"               : "iqmethod"
@@ -206,26 +206,26 @@
         ,{
             "role"              : "input"
             ,"id"               : "prerrors"
-            ,"label"            : "Use Errors in P(r) fitting"
+            ,"label"            : "Perform a second P(r) NNLS fit using SDs"
             ,"type"             : "checkbox"
             ,"help"             : "For model preselection, P(r) can additionaly be fit with P(r) SDs"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
         }
-        ,{
-            "width"             : "100%",
-            "label"             : "Structure",
-            "help"              : "Right click on structure for more options",
-            "role"              : "output",
-            "id"                : "struct",
-            "type"              : "atomicstructure",
-            "jsmoladd"          : "background white",
-            "labelmargintop"    : "1rem"
-            ,"layout" : {
-                "parent" : "resultpanel"
-            }
-        }
+#        ,{
+#            "width"             : "100%",
+#            "label"             : "Structure",
+#            "help"              : "Right click on structure for more options",
+#            "role"              : "output",
+#            "id"                : "struct",
+#            "type"              : "atomicstructure",
+#            "jsmoladd"          : "background white",
+#            "labelmargintop"    : "1rem"
+#            ,"layout" : {
+#                "parent" : "resultpanel"
+#            }
+#        }
         ,{
             "role"              : "output"
             ,"label"             : "<br>"

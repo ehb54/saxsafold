@@ -52,7 +52,7 @@ if ( !isset( $cgstate->state->mmcdownloaded )
 
 $result->desc                      = $cgstate->state->description;
 $result->pname                     = $request->_project;
-$result->downloads                 = $cgstate->state->output_load->downloads;
+#$result->downloads                 = $cgstate->state->output_load->downloads;
 
 # require "$scriptdir/plotly_computeiqpr.php";
 # plotlycomputeiqpr( $cgstate->state->output_loadsaxs, $result );

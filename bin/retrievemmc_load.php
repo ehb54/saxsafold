@@ -48,6 +48,7 @@ $result->desc                 = $cgstate->state->description;
 $result->pname                = $request->_project;
 $result->downloads            = $cgstate->state->output_load->downloads;
 $result->mmcstride            = $cgstate->state->mmcstride;
+$result->mmcoffset            = $cgstate->state->mmcoffset;
 
 if ( $cgstate->state->mmcdownloaded ) {
 
