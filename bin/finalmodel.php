@@ -325,10 +325,10 @@ foreach ( $names as $name ) {
 
 progress_text( "Running NNLS on I(q)" );
 
-$ga->tcpmessage( [
-                     "_textarea" =>
-                     "alliqframes" . json_encode( $alliqframes, JSON_PRETTY_PRINT ) . "\n"
-                 ] );
+#$ga->tcpmessage( [
+#                     "_textarea" =>
+#                     "alliqframes" . json_encode( $alliqframes, JSON_PRETTY_PRINT ) . "\n"
+#                 ] );
 
 $iqresults = [];
 
@@ -457,13 +457,20 @@ foreach ( $iqresults as $name => $conc ) {
 }
 $output->struct->script .= "frame all;";
 
-$output->_textarea .= "script : " . $output->struct->script . "\n";
+# $output->_textarea .= "script : " . $output->struct->script . "\n";
 
 #$output->struct = "results/users/$logon/$base_dir/$pdboutname";
 
 ## save state
 
 $cgstate->state->output_final  = $output;
+
+## unsaved outputs (since they were previously saved
+
+if ( isset( $cgstate->state->output_load ) 
+     && isset( $cgstate->state->output_load->iqplot ) ) {
+    $output->iqplot = &$cgstate->state->output_load->iqplot;
+}
 
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
@@ -472,10 +479,10 @@ if ( !$cgstate->save() ) {
 
 ## log results to textarea
 
-$output->_textarea =
-    "iqfiles[]:\n" . json_encode( $iqfiles, JSON_PRETTY_PRINT ) . "\n"
-    . $sas->data_summary( $sas->data_names() )
-    ;
+#$output->_textarea =
+#    "iqfiles[]:\n" . json_encode( $iqfiles, JSON_PRETTY_PRINT ) . "\n"
+#    . $sas->data_summary( $sas->data_names() )
+#    ;
 
 # $output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
 # $output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
