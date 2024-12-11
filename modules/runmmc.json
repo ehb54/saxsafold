@@ -249,7 +249,9 @@
             "role"     : "input",
             "id"       : "trials",
             "label"    : "number of trial attempts",
-            "type"     : "text",
+            "type"     : "integer",
+            "min"      : 100,
+            "max"      : 99999,
             "help"     : "enter number of Monte Carlo move attempts",
             "required" : "true"
             ,"layout" : {

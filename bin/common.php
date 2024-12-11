@@ -132,12 +132,13 @@ function run_streaming_cmd( $cmd, $cb_on_write, $exit_if_error = true, $array_re
     return $array_result ? [] : "";
 }
 
-function error_exit( $msg ) {
+function error_exit( $msg, $nonotify = true ) {
     if ( !strlen( $msg ) ) {
         $msg = "Empty error message!";
     }
     $msgobj = (object) [
-        "_message" => (object) [
+        "_disable_notify" => $nonotify
+        ,"_message" => (object) [
             "icon" => "toast.png"
             ,"text" => $msg
         ]

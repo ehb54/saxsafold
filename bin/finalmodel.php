@@ -155,6 +155,7 @@ $response =
 
 if ( $response->_response->button == "cancelfornow" ) {
     $output->_textarea = "Processing canceled by user request\n";
+    $output->_disable_notify = true;
     echo json_encode( $output );
     exit;
 }
@@ -210,11 +211,15 @@ if ( !$count ) {
 ## setup sas with Exp. I(q) data
 
 $plotname = "I(q) waxsis nnls";
-$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_loadsaxs->iqplot
+$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
                              ,[
                                  'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected models"
                                  ,'titlefontsize' => 14
                              ]);
+
+$sas->remove_plot_data( $plotname, "Res./SD" );
+$sas->remove_plot_data( $plotname, "WAXSiS" );
+$sas->remove_data( "Res./SD" );
 
 $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
     ? $cgstate->state->waxsis_last_run_time_minutes
@@ -241,7 +246,7 @@ $waxsis_cb = function( $line ) {
 
 $waxsisiqfile    = $waxsis_params->subdir . "/intensity_waxsis.calc";
 $iqfiles         = [];
-$alliqframes     = [];
+$alliqframes     = [ 'WAXSiS' ];
 $waxsis_failures = [];
 
 $chi2  = -1;
@@ -463,6 +468,7 @@ $output->struct->script .= "frame all;";
 
 ## save state
 
+$cgstate->state->final_waxsis_failures = $waxsis_failures;
 $cgstate->state->output_final  = $output;
 
 ## unsaved outputs (since they were previously saved
@@ -479,9 +485,23 @@ if ( !$cgstate->save() ) {
 
 ## log results to textarea
 
+if ( count( $waxsis_failures ) ) {
+    $msg =
+        "WAXSiS simulation failures occured on " . count( $waxsis_failures ) . " Models:\n"
+        . implode( ' ', $waxsis_failures ) . "\n"
+        ;
+
+    $output->_message = [
+        "text" => $msg
+        ,"icon" => "warning.png"
+        ];
+
+    $output->_textarea = $msg;
+}
+
 #$output->_textarea =
 #    "iqfiles[]:\n" . json_encode( $iqfiles, JSON_PRETTY_PRINT ) . "\n"
-#    . $sas->data_summary( $sas->data_names() )
+    #    . $sas->data_summary( $sas->data_names() )
 #    ;
 
 # $output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
