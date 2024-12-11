@@ -444,6 +444,9 @@ if ( isset( $input->prerrors ) ) {
     );
 
     $output->prweplotsel = $sas->plot( "P(r) we sel" );
+} else {
+    unset( $cgstate->state->nnlsprweresults );
+    $output->prweresults = "";
 }
 
 ## rebuild final plots

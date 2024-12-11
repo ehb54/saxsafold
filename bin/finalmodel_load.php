@@ -71,8 +71,10 @@ if ( isset( $cgstate->state->output_final ) ) {
     if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
         $result->csvdownloads = &$cgstate->state->output_final->csvdownloads;
     }
+    if ( isset( $cgstate->state->output_final->struct ) ) {
+        $result->struct = &$cgstate->state->output_final->struct;
+    }
 }
-
 
 $result->desc                      = $cgstate->state->description;
 $result->pname                     = $request->_project;

@@ -68,8 +68,11 @@ if ( !isset( $cgstate->state->mmcrunname ) ) {
     error_exit( "No MMC run name found, did you <i>Run MMC</i>?" );
 }
 
-if ( !isset( $cgstate->state->mmcdownloaded ) || !$cgstate->state->mmcdownloaded || !isset( $cgstate->state->mmcextracted ) || !strlen( $cgstate->state->mmcextracted )
-    || !isset( $cgstate->state->mmcframecount ) ) {
+if ( !isset( $cgstate->state->mmcdownloaded )
+     || !$cgstate->state->mmcdownloaded
+     || !isset( $cgstate->state->mmcextracted )
+     || !strlen( $cgstate->state->mmcextracted )
+     || !isset( $cgstate->state->mmcframecount ) ) {
     error_exit( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
@@ -85,7 +88,7 @@ if ( !isset( $cgstate->state->nnlsiqresults )
 ## process inputs here to produce output
 
 if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
-    error_exit( "The maximum value allowed for the <i>Additional adjacent frame count</i> is " . ( intval( $cgstate->state->mmcstride / 2 ) - 1 ) );
+    error_exit( "The maximum value allowed for the <i>Additional adjacent frame count</i> is " . ( intval( $cgstate->state->mmcstride / 2 ) ) );
 }
 
 ### build up set of models
@@ -110,12 +113,16 @@ if ( !add_adjacent_frames( $input->adjacent_frames, $frameset, $errors ) ) {
 
 $models_to_process_count = count( $frameset );
 
-$estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_process_count * 1.2 + .5 ) );
+if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
+     $cgstate->state->waxsis_last_run_time_minutes > 0 ) {
+    $estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_process_count * 1.2 + .5 ) );
+} else {
+    $estimated_time_to_completion = "*unknown duration*";
+}
 
 $ga->tcpmessage( [ "_textarea" =>
                    "Original models preselected " . count( $org_frames ) . "\n"
                    . "Total models with additional frames $models_to_process_count\n"
-                   . "Estimated time to completion $estimated_time_to_completion\n"
                    . "\n"
                    . "\n"
                  ] );
@@ -209,7 +216,11 @@ $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_lo
                                  ,'titlefontsize' => 14
                              ]);
 
-$avg_waxsis_time = $cgstate->state->waxsis_last_run_time_minutes;
+$avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
+    ? $cgstate->state->waxsis_last_run_time_minutes
+    : 0
+    ;
+
 $tot_waxsis_time = 0;
 
 $waxsis_lc = 0;
@@ -247,7 +258,11 @@ foreach ( $names as $name ) {
         $avg_waxsis_time = $tot_waxsis_time / $pos;
     }
 
-    $estimated_time_to_completion = dhms_from_minutes( intval( $avg_waxsis_time * ( $count - $pos ) * 1.2 ) + .5 );
+    if ( $avg_waxsis_time > 0 ) {
+        $estimated_time_to_completion = dhms_from_minutes( intval( $avg_waxsis_time * ( $count - $pos ) * 1.2 ) + .5 );
+    } else {
+        $estimated_time_to_completion = "*unknown duration*";
+    }
     
     $ga->tcpmessage( [ 'processing_progress' => $pos_frac ] );
 
@@ -256,26 +271,31 @@ foreach ( $names as $name ) {
     $ok = false;
 
     if ( !$do_testing ) {
-        $time_start = dt_now();
-        $ok =
-            run_waxsis(
-                "$procdir/$name"
-                ,$waxsis_params
-                ,$waxsis_cb
-                ,false
-            );
-        $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
+        $iqfile = "$procdir/$pdbnoext-waxsis.dat";
+        if ( !file_exists( $iqfile ) ) {
+            $time_start = dt_now();
+            $ok =
+                run_waxsis(
+                    "$procdir/$name"
+                    ,$waxsis_params
+                    ,$waxsis_cb
+                    ,false
+                );
+            $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
 
-        if ( $ok ) {
-            if ( !file_exists( $waxsisiqfile ) ) {
-                error_exit( "WAXSiS did not produce the expected I(q) file" );
+            if ( $ok ) {
+                if ( !file_exists( $waxsisiqfile ) ) {
+                    error_exit( "WAXSiS did not produce the expected I(q) file" );
+                }
+
+                run_cmd( "mv $waxsisiqfile $iqfile" );
+                $iqfiles[] = $iqfile;
+            } else {
+                $waxsis_failures[] = $frame;
             }
-
-            $iqfile = "$procdir/$pdbnoext-waxsis.dat";
-            run_cmd( "mv $waxsisiqfile $iqfile" );
-            $iqfiles[] = $iqfile;
         } else {
-            $waxsis_failures[] = $frame;
+            $iqfiles[] = $iqfile;
+            $ok = true;
         }
     } else {
         $iqfiles[] = "$procdir/$pdbnoext-waxsis.dat";
@@ -377,6 +397,69 @@ $output->csvdownloads =
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
     . "</div>"
     ;
+
+## setup pdb
+
+$pdboutname = "waxsisfinalset.pdb";
+$pdbout     = "";
+
+foreach ( $iqresults as $name => $conc ) {
+    $tmpname = explode( ' ', $name );
+    $frame = end( $tmpname );
+    $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+    $pdbname = "${bname}-somo-m$frame_padded.pdb";
+    if ( !file_exists( "$procdir/$pdbname" ) ) {
+        error_exit( "expected file '$procdir/$pdbname' not found" );
+    }
+
+    $pdbout .= "MODEL $frame\n"
+        . run_cmd( "grep -P '^(ATOM|HETATM)' $procdir/$pdbname" )
+        . "ENDMDL\n"
+        ;
+};
+
+$pdbout .= "END\n";
+
+if ( !file_put_contents( $pdboutname, $pdbout ) ) {
+    error_exit( "error creating '$pdboutname'" );
+}    
+
+$output->csvdownloads =
+    "<div>"
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>mmPDB &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
+    . "</div>"
+    ;
+
+function get_color( $pos ) {
+    $colors = [
+        "red"
+        ,"orange"
+        ,"yellow"
+        ,"green"
+        ,"blue"
+        ];
+
+    return $colors[ $pos % count( $colors ) ];
+}
+
+$output->struct = (object) [
+    "file" => "results/users/$logon/$base_dir/$pdboutname"
+    #    ,"script" => "background white;ribbon only;select */29; color blue; select */30; color green; frame all"
+    ,"script" => "background white;ribbon only;"
+    ];
+
+$pos = 0;
+foreach ( $iqresults as $name => $conc ) {
+    $tmpname = explode( ' ', $name );
+    $frame = end( $tmpname );
+    $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
+}
+$output->struct->script .= "frame all;";
+
+$output->_textarea .= "script : " . $output->struct->script . "\n";
+
+#$output->struct = "results/users/$logon/$base_dir/$pdboutname";
 
 ## save state
 

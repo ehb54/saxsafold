@@ -442,7 +442,7 @@ $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
 
 ## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
 
-## for testing expediency, don't run WAXSiS
+## for testing expediency, optionally run WAXSiS
 if ( 1 ) {
    
     $time_start = dt_now();
