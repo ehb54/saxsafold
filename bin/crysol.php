@@ -8,16 +8,17 @@ require_once "$scriptdir/common.php";
 
 $crysol_defaults =
     (object) [
-        'maxq'                  => 0.5
-        ,'qpoints'              => 501
-        ,'solvent_e_density'    => .334
-        ,'random_seed'          => 'no'
-        ,'install_path'         => '/host/ATSAS-3.2.1-1'
-        ,'hydration_shell'      => 'directional'
-        ,'fibonacci_grid'       => 17
-        ,'spherical_harmonics'  => 20
-        ,'expfile'              => ''
-        ,'subdir'               => '.'
+        'maxq'                      => 0.5
+        ,'qpoints'                  => 501
+        ,'solvent_e_density'        => .334
+        ,'hydration_contrast_shell' => 0.02
+        ,'random_seed'              => 'no'
+        ,'install_path'             => '/host/ATSAS-3.2.1-1'
+        ,'hydration_shell'          => 'directional'
+        ,'fibonacci_grid'           => 18
+        ,'spherical_harmonics'      => 25
+        ,'expfile'                  => ''
+        ,'subdir'                   => '.'
     ];
 
 function run_crysol( $pdb, $config, $cb_on_write ) {
@@ -53,6 +54,7 @@ function run_crysol( $pdb, $config, $cb_on_write ) {
         . " -smax $config->maxq"
         . " -ns $config->qpoints"
         . " -dns $config->solvent_e_density"
+        . " -dro $config->hydration_contrast_shell"
         . " -fb $config->fibonacci_grid"
         . " -lm $config->spherical_harmonics"
         #  . " -units A" ## ? what are supported unit values
