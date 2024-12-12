@@ -12,7 +12,7 @@
 #        ,{ "cpan" : "JSON" }
 #    ]
     ,"loadfields"      : "retrievemmc_load.php"
-    ,"noreset"         : "true"
+#    ,"noreset"         : "true"
     ,"panels" : [
         {
             "root" : {

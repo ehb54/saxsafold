@@ -12,6 +12,7 @@
 #        ,{ "cpan" : "JSON" }
 #    ]
     ,"loadfields"      : "computeiqpr_load.php"
+    ,"notify"          : "email"
     ,"panels" : [
         {
             "root" : {
@@ -198,7 +199,7 @@
             ,"label"            : "I(q) computation method"
             ,"type"             : "listbox"
             ,"help"             : "Select I(q) computation method"
-            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3~crysol3~CRYSOL 2.8~crysol28"
+            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3.2.1-1~crysol3"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }

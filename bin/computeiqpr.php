@@ -81,6 +81,7 @@ $ga->tcpmessage( [
 ## initial plots
 include_once "limits.php";
 require "sas.php";
+include "crysol.php";
 $sas = new SAS();
 
 $plots = (object) [];
@@ -112,9 +113,80 @@ $ga->tcpmessage( $tmpout );
 
 ## process inputs here to produce output
 
-if ( $input->iqmethod != "pepsi" ) {
-    error_exit( "Only PEPSI-SAXS currently supported" );
+### check if crysol selected and if so, verify academic usage
+
+if ( $input->iqmethod == "crysol3" ) {
+    require_once "$input->_webroot/$input->_application/ajax/ga_db_lib.php";
+
+    if ( !ga_db_status( ga_db_open( $error_json_exit ) ) ) {
+        error_exit( "failed to connect to db" );
+    }
+
+    $userdoc = ga_db_output( ga_db_findOne( 'users', '', [ '_logon' => $input->logon ] ) );
+
+    # $output->_textarea = json_encode( $userdoc, JSON_PRETTY_PRINT ) . "\n----\n";
+    if ( 1 || !isset( $userdoc->academicAgree ) ) {
+        $response =
+            json_decode(
+                $ga->tcpquestion(
+                    [
+                     "id"           => "q1"
+                     ,"title"       => "<h5>CRYSOL is for Academic Use Only</h5>"
+                     ,"icon"        => "warning.png"
+                     ,"text"        => ""
+                     ,"timeouttext" => "The time to respond has expired, please submit again."
+                     ,"buttons"     => [ "I hereby agree that this work is exclusively for academic usage and my email address may be shared with the ATSAS team", "No this work is NOT for academic usage" ]
+                     ,"fields" => [
+                         [
+                          "id"          => "l1"
+                          ,"type"       => "label"
+                          ,"label"      => "By clicking <strong><i>I hearby agree...</i><strong> below, your registered email address will be shared with the EMBL ATSAS team"
+                          ,"align"      => "center"
+                         ]
+                     ]
+                    ]
+
+                )
+            );
+
+        if ( $response->_response->button != "iherebyagreethatthisworkisexclusivelyforacademicusageandmyemailaddressmaybesharedwiththeatsasteam" ) {
+            $output->_message = [
+                "text" => "Processing canceled by user request"
+                ,'icon' => 'information.png'
+                ];
+            $output->processing_progress = 0;
+            $output->_disable_notify = true;
+            echo json_encode( $output );
+            exit;
+        }
+
+        # update db
+
+        if ( !isset( $userdoc->academicAgree ) ) {
+            $userdoc->academicAgree = [];
+        }
+
+        $userdoc->academicAgree[] = [ "CRYSOL" => ga_db_output( ga_db_date() ) ];
+
+        if ( !ga_db_status(
+                  ga_db_update(
+                      'users',
+                      '',
+                      [ "_id" => $userdoc->_id ]
+                      ,[ '$set' => [
+                             'academicAgree' => $userdoc->academicAgree
+                         ] ]
+                  )
+             )
+            ) {
+            error_exit( "Error updating the database" );
+        }
+    }
 }
+
+#if ( $input->iqmethod != "pepsi" ) {
+#    error_exit( "Only PEPSI-SAXS currently supported" );
+#}
 
 ## compute Iq
 
@@ -215,16 +287,45 @@ $ga->tcpmessage(
 
 $alliqnames = [];
 
+$textarea_key = "_textarea";
+
+$crysol_cb = function( $line ) {
+    global $ga;
+    global $textarea_key;
+#    $ga->tcpmessage( [
+#                         $textarea_key => $line
+#                     ] );
+};
+
 foreach ( $pdbs as $pdb ) {
     ++$pos;
 
-    # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
-    $cmd    = "cd preselected && Pepsi-SAXS -ms " . $cgstate->state->qmax * 1.01 . " -ns " . $cgstate->state->qpoints . " $pdb";
-    $cmdres = run_cmd( $cmd, false );
-    if ( $run_cmd_last_error_code ) {
-        error_exit( "Error computing I(q) : $cmdres" );
-    }
-    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
+    switch( $input->iqmethod ) {
+        case 'pepsi' : {
+            # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
+            $cmd    = "cd preselected && Pepsi-SAXS -ms " . $cgstate->state->qmax * $max_q_multiplier . " -ns " . $cgstate->state->qpoints . " $pdb";
+            $cmdres = run_cmd( $cmd, false );
+            if ( $run_cmd_last_error_code ) {
+                error_exit( "Error computing I(q) : $cmdres" );
+            }
+            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
+        }
+        break;
+
+        case 'crysol3' : {
+            run_crysol( "preselected/$pdb"
+                        ,(object)[
+                            'qpoints' => $cgstate->state->qpoints
+                            ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
+                            ,'solvent_e_density' => $cgstate->state->solvent_e_density
+                            ,'subdir' => 'preselected'
+                        ]
+                        ,$crysol_cb
+                );
+            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
+        }            
+    }                            
+            
     if ( !file_exists( $iqfile ) ) {
         error_exit( "Expected Iq file missing : $iqfile" );
     }

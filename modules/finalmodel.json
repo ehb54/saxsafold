@@ -12,7 +12,6 @@
 #        ,{ "cpan" : "JSON" }
 #    ]
     ,"loadfields"      : "finalmodel_load.php"
-# hold off until we can provide a email decision state
     ,"notify"          : "email"
     ,"panels" : [
         {
