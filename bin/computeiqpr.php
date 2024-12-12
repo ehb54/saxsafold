@@ -303,7 +303,10 @@ foreach ( $pdbs as $pdb ) {
     switch( $input->iqmethod ) {
         case 'pepsi' : {
             # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
-            $cmd    = "cd preselected && Pepsi-SAXS -ms " . $cgstate->state->qmax * $max_q_multiplier . " -ns " . $cgstate->state->qpoints . " $pdb";
+            $cmd    = "cd preselected && Pepsi-SAXS"
+                . " -ms " . $cgstate->state->qmax * $max_q_multiplier
+                . " -ns " . $cgstate->state->qpoints
+                . " $pdb";
             $cmdres = run_cmd( $cmd, false );
             if ( $run_cmd_last_error_code ) {
                 error_exit( "Error computing I(q) : $cmdres" );
