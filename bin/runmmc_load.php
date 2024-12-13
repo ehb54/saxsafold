@@ -40,6 +40,20 @@ if ( !$cgstate->state->flex || !count( $cgstate->state->flex ) ) {
     error_exit_hook( "No Flexible regions have been defined, Please run <i>'Structure info & flexible regions SAXS'</i> first" );
 }    
 
+foreach ( $cgstate->state->flex as $v ) {
+    if ( !strlen( $v ) ) {
+        error_exit_hook( "Empty flexible region found, Please run <i>'Structure info & flexible regions SAXS'</i> and verify flexible regions are correct." );
+    }
+    if ( !preg_match( '/^\d+,\d+$/', $v ) ) {
+        error_exit_hook( "Invalid flexible region found ($v), Please run <i>'Structure info & flexible regions SAXS'</i> and verify flexible regions are correct." );
+    }
+    $regions = explode( ',', $v );
+    if ( count( $regions ) != 2
+         || $regions[0] > $regions[1] ) {
+        error_exit_hook( "Invalid flexible region found, Please run <i>'Structure info & flexible regions SAXS'</i> and verify flexible regions are correct." );
+    }
+}    
+
 ## not sure if we want a timestamp, that will change the name every time
 # $timestamp = `date '+%Y%m%d%H%M%S'`;
 $cgstate->state->mmcrunname = "run_$request->_project";
