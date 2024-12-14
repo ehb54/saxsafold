@@ -41,8 +41,19 @@ if ( !$cgstate->state->loaded ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
+function mod_ranges( $a, $b ) {
+    $av = explode( ',', $a );
+    $bv = explode( ',', $b );
+
+    $ai = intval( $av[0] );
+    $bi = intval( $bv[0] );
+    
+    return $ai > $bi;
+}
+
 if ( count( $input->flexrange ) ) {
-   $cgstate->state->flex = $input->flexrange;
+    usort( $input->flexrange, fn( $a, $b ) => mod_ranges( $a, $b ) );
+    $cgstate->state->flex = $input->flexrange;
 }
 
 $output->_textarea = "Flexible regions saved\n";
@@ -53,13 +64,26 @@ if ( $cgstate->state->mmcdownloaded ) {
 }
 
 $cgstate->state->mmcstride = 10;
+$output->struct = $cgstate->state->output_load->struct;
+$output->struct->script = "background white; color structure; ribbon only";
+if ( isset( $cgstate->state->flex ) && count( $cgstate->state->flex ) ) {
+    $output->struct->script .= "; select ";
+    foreach ( $cgstate->state->flex as $v ) {
+        $vs = explode( ",", $v );
+        if ( count( $vs ) == 2 ) {
+            $output->struct->script .=  $vs[0] . "-" . $vs[1] . ",";
+        }
+    }
+    $output->struct->script = preg_replace( '/,$/', '', $output->struct->script );
+    $output->struct->script .= "; color green";
+}
+
+$cgstate->state->output_flex = $output;
 
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
     exit;
 }
-
-$output->struct = $cgstate->state->output_load->struct;
 
 ## log results to textarea
 
