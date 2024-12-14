@@ -199,7 +199,8 @@
             ,"label"            : "I(q) computation method"
             ,"type"             : "listbox"
             ,"help"             : "Select I(q) computation method"
-            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3.2.1-1~crysol3"
+#            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 2.8.4-1~crysol2~CRYSOL 3.2.1-1~crysol3"
+            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3.2.1-1~crysol3"            
             ,"layout"     : {
                 "parent" : "inputpanel"
             }

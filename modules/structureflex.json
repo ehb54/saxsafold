@@ -452,7 +452,7 @@
             ,"type"     : "integer"
             ,"role"     : "input"
             ,"id"       : "nflex"
-            ,"minimum"  : 1
+            ,"min"      : 1
             ,"default"  : 1
             ,"repeater" : "true"
             ,"layout"   : {

@@ -80,6 +80,13 @@ if ( !$cgstate->state->mmcrunname ) {
 if ( $input->mmcoffset >= $input->mmcstride ) {
     error_exit( "The <i>Offset</i> must be less than the <i>Stride</i>" ); 
 }
+if ( $input->mmcoffset < 0 ) {
+    error_exit( "The <i>Offset</i> must be positive" ); 
+}
+
+if ( !strlen( $input->mmcoffset ) ) {
+   $result->input = 0;
+}
 
 $statsname = $cgstate->state->mmcrunname . ".dcd.stats";
 

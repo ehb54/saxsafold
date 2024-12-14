@@ -222,7 +222,7 @@
             ,"help"              : "Stride defines how many frames will be skipped"
             ,"id"                : "mmcstride"
             ,"type"              : "integer"
-            ,"minimum"           : 1
+            ,"min"               : 1
             ,"default"           : 10
             ,"layout"           : {
                 "parent" : "inputpanel"
@@ -234,7 +234,7 @@
             ,"help"              : "Offset defines the starting extraction frame"
             ,"id"                : "mmcoffset"
             ,"type"              : "integer"
-            ,"minimum"           : 0
+            ,"min"               : 0
             ,"default"           : 0
             ,"layout"           : {
                 "parent" : "inputpanel"

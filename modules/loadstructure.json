@@ -207,46 +207,60 @@
             }
         }
         ,{
-            "role" : "input",
-            "id" : "pdboraf",
-            "help" : "You can either upload a PDB or mmCIF file or select an AlphaFold (v4) structure",
-            "type" : "listbox",
-            "label" : "Select input source",
-            "labelmargintop" : "0.5rem"
-            ,"required" : "true"
-            ,"layout" : {
+            "role"              : "input",
+            "id"                : "pdboraf",
+            "help"              : "You can either:<br>upload a PDB or mmCIF file<br>select an AlphaFold (v4) structure<br>or get an AF (v2) post translationally modified structure",
+            "type"              : "listbox",
+            "label"             : "Select input source",
+            "labelmargintop"    : "0.5rem"
+            ,"required"         : "true"
+            ,"layout"           : {
                 "parent" : "inputpanel"
             }
-            ,"values"    : "Input PDB or CIF~pdbcif~Get AlphaFold structure~alphafold"
-            ,"default"   : "pdbcif"
-            ,"repeater"  : "true"
+            ,"values"           : "Input PDB or CIF~pdbcif~Get AlphaFold structure~alphafold~Get Post Translationally Modified AFv2 structures~somoaf"
+            ,"default"          : "pdbcif"
+            ,"repeater"         : "true"
         },
         {
-            "role" : "input",
-            "id" : "pdbfile",
-            "help" : "Select a PDB or mmCIF file and then click <i>Process</i> below",
-            "type" : "lrfile",
-            "label" : "Input PDB or mmCIF file",
-            "labelmargintop" : "0.5rem"
-            ,"required" : "true"
-            ,"layout" : {
+            "role"              : "input",
+            "id"                : "pdbfile",
+            "help"              : "Select a PDB or mmCIF file and then click <i>Process</i> below",
+            "type"              : "lrfile",
+            "label"             : "Input PDB or mmCIF file",
+            "labelmargintop"    : "0.5rem"
+            ,"required"         : "true"
+            ,"layout"           : {
                 "parent" : "inputpanel"
             }
-            ,"repeat" : "pdboraf:pdbcif"
+            ,"repeat"           : "pdboraf:pdbcif"
         },
         {
-            "role" : "input",
-            "id" : "searchkey",
-            "help" : "Enter an AlphaFold predicted UniProt accession code or the start of a code and click Process",
-            "type" : "text",
-            "maxlen" : 30,
-            "label" : "UniProt accession",
-            "labelmargintop" : "0.5rem"
-            ,"layout" : {
+            "role"              : "input",
+            "id"                : "searchkey",
+            "help"              : "Enter an AlphaFold predicted UniProt accession code or the start of a code and click Process",
+            "type"              : "text",
+            "maxlen"            : 30,
+            "label"             : "UniProt accession",
+            "labelmargintop"    : "0.5rem"
+            ,"layout"           : {
                 "parent" : "inputpanel"
             }
-            ,"repeat" : "pdboraf:alphafold"
-            ,"required" : "true"
+            ,"repeat"           : "pdboraf:alphafold"
+            ,"required"         : "true"
+        }
+        ,{
+            "role"              : "input",
+            "id"                : "searchkeysomoaf",
+            "help"              : "Enter an AlphaFold predicted UniProt accession code or the start of a code and click Process",
+            "type"              : "text",
+            "maxlen"            : 30,
+            "label"             : "UniProt accession",
+            "labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent"        : "inputpanel"
+            }
+            ,"repeat"           : "pdboraf:somoaf"
+            ,"required"         : "true"
         }
         ,{
             "role"              : "output"

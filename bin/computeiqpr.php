@@ -115,7 +115,9 @@ $ga->tcpmessage( $tmpout );
 
 ### check if crysol selected and if so, verify academic usage
 
-if ( $input->iqmethod == "crysol3" ) {
+if ( $input->iqmethod == "crysol3"
+   || $input->iqmethod == "crysol2"
+   ) {
     require_once "$input->_webroot/$input->_application/ajax/ga_db_lib.php";
 
     if ( !ga_db_status( ga_db_open( $error_json_exit ) ) ) {
@@ -135,12 +137,12 @@ if ( $input->iqmethod == "crysol3" ) {
                      ,"icon"        => "warning.png"
                      ,"text"        => ""
                      ,"timeouttext" => "The time to respond has expired, please submit again."
-                     ,"buttons"     => [ "I hereby agree that this work is exclusively for academic usage and my email address may be shared with the ATSAS team", "No this work is NOT for academic usage" ]
+                     ,"buttons"     => [ "I hereby agree that this work is exclusively for academic usage and my email address may be shared with BIOSAXS GmbH", "No this work is NOT for academic usage" ]
                      ,"fields" => [
                          [
                           "id"          => "l1"
                           ,"type"       => "label"
-                          ,"label"      => "By clicking <strong><i>I hearby agree...</i><strong> below, your registered email address will be shared with the EMBL ATSAS team"
+                          ,"label"      => "By clicking <strong><i>I hearby agree...</i><strong> below, your registered email address may be shared with BIOSAXS GmbH"
                           ,"align"      => "center"
                          ]
                      ]
@@ -149,7 +151,7 @@ if ( $input->iqmethod == "crysol3" ) {
                 )
             );
 
-        if ( $response->_response->button != "iherebyagreethatthisworkisexclusivelyforacademicusageandmyemailaddressmaybesharedwiththeatsasteam" ) {
+        if ( $response->_response->button != "iherebyagreethatthisworkisexclusivelyforacademicusageandmyemailaddressmaybesharedwithbiosaxsgmbh" ) {
             $output->_message = [
                 "text" => "Processing canceled by user request"
                 ,'icon' => 'information.png'
@@ -327,6 +329,21 @@ foreach ( $pdbs as $pdb ) {
                 );
             $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
         }            
+        break;
+
+        case 'crysol2' : {
+            run_crysol2( "preselected/$pdb"
+                        ,(object)[
+                            'qpoints' => $cgstate->state->qpoints
+                            ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
+                            ,'solvent_e_density' => $cgstate->state->solvent_e_density
+                            ,'subdir' => 'preselected'
+                        ]
+                        ,$crysol_cb
+                );
+            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
+        }            
+        break;
     }                            
             
     if ( !file_exists( $iqfile ) ) {

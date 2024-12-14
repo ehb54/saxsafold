@@ -94,8 +94,11 @@ function plot_to_image( $plotobj ) {
         error_exit( "Error producing image from plot" );
     }
 
+## safari didn't like charset=utf-8
+#        <div><img style="width:{$plotsobj->width}px;height:{$plotsobj->height}px" src="data:image/png;base64;charset=utf-8,$plotsobj->plotlydata" /></div>
+
     $plotimg = <<<__EOD
-        <div><img style="width:{$plotsobj->width}px;height:{$plotsobj->height}px" src="data:image/png;base64;charset=utf-8, $plotsobj->plotlydata" /></div>
+        <div><img style="width:{$plotsobj->width}px;height:{$plotsobj->height}px" src="data:image/png;base64,$plotsobj->plotlydata" /></div>
         __EOD;
 
     return $plotimg;

@@ -432,7 +432,7 @@ if ( !file_put_contents( $pdboutname, $pdbout ) ) {
 $output->csvdownloads =
     "<div>"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>mmPDB &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
     . "</div>"
     ;
 

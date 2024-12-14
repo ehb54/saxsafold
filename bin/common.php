@@ -132,6 +132,12 @@ function run_streaming_cmd( $cmd, $cb_on_write, $exit_if_error = true, $array_re
     return $array_result ? [] : "";
 }
 
+function json_exit() {
+    global $output;
+    echo json_encode( $output );
+    exit;
+}    
+
 function error_exit( $msg, $nonotify = true ) {
     if ( !strlen( $msg ) ) {
         $msg = "Empty error message!";

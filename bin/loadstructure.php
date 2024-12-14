@@ -93,17 +93,20 @@ $ga->tcpmessage( [
 
 ## process inputs here to produce output
 
-## alphafold or pdb ?
+## alphafold, somoaf or pdb/somoaf ?
 
-if ( !isset( $input->searchkey ) ) {
+if ( !isset( $input->searchkey )
+     && !isset( $input->searchkeysomoaf )
+    ) {
+    ## pdb/cif loaded
     if ( !isset( $input->pdbfile[0] ) ) {
         $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
         error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
     }
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
     $is_alphafold = preg_match( '/^AF-/', $fpdb );
-} else {
-    ## alphafold code
+} elseif ( isset( $input->searchkey ) ) {
+    ## alphafold download
     $ga->tcpmessage( [ 'processing_progress' => 0 ] );
     $searchkey = strtoupper( "AF-" . preg_replace( '/^AF-/i', '', $input->searchkey ) );
 
@@ -193,6 +196,145 @@ if ( !isset( $input->searchkey ) ) {
 
     $is_alphafold = true;
     $fpdb = "AF-${searchkey}-model_v4.cif";
+} elseif ( isset( $input->searchkeysomoaf ) ) {
+    ## somoaf
+    ### open db
+    require '/var/www/html/saxsafold/vendor/autoload.php'; ## include Composer's autoloader
+
+    try {
+        $db_mongo = new MongoDB\Client();
+    } catch ( Exception $e ) {
+        $output->errors = "Error connecting to db " . $e->getMessage();
+        json_exit();
+    }
+
+    $searchkey = preg_replace( '/^AF-/i', '', $input->searchkeysomoaf );
+
+
+    ### find in db
+    try {
+        $query = [ '_id' => new \MongoDB\BSON\Regex( '^' . $searchkey, 'i' ) ];
+
+        # $output->_textarea = "query:\n" . json_encode( $query, JSON_PRETTY_PRINT ) . "\n";
+
+        $foundcursor = $db_mongo->somo->afd->find(
+            $query
+            ,[
+                'limit' => $MAX_RESULTS
+                ,'projection' => [
+                    '_id' => 1
+                ]
+            ]
+            );
+    } catch ( MongoDB\Exception\UnsupportedException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    } catch ( MongoDB\Exception\InvalidArgumentException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    } catch ( MongoDB\Exception\RuntimeException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    }
+
+    $ids = [];
+    foreach( $foundcursor as $doc ) {
+        $ids[] = $doc->_id;
+    }
+
+    if ( count( $ids ) == 0 ) {
+        $output->_message =
+            [
+             'text'  => $input->searchkey . ' did not match any records'
+             ,'icon' => 'information.png'
+            ];
+        json_exit();
+    }
+
+    # $output->_textarea .= "output ids:\n" . json_encode( $ids, JSON_PRETTY_PRINT ) . "\n";
+
+    if ( count( $ids ) > 1 ) {
+
+        if ( count( $ids ) == $MAX_RESULTS ) {
+            $multiple_msg = "<i>Note - results are limited to $MAX_RESULTS, more matches may exist.<br>Use a longer search string to refine the results.</i><br>";
+        } else {
+            $multiple_msg = "";
+        }
+
+        $response =
+            json_decode(
+                $ga->tcpquestion(
+                    [
+                     "id" => "q1"
+                     ,"title" => "Multiple search results found"
+                     ,"icon"  => "noicon.png"
+                     ,"text" =>
+                     $multiple_msg
+                     . "<hr>"
+                     ,"grid" => 3
+                     ,"timeouttext" => "The time to respond has expired, please search again."
+                     ,"fields" => [
+                         [
+                          "id" => "lb1"
+                          ,"type"       => "listbox"
+                          ,"fontfamily" => "monospace"
+                          ,"values"     => $ids
+                          ,"returns"    => $ids
+                          ,"required"   => "true"
+                          ,"size"       => count( $ids ) > $MAX_RESULTS_SHOWN ? $MAX_RESULTS_SHOWN : count( $ids )
+                          ,"grid"       => [
+                              "data"    => [1,3]
+                          ]
+                         ]
+                     ]
+                    ]
+                )
+            );
+
+
+        if (
+            isset( $response->_response )
+            && isset( $response->_response->button )
+            && $response->_response->button == "ok"
+            && isset( $response->_response->lb1 )
+            && strlen( $response->_response->lb1 )
+            ) {
+            $output->searchkey = $response->_response->lb1;
+        } else {
+            $output->_null = "";
+            json_exit();
+        }
+    } else {
+        ## one entry, set the searchkey to the full _id
+        $output->searchkey = $ids[ 0 ];
+    }
+
+    try {
+        $found = $db_mongo->somo->afd->findOne( [ "_id" => $output->searchkey ] );
+    } catch ( MongoDB\Exception\UnsupportedException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    } catch ( MongoDB\Exception\InvalidArgumentException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    } catch ( MongoDB\Exception\RuntimeException $e ) {
+        $output->errors = "Error finding " .  $e->getMessage();
+        json_exit();
+    }
+
+    # $ga->tcpmessage( [ "_textarea" => json_encode( $found, JSON_PRETTY_PRINT ) . "\n" ] );
+
+    $basename   = $found->name;
+    $somoaffile = "/host/somoaf/pdb/$basename-somo.pdb";
+    
+    if ( !file_exists( $somoaffile ) ) {
+        error_exit( "The post translationally modified structure was not found" );
+    }
+
+    run_cmd( "cp $somoaffile ./$basename.pdb" );
+
+    $fpdb = "$basename.pdb";
+    $is_alphafold = true;
 }
 
 ## are we ok to run / any pre-run checks
