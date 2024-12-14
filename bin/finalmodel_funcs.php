@@ -65,6 +65,35 @@ function add_adjacent_frames( $adjacentframes, &$results, &$errormsg ) {
     return true;
 }
 
+function get_frames_to_run( $checkdir, $frames, &$framesleft, &$errormsg ) {
+    global $cgstate;
+    global $max_frame_digits;
+
+    if ( !is_dir( $checkdir ) ) {
+        $errormsg = "Expected directory '$checkdir' does not exist";
+        return false;
+    }        
+
+    if ( !isset( $cgstate->state->output_load->name ) ) {
+        $errormsg = "No name defined";
+        return false;
+    }
+
+    $name = preg_replace( '/\.pdb$/', '', $cgstate->state->output_load->name );
+
+    $framesleft = [];
+
+    foreach ( $frames as $frame ) {
+        $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+        $waxsis_file = "$checkdir/$name-m$frame_padded-waxsis.dat";
+        if ( !file_exists( $waxsis_file ) ) {
+            $framesleft[] = $frame;
+        }
+    }
+
+    return true;
+}
+
 function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) {
     global $cgstate;
     global $max_frame_digits;

@@ -91,6 +91,8 @@ if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
     error_exit( "The maximum value allowed for the <i>Additional adjacent frame count</i> is " . ( intval( $cgstate->state->mmcstride / 2 ) ) );
 }
 
+$procdir = "waxsissets";
+
 ### build up set of models
 
 include "finalmodel_funcs.php";
@@ -111,7 +113,21 @@ if ( !add_adjacent_frames( $input->adjacent_frames, $frameset, $errors ) ) {
     error_exit( $errors );
 }
 
-$models_to_process_count = count( $frameset );
+#$ga->tcpmessage( [ "_message" => [ "text" => "frameset: " . json_encode( $frameset ) ] ] );
+
+$frames_left = [];
+
+if ( is_dir( $procdir ) ) {
+    if ( !get_frames_to_run( $procdir, $frameset, $frames_left, $errors ) ) {
+        error_exit( $errors );
+    }
+} else {
+    $frames_left = $frameset;
+}
+
+#$ga->tcpmessage( [ "_message" => [ "text" => "frames_left: " . json_encode( $frames_left ) ] ] );
+
+$models_to_process_count = count( $frames_left );
 
 if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
      $cgstate->state->waxsis_last_run_time_minutes > 0 ) {
@@ -122,11 +138,10 @@ if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
 
 $ga->tcpmessage( [ "_textarea" =>
                    "Original models preselected " . count( $org_frames ) . "\n"
-                   . "Total models with additional frames $models_to_process_count\n"
+                   . "Total models with adjacent frames " . count( $frameset ) . "\n"
                    . "\n"
                    . "\n"
                  ] );
-
 
 ## ask really proceed
 
@@ -162,8 +177,6 @@ if ( $response->_response->button == "cancelfornow" ) {
 
 ## collect models
 
-$procdir = "waxsissets";
-
 if ( !$do_testing ) {
 ## why should we clear the directory?
     if ( !is_dir( $procdir ) ) {
@@ -175,7 +188,7 @@ if ( !$do_testing ) {
 
 ## link existing frames
 
-progress_text( "Extracting " . ( $models_to_process_count - count( $org_frames ) ) . " additonal frames" );
+progress_text( "Extracting " . ( count( $frameset ) - count( $org_frames ) ) . " additonal frames if needed" );
 $ga->tcpmessage( [ 'processing_progress' => 0.01 ] );
 
 $names = [];
@@ -185,7 +198,6 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 }
 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
-
 
 ## run waxsis calcs
 
@@ -200,9 +212,7 @@ $waxsis_params =
     ];
 
 
-$pos = 0;
 $count = count( $names );
-
 
 if ( !$count ) {
     error_exit( "no frames found to process" );
@@ -225,6 +235,8 @@ $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cg
     ? $cgstate->state->waxsis_last_run_time_minutes
     : 0
     ;
+
+# $ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time: $avg_waxsis_time" ] ] );
 
 $tot_waxsis_time = 0;
 
@@ -252,24 +264,33 @@ $waxsis_failures = [];
 $chi2  = -1;
 $rmsd  = -1;
 $scale = 0;
-
+$to_compute = $models_to_process_count;
+$pos = 0;
+#$ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time (2): $avg_waxsis_time" ] ] );
+$models_processed = 0;
 foreach ( $names as $name ) {
     
-    $pos_frac = ( $pos + .5 ) / $count;
+    if ( $models_to_process_count ) {
+        $pos_frac = ( $models_processed + .5 ) / $models_to_process_count;
+    } else {
+        $pos_frac = .5;
+    }
+
     $frame = $frameset[ $pos ];
     $pdbnoext = preg_replace( '/\.pdb$/', '', $name );
 
-    if ( $pos ) {
-        $avg_waxsis_time = $tot_waxsis_time / $pos;
+    if ( $models_processed ) {
+        $avg_waxsis_time = $tot_waxsis_time / $models_processed;
     }
 
     if ( $avg_waxsis_time > 0 ) {
-        $estimated_time_to_completion = dhms_from_minutes( intval( $avg_waxsis_time * ( $count - $pos ) * 1.2 ) + .5 );
+        $estimated_time_to_completion = dhms_from_minutes( intval( $avg_waxsis_time * ( $models_to_process_count ) * 1.2 ) + .5 );
     } else {
         $estimated_time_to_completion = "*unknown duration*";
     }
     
-    $ga->tcpmessage( [ 'processing_progress' => $pos_frac ] );
+    $ga->tcpmessage( [ 'processing_progress' => $pos_frac
+                     , '_textarea' => "Processing frame $frame\n" ] );
 
     progress_text( "Running WAXSiS calculations on frame $frame<br>Estimated $estimated_time_to_completion remaining" );
 
@@ -298,7 +319,12 @@ foreach ( $names as $name ) {
             } else {
                 $waxsis_failures[] = $frame;
             }
+            --$models_to_process_count;
+            ++$models_processed;
         } else {
+            
+            $ga->tcpmessage( [ '_textarea' => "Frame $frame previously processed\n" ] );
+
             $iqfiles[] = $iqfile;
             $ok = true;
         }
@@ -488,7 +514,8 @@ if ( !$cgstate->save() ) {
 if ( count( $waxsis_failures ) ) {
     $msg =
         "WAXSiS simulation failures occured on " . count( $waxsis_failures ) . " Models:\n"
-        . implode( ' ', $waxsis_failures ) . "\n"
+        . implode( ' ', $waxsis_failures ) . "'<br>"
+        . "These frames are excluded from the final NNLS fit<br>"
         ;
 
     $output->_message = [
