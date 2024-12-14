@@ -342,8 +342,27 @@ class SAS {
 
             $this->debug_msg( "Got " . count( $plotin ) . " lines of data\n" );
 
+            if ( FALSE !== strpos( $data, "G N O M" ) ) {
+                ## GNOM file, skip to PR section
+
+                $plotin_pr = [];
+
+                $found_pr = false;
+                foreach ( $plotin as $line ) {
+                    if ( $found_pr ) {
+                        $plotin_pr[] = $line;
+                        continue;
+                    }
+                    if ( FALSE != strpos( $line, 'Distance distribution' ) ) {
+                        $found_pr = true;
+                    }
+                }
+
+                $plotin = $plotin_pr;
+            }
+
             # remove blank & text & comment lines & lines that start with quotes
-            $plotin = preg_grep( '/^(\s*#|\s*$|\s*[A-Za-z\'"~*])/', $plotin, PREG_GREP_INVERT );
+            $plotin = preg_grep( '/^(\s*--|\s*#|\s*$|\s*[A-Za-z\'"~*])/', $plotin, PREG_GREP_INVERT );
 
             # any lines left
             if ( !count( $plotin ) ) {
@@ -2283,4 +2302,9 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }
-
+/*
+$sas = new SAS( true );
+$sas->load_file( SAS::PLOT_IQ, "sas_g_ang iq", "SAS_G_ang.dat" );
+$sas->load_file( SAS::PLOT_PR, "sas_g_ang pr", "SAS_G_ang.out" );
+echo $sas->data_summary( [ "sas_g_ang iq" ] );
+*/
