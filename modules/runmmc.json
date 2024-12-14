@@ -5,6 +5,7 @@
     ,"help"       : "Run Monomer Monte Carlo on selected structures"
     ,"executable" : "monomer_monte_carlo"
     ,"loadfields" : "runmmc_load.php"
+    ,"notify"     : "email"
     ,"panels" : [
         {
             "root" : {
