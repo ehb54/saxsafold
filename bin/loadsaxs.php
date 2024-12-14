@@ -43,6 +43,11 @@ if ( !$cgstate->state->loaded ) {
 
 ## process inputs here to produce output
 
+## clean up filenames
+
+$input->saxsiqfile[0] =  clean_up_filename_and_copy_if_needed( $input->saxsiqfile[0] );
+$input->saxsprfile[0] =  clean_up_filename_and_copy_if_needed( $input->saxsprfile[0] );
+
 ## possibly plot (easy for P(r), we have the code)
 
 ## plotly

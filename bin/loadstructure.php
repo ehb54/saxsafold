@@ -103,6 +103,7 @@ if ( !isset( $input->searchkey )
         $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
         error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
     }
+    $input->pdbfile[0] =  clean_up_filename_and_copy_if_needed( $input->pdbfile[0] );
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
     $is_alphafold = preg_match( '/^AF-/', $fpdb );
 } elseif ( isset( $input->searchkey ) ) {
