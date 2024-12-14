@@ -1839,6 +1839,7 @@ class SAS {
             'target'      => &$this->data->$targetname  ## note target:x is not needed, but if we unset, it will clear in the reference, not worth deep copy
             ,'data'       => (object)[]
             ,'use_errors' => $use_errors ? 1 : 0
+            ,'sd_factor'  => $this->data->$targetname->type == self::PLOT_IQ ? "1/sd^2" : "1/sd"
             ];
 
         foreach ( $names as $name ) {
