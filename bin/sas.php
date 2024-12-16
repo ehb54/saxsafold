@@ -24,6 +24,18 @@ class SAS {
     const PLOT_IQ_XAXIS_TITLE   = "q [&#8491;<sup>-1</sup>]";
     const PLOT_PR_XAXIS_TITLE   = "Distance [&#8491;]";
     const PR_MIN_ERRORS_MULT    = 1e-2;
+    const PLOTLY_COLORS         = [
+        '#1f77b4'  # muted blue
+        ,'#ff7f0e'  # safety orange
+        ,'#2ca02c'  # cooked asparagus green
+        ,'#d62728'  # brick red
+        ,'#9467bd'  # muted purple
+        ,'#8c564b'  # chestnut brown
+        ,'#e377c2'  # raspberry yogurt pink
+        ,'#7f7f7f'  # middle gray
+        ,'#bcbd22'  # curry yellow-green
+        ,'#17becf'  # blue-teal
+        ];
 
     ## php 8.1 has enum, should eventually replace
 
@@ -510,6 +522,60 @@ class SAS {
         return true;
     }
 
+    # plot_trace_options() options for individual traces
+    function plot_trace_options( $name, $dataname, $options ) {
+        $this->debug_msg( "SAS::plot_trace_options( '$name', '$dataname', options[] )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::plot_trace_options() plot name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !is_array( $options ) ) {
+            $this->last_error = "SAS::plot_trace_options() \$options is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->plots->$name->data ) ) {
+            $this->last_error = "SAS::plot_trace_options() plot '$name' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $plotdata = false;
+
+        foreach ( $this->plots->$name->data as $v ) {
+            if ( $v->name == $dataname ) {
+                $plotdata = $v;
+                break;
+            }
+        }
+
+        if ( !is_object( $plotdata ) ) {
+            $this->last_error = "SAS::plot_trace_options() plot '$name' has not trace name '$dataname'";
+            return $this->error_exit( $this->last_error );
+        }
+
+        foreach ( $options as $k => $v ) {
+            switch ( $k ) {
+                case "linecolor" : {
+                    $plotdata->line->color = $v;
+                }
+                break;
+                case "linecolor_number" : {
+                    $plotdata->line->color = self::PLOTLY_COLORS[ $v % count( self::PLOTLY_COLORS ) ];
+                }
+                break;
+
+                default : {
+                    $this->last_error = "SAS::plot_trace_options() option '$k' unknown";
+                    return $this->error_exit( $this->last_error );
+                }
+            }
+        }
+                    
+        return true;
+    }   
     # plot_options() sets variuos plot options
     function plot_options( $name, $options ) {
         $this->debug_msg( "SAS::plot_options( '$name', options[] )" );
@@ -1230,7 +1296,7 @@ class SAS {
         
         for ( $i = 0; $i < $len1; ++$i ) {
             $msd += pow( $this->data->$name1->y[$i] - $this->data->$name2->y[$i], 2 );
-            $this->data->$destname->y[] =  $this->significant_digits( $this->data->$name2->y[$i] - $this->data->$name1->y[$i] );
+            $this->data->$destname->y[] =  $this->significant_digits( $this->data->$name1->y[$i] - $this->data->$name2->y[$i] );
         }
 
         $rmsd = sqrt( $msd );
@@ -1839,7 +1905,7 @@ class SAS {
             'target'      => &$this->data->$targetname  ## note target:x is not needed, but if we unset, it will clear in the reference, not worth deep copy
             ,'data'       => (object)[]
             ,'use_errors' => $use_errors ? 1 : 0
-            ,'sd_factor'  => $this->data->$targetname->type == self::PLOT_IQ ? "1/sd^2" : "1/sd"
+            ,'sd_factor'  => $this->data->$targetname->type == self::PLOT_IQ ? "1/sd" : "1/sd"
             ];
 
         foreach ( $names as $name ) {
@@ -2023,10 +2089,21 @@ if ( isset( $do_testing_iq ) && $do_testing_iq ) {
         $sas->annotate_plot( "I(q)", $annotate_msg );
     }
     
-#    $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" );
-#    $sas->add_plot_residuals( $plotname, "Res./SD" );
+    if ( !$sas->plot_trace_options( $plotname, "WAXSiS", [ 'linecolor_number' => 1 ] ) ) {
+        echo $sas->last_error . "\n";
+        exit(-1);
+    }
 
-    $sas->plot_residuals( $plotname, false );
+    $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" );
+    $sas->add_plot_residuals( $plotname, "Res./SD" );
+
+    if ( !$sas->plot_trace_options( $plotname, "Res./SD", [ 'linecolor_number' => 1 ] ) ) {
+        echo $sas->last_error . "\n";
+        exit(-1);
+    }
+
+    # $sas->plot_residuals( $plotname, false );
+
     
     file_put_contents( "dump_data.json", $sas->dump_data() );
     file_put_contents( "dump_plots.json", json_encode( $sas->plot( $plotname ), JSON_PRETTY_PRINT ) );
