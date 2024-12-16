@@ -33,4 +33,5 @@ $test_limit_max_computeiqpr_frames      = 0;
 $waxsis_convergence_mode                = 'quick';
 
 $waxsis_threads                         = 10;
-$waxsis_retries                         = 3;
+$waxsis_retries                         = 1;
+$waxsis_model_number                    = 0;
