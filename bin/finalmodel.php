@@ -92,6 +92,7 @@ if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
 }
 
 $procdir = "waxsissets";
+$waxsis_data_name = "I(q) WAXSiS mod. 0";
 
 ### build up set of models
 
@@ -114,6 +115,7 @@ if ( !add_adjacent_frames( $input->adjacent_frames, $frameset, $errors ) ) {
 }
 
 #$ga->tcpmessage( [ "_message" => [ "text" => "frameset: " . json_encode( $frameset ) ] ] );
+$ga->tcpmessage( [ "_textarea" => "Models to include : " . implode( ",", $frameset ) . "\n" ] );
 
 $frames_left = [];
 
@@ -125,7 +127,12 @@ if ( is_dir( $procdir ) ) {
     $frames_left = $frameset;
 }
 
+if ( count( $frames_left ) ) {
+    $ga->tcpmessage( [ "_textarea" => "Models to process (without prior results) : " . implode( ",", $frames_left ) . "\n" ] );
+}
 #$ga->tcpmessage( [ "_message" => [ "text" => "frames_left: " . json_encode( $frames_left ) ] ] );
+
+$ga->tcpmessage( [ "_textarea" => "\n" ] );
 
 $models_to_process_count = count( $frames_left );
 
@@ -137,8 +144,8 @@ if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
 }
 
 $ga->tcpmessage( [ "_textarea" =>
-                   "Original models preselected " . count( $org_frames ) . "\n"
-                   . "Total models with adjacent frames " . count( $frameset ) . "\n"
+                   "Original models preselected : " . count( $org_frames ) . "\n"
+                   . "Number of models including adjacent frames : " . count( $frameset ) . "\n"
                    . "\n"
                    . "\n"
                  ] );
@@ -188,7 +195,7 @@ if ( !$do_testing ) {
 
 ## link existing frames
 
-progress_text( "Extracting " . ( count( $frameset ) - count( $org_frames ) ) . " additonal frames if needed" );
+progress_text( "Extracting additonal frames if needed" );
 $ga->tcpmessage( [ 'processing_progress' => 0.01 ] );
 
 $names = [];
@@ -230,6 +237,7 @@ $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_lo
 $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
+$sas->rename_data( "WAXSiS", $waxsis_data_name );
 
 $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
     ? $cgstate->state->waxsis_last_run_time_minutes
@@ -258,7 +266,7 @@ $waxsis_cb = function( $line ) {
 
 $waxsisiqfile    = $waxsis_params->subdir . "/intensity_waxsis.calc";
 $iqfiles         = [];
-$alliqframes     = [ 'WAXSiS' ];
+$alliqframes     = [ $waxsis_data_name ];
 $waxsis_failures = [];
 
 $chi2  = -1;
@@ -380,6 +388,7 @@ $sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2
 $sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
 $sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
 $sas->add_plot_residuals( $plotname, "I(q) fit Res./SD" );
+$sas->plot_trace_options( $plotname, "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
 
 $rmsd = round( $rmsd, 3 );
 $chi2 = round( $chi2, 3 );
@@ -434,19 +443,34 @@ $output->csvdownloads =
 $pdboutname = "waxsisfinalset.pdb";
 $pdbout     = "";
 
+# $ga->tcpmessage( [ "_textarea" => "nnlsresults :\n" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
+
 foreach ( $iqresults as $name => $conc ) {
     $tmpname = explode( ' ', $name );
     $frame = end( $tmpname );
-    $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
-    $pdbname = "${bname}-somo-m$frame_padded.pdb";
-    if ( !file_exists( "$procdir/$pdbname" ) ) {
-        error_exit( "expected file '$procdir/$pdbname' not found" );
-    }
+    if ( $name == $waxsis_data_name ) {
+        $pdbname = "${bname}-somo.pdb";
+        if ( !file_exists( "$pdbname" ) ) {
+            error_exit( "expected file '$pdbname' not found" );
+        }
 
-    $pdbout .= "MODEL $frame\n"
-        . run_cmd( "grep -P '^(ATOM|HETATM)' $procdir/$pdbname" )
-        . "ENDMDL\n"
-        ;
+        $pdbout .= "MODEL $waxsis_model_number\n"
+            . run_cmd( "grep -P '^(ATOM|HETATM)' $pdbname" )
+            . "ENDMDL\n"
+            ;
+        
+    } else {
+        $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+        $pdbname = "${bname}-somo-m$frame_padded.pdb";
+        if ( !file_exists( "$procdir/$pdbname" ) ) {
+            error_exit( "expected file '$procdir/$pdbname' not found" );
+        }
+
+        $pdbout .= "MODEL $frame\n"
+            . run_cmd( "grep -P '^(ATOM|HETATM)' $procdir/$pdbname" )
+            . "ENDMDL\n"
+            ;
+    }
 };
 
 $pdbout .= "END\n";
@@ -482,8 +506,12 @@ $output->struct = (object) [
 
 $pos = 0;
 foreach ( $iqresults as $name => $conc ) {
-    $tmpname = explode( ' ', $name );
-    $frame = end( $tmpname );
+    if ( $name == $waxsis_data_name ) {
+        $frame = $waxsis_model_number;
+    } else {
+        $tmpname = explode( ' ', $name );
+        $frame = end( $tmpname );
+    }
     $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
 }
 $output->struct->script .= "frame all;";
