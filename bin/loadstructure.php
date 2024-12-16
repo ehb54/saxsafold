@@ -527,6 +527,7 @@ if (
                           ]
     )
     && $sas->add_plot_residuals( "P(r)", "Resid." )
+    && $sas->plot_trace_options( "P(r)", "Resid.", [ 'linecolor_number' => 1 ] )
     && $sas->plot_options( "P(r)", [ 'yaxistitle' => 'Norm. Freq. [Da]' ] )
     ) {
 } else {
@@ -630,6 +631,7 @@ if (
     && $sas->add_plot( "I(q)", "WAXSiS" )
     && $sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
     && $sas->add_plot_residuals( "I(q)", "Res./SD" )
+    && $sas->plot_trace_options( "I(q)", "Res./SD", [ 'linecolor_number' => 1 ] )
     ) {
     $output->iqplot = $sas->plot( "I(q)" );
 } else {

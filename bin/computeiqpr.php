@@ -417,6 +417,7 @@ $scale   = 0;
 
 $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Resid.", $rmsd_pr );
 $sas->add_plot_residuals( "P(r) sel", "P(r) fit Resid." );
+$sas->plot_trace_options( "P(r) sel", "P(r) fit Resid.", [ 'linecolor_number' => 1 ] );
 $sas->plot_options( "P(r) sel", [ "yaxis2title" => "Resid." ] );
 
 $rmsd_pr = round( $rmsd_pr, 3 );
@@ -471,6 +472,7 @@ $sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2
 $sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
 $sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
 $sas->add_plot_residuals( "I(q) sel", "I(q) fit Res./SD" );
+$sas->plot_trace_options( "I(q) sel", "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
 
 $rmsd = round( $rmsd, 3 );
 $chi2 = round( $chi2, 3 );
@@ -535,6 +537,7 @@ if ( isset( $input->prerrors ) ) {
 #    $sas->rmsd( "Exp. P(r)", "P(r) NNLS fit w/SDs", $rmsd_prwe );
 #    $sas->calc_residuals( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) fit w/SDs Resid." );
     $sas->add_plot_residuals( "P(r) we sel", "P(r) fit w/SDs Resid." );
+    $sas->plot_trace_options( "P(r) we sel", "P(r) fit w/SDs Resid.", [ 'linecolor_number' => 1 ] );
     $sas->plot_options( "P(r) we sel", [ "yaxis2title" => "Resid." ] );
 
     $rmsd_prwe = round( $rmsd_prwe, 3 );
