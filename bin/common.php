@@ -201,6 +201,10 @@ function nnls_results_to_html( $obj ) {
 function extract_dcd_frame( $frame, $pdb, $dcd, $outdir, $skipifexists = false ) {
     global $max_frame_digits;
 
+    if ( $frame < 1 ) {
+        error_exit( "extract_dcd_frame() : invalid frame number requested ($frame)" );
+    }
+
     if ( !file_exists( $pdb ) ) {
         error_exit( "extract_dcd_frame() : $pdb does not exist" );
     }
@@ -230,8 +234,10 @@ function extract_dcd_frame( $frame, $pdb, $dcd, $outdir, $skipifexists = false )
     if ( !is_dir( $outdir ) ) {
         error_exit( "could not make directory $outdir" );
     }
+
+    $mdconvertframe = $frame - 1;
     
-    $cmd = "mdconvert -i $frame -t $pdbuse -o $outname.tmp.pdb $dcd && grep -Pv '^(MODEL|ENDMDL)' $outname.tmp.pdb > $outname && rm $outname.tmp.pdb";
+    $cmd = "mdconvert -i $mdconvertframe -t $pdbuse -o $outname.tmp.pdb $dcd && grep -Pv '^(MODEL|ENDMDL)' $outname.tmp.pdb > $outname && rm $outname.tmp.pdb";
 
     run_cmd( $cmd );
 
