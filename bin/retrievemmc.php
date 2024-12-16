@@ -44,7 +44,6 @@ $cgstate = new cgrun_state();
 
 ## does the project already exist ?
 
-
 ## make sure project is loaded
 
 if ( !$cgstate->state->loaded ) {
@@ -163,7 +162,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
             run_cmd( "mkdir preselected" );
         }
 
-        for ( $frame = $input->mmcoffset; $frame < $totframes; $frame += $input->mmcstride ) {
+        for ( $frame = $input->mmcoffset + 1; $frame <= $totframes; $frame += $input->mmcstride ) {
             extract_dcd_frame( $frame, $pdbname, "monomer_monte_carlo/$dcdname", "preselected" );
             if ( !($extracted++ % $update_mmc_extract_frequency ) ) {
                 $ga->tcpmessage( [
