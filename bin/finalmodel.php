@@ -104,6 +104,13 @@ $sas = new SAS( false );
 $errors = "";
 $frameset = [];
 
+switch( $input->waxsis_convergence_mode ) {
+    case "normal"   : $waxsis_suffix = "_n"; break;
+    case "thorough" : $waxsis_suffix = "_t"; break;
+    case "quick"    : $waxsis_suffix = "_q"; break;
+    default         : error_exit( "internal error - unknown or unsupported WAXSiS convergence mode" );
+}
+
 if ( !initial_model_set( $frameset, $errors ) ) {
     error_exit( $errors );
 }
@@ -159,7 +166,7 @@ $response =
              "id"           => "q1"
              ,"title"       => "<h5>Proceed with computations? </h5>"
              ,"icon"        => "warning.png"
-             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_process_count</strong> models is <strong>$estimated_time_to_completion</strong>"
+             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_process_count</strong> models is <strong>$estimated_time_to_completion</strong><br><br>This initial estimate is based upon a WAXSiS convergence mode of '$waxsis_convergence_mode' used when <i>Load Structure</i> performed WAXSiS.<br>Projected time will be updated upon completion of each new WAXSiS run at your selected convergence mode."
              ,"timeouttext" => "The time to respond has expired, please submit again."
              ,"buttons"     => [ "Yes, proceed", "Cancel for now" ]
              ,"fields" => [
@@ -212,7 +219,7 @@ $waxsis_params =
     (object)[
         'qpoints'             => $cgstate->state->qpoints + 10 # 10 to compensate for low-q region
         ,'maxq'               => $cgstate->state->qmax * $max_q_multiplier  # extend to prevent extrapolation when interpolating
-        ,'convergence'        => $waxsis_convergence_mode
+        ,'convergence'        => $input->waxsis_convergence_mode
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => $cgstate->state->solvent_e_density
         ,'subdir'             => 'waxsisfinal'
@@ -276,6 +283,14 @@ $to_compute = $models_to_process_count;
 $pos = 0;
 #$ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time (2): $avg_waxsis_time" ] ] );
 $models_processed = 0;
+
+switch( $input->waxsis_convergence_mode ) {
+    case "normal"   : $waxsis_suffix = "_n"; break;
+    case "thorough" : $waxsis_suffix = "_t"; break;
+    case "quick"    : $waxsis_suffix = "_q"; break;
+    default         : error_exit( "internal error - unknown or unsupported WAXSiS convergence mode" );
+}
+    
 foreach ( $names as $name ) {
     
     if ( $models_to_process_count ) {
@@ -305,7 +320,7 @@ foreach ( $names as $name ) {
     $ok = false;
 
     if ( !$do_testing ) {
-        $iqfile = "$procdir/$pdbnoext-waxsis.dat";
+        $iqfile = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
         if ( !file_exists( $iqfile ) ) {
             $time_start = dt_now();
             $ok =

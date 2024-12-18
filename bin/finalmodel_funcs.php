@@ -77,6 +77,7 @@ function add_adjacent_frames( $adjacentframes, &$results, &$errormsg ) {
 function get_frames_to_run( $checkdir, $frames, &$framesleft, &$errormsg ) {
     global $cgstate;
     global $max_frame_digits;
+    global $waxsis_suffix;
 
     if ( !is_dir( $checkdir ) ) {
         $errormsg = "Expected directory '$checkdir' does not exist";
@@ -94,7 +95,7 @@ function get_frames_to_run( $checkdir, $frames, &$framesleft, &$errormsg ) {
 
     foreach ( $frames as $frame ) {
         $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
-        $waxsis_file = "$checkdir/$name-m$frame_padded-waxsis.dat";
+        $waxsis_file = "$checkdir/$name-m$frame_padded-waxsis${waxsis_suffix}.dat";
         if ( !file_exists( $waxsis_file ) ) {
             $framesleft[] = $frame;
         }
