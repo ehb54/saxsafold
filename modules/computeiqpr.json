@@ -252,11 +252,12 @@
         }
         ,{
             "role"              : "output"
-            ,"label"             : "<br>"
+            ,"label"             : "<hr><strong>Starting model section</strong><hr>"
             ,"type"              : "label"
-            ,"id"                : "plotsheader"
+            ,"id"                : "expt_header"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
             }
         }
         ,{

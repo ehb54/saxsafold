@@ -88,6 +88,12 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
         if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->results} ) ) {
             $result->{$mdata->tags->results} = &$cgstate->state->output_iqpr->{$mdata->tags->results};
         }
+        if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->header_id} ) ) {
+            $result->{$mdata->tags->header_id} = &$cgstate->state->output_iqpr->{$mdata->tags->header_id};
+        }
+        if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->downloads} ) ) {
+            $result->{$mdata->tags->downloads} = &$cgstate->state->output_iqpr->{$mdata->tags->downloads};
+        }
     }
 
     if ( isset( $cgstate->state->output_iqpr->pr_plotallhtml ) ) {
@@ -98,6 +104,15 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     }
     if ( isset( $cgstate->state->output_iqpr->pr_plotsel ) ) {
         $result->pr_plotsel = &$cgstate->state->output_iqpr->pr_plotsel;
+    }
+    if ( isset( $cgstate->state->output_iqpr->pr_header ) ) {
+        $result->pr_header = &$cgstate->state->output_iqpr->pr_header;
+    }
+    if ( isset( $cgstate->state->output_iqpr->pr_downloads ) ) {
+        $result->pr_downloads = &$cgstate->state->output_iqpr->prwe_downloads;
+    }
+    if ( isset( $cgstate->state->output_iqpr->prwe_downloads ) ) {
+        $result->prwe_downloads = &$cgstate->state->output_iqpr->prwe_downloads;
     }
 
     if ( isset( $cgstate->state->computeiqpr_prerrors ) &&
@@ -115,6 +130,8 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
 
 
 ## unset() below can be removed, but keeping for legacy run testing
+unset( $result->iq_p_plotall );
+unset( $result->iq_c3_plotall );
 unset( $result->iqplotall );
 unset( $result->prplotall );
 

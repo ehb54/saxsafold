@@ -326,8 +326,59 @@ class SAS {
                          ? number_format($value, $decimalPlaces, '.', '') : round($value, $decimalPlaces) );
     }
 
-    function load_file( $type, $name, $file, $includeSDs = true, $tag = "" ) {
+    # save_file
 
+    function save_file( $name, $file ) {
+        $this->debug_msg( "SAS::save_file( '$name', '$file' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::save_file() curve named '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $contents = "# SAXSAFOLD produced data file\n";
+        
+        if ( isset( $this->data->$name->error_y ) ) {
+            if ( $this->data->$name->type == self::PLOT_PR ) {
+                $contents .= "# r\tP(r)\tSD\n";
+            } else {
+                $contents .= "# q\tI(q)\tSD\n";
+            }
+            for ( $i = 0; $i < count( $this->data->$name->x ); ++$i ) {
+                $contents .=
+                    sprintf( "%f\t%f\t%f\n"
+                             ,$this->data->$name->x[$i]
+                             ,$this->data->$name->y[$i]
+                             ,$this->data->$name->error_y[$i]
+                    );
+            }
+        } else {
+            if ( $this->data->$name->type == self::PLOT_PR ) {
+                $contents .= "# r\tP(r)\n";
+            } else {
+                $contents .= "# qr\tI(q)\n";
+            }
+
+            for ( $i = 0; $i < count( $this->data->$name->x ); ++$i ) {
+                $contents .=
+                    sprintf( "%f\t%f\n"
+                             ,$this->data->$name->x[$i]
+                             ,$this->data->$name->y[$i]
+                    );
+            }
+        }
+
+        if ( !file_put_contents( $file, $contents ) ) {
+            $this->last_error = "SAS::save_file() error writing file '$file'";
+            return $this->error_exit( $this->last_error );
+        }
+
+        return true;
+    }
+
+    # load file
+    function load_file( $type, $name, $file, $includeSDs = true, $tag = "" ) {
         $this->debug_msg( "SAS::load_file( $type, '$name', '$file' )" );
         $this->last_error = "";
         if ( strlen( $tag ) ) { $tag = ' ' . $tag; };
@@ -1014,7 +1065,7 @@ class SAS {
             return $this->plots->$name;
         }
 
-        $this->last_error = "plot() plot name '$name' does not existn";
+        $this->last_error = "plot() plot name '$name' does not exist";
         return $this->error_exit( $this->last_error );
     }
 
@@ -2380,9 +2431,12 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }
+
 /*
-$sas = new SAS( true );
+    $sas = new SAS( true );
 $sas->load_file( SAS::PLOT_IQ, "sas_g_ang iq", "SAS_G_ang.dat" );
 $sas->load_file( SAS::PLOT_PR, "sas_g_ang pr", "SAS_G_ang.out" );
 echo $sas->data_summary( [ "sas_g_ang iq" ] );
+$sas->save_file( "sas_g_ang iq", "test_iq.dat" );
+$sas->save_file( "sas_g_ang pr", "test_pr.dat" );
 */

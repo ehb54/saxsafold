@@ -250,6 +250,12 @@ function model_no_from_pdb_name( $pdb ) {
     return intval( $model );
 }
 
+function padded_model_no_from_pdb_name( $pdb ) {
+    global $max_frame_digits;
+    $frame = model_no_from_pdb_name( $pdb );
+    return str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+}
+
 function clean_up_filename_and_copy_if_needed( $filename ) {
     $filename_no_path    = preg_replace( '/^.*\//', '', $filename );
     $path                = dirname( $filename );

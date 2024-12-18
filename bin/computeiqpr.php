@@ -70,6 +70,8 @@ if ( !$cgstate->state->mmcdownloaded || !$cgstate->state->mmcextracted || !strle
     error_exit( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
+require "computeiqpr_defines.php";
+
 ## clear output
 $ga->tcpmessage( [
                      'processing_progress' => 0.01
@@ -79,15 +81,25 @@ $ga->tcpmessage( [
                      ,"pr_results"         => ''
                  ]);
 
+### clear state data
+
+## note - $output is fully reset, so only top-level state info needs to be cleared
+
+unset( $cg->state->pr_nnlsresults );
+unset( $cg->state->prwe_nnlsresults );
+
+foreach ( $mdatas as $mdata ) {
+    unset( $cg->state->{$mdata->tags->nnlsresults} );
+}
+
 ## initial plots
 include_once "limits.php";
 require "sas.php";
 include "crysol.php";
+require "computeiqpr_funcs.php";
 $sas = new SAS();
 
 $plots = (object) [];
-
-require "$scriptdir/computeiqpr_funcs.php";
 
 setup_computeiqpr_plots( $plots );
 
@@ -103,12 +115,9 @@ if ( isset( $input->prerrors ) ) {
 $tmpout = (object)[];
 
 $tmpout->iqplot       = $plots->iqplot;
-# $tmpout->iqplotall    = $sas->plot( "I(q) all mmc" );
-# $tmpout->iqplotsel    = $plots->iqplotsel;
-
 $tmpout->prplot       = $plots->prplot;
-# $tmpout->prplotall    = $sas->plot( "P(r) all mmc" );
-# $tmpout->pr_plotsel    = $plots->pr_plotsel;
+
+## add other plots ?
 
 $ga->tcpmessage( $tmpout );
 
@@ -116,7 +125,7 @@ $ga->tcpmessage( $tmpout );
 
 $bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
 
-$ga->tcpmessage( [ '_textarea' => "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
 
 if ( !isset( $input->iqmethod ) ) {
     error_exit( "At least one <i>I(q) computation method</i> must be selected" );
@@ -125,7 +134,7 @@ if ( !is_array( $input->iqmethod ) ) {
     error_exit( "Internal error - iqmethod is not an array" );
 }
 
-$ga->tcpmessage( [ "_message" => [ "text" =>  "This module is under development/modification" ] ] );
+# $ga->tcpmessage( [ "_message" => [ "text" =>  "This module is under development/modification" ] ] );
 
 ### check if crysol selected and if so, verify academic usage
 
@@ -141,6 +150,7 @@ if ( in_array( "crysol3", $input->iqmethod )
     $userdoc = ga_db_output( ga_db_findOne( 'users', '', [ '_logon' => $input->logon ] ) );
 
     # $output->_textarea = json_encode( $userdoc, JSON_PRETTY_PRINT ) . "\n----\n";
+    ## remove the 1 || below to only ask once
     if ( 1 || !isset( $userdoc->academicAgree ) ) {
         $response =
             json_decode(
@@ -221,8 +231,6 @@ $count_pdbs    = count( $pdbs );
 if ( $count_pdbs > $max_frames ) {
     error_exit( "Number of Frames ($count_pdbs) to process is greater than the current limit ($max_frames).<br>Rerun <i>Retrieve MMC</i>.<br>Be sure to check <i>Extract Frames</i> and <br>set <i>Stride</i> to ensure the number of Frames subselected is less than the limit." );
 }
-    
-
 
 #### P(r) start #####
 
@@ -248,10 +256,12 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     $usecount = min( count( $prpdbs ), $batch_run_pr_size );
     progress_text( "Computing P(r) (" . ( $pos + 1 ) . "-" . ( $pos + $usecount ) . " of $count_pdbs)" );
 
+    $output->pr_header = "<hr><strong>P(r) results section</strong><hr>";
+
     $ga->tcpmessage(
         [
          "processing_progress" => 0 + .4 * ( ( $pos + .5 * $usecount ) / $count_pdbs )
-         ,"pr_header" => "<hr>P(r) results section<hr>"
+         ,"pr_header" => $output->pr_header
          ,"pr_plotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
         ]
         );
@@ -259,31 +269,57 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     $prnamescomp   = [];
     $prnamesinterp = [];
     $prnamesnormed = [];
+    $prnamesotcomp = [];
     
+    $prfiles       = [];
+    $prfileexists  = [];
+
     for ( $i = 0; $i < $usecount; ++$i ) {
+        $prfiles[ $i ]   = "preselected/${bname}-m" . padded_model_no_from_pdb_name( $prpdbs[ $i ] ) . "-somo-pr.dat";
         $prnamesnormed[] = "P(r) mod. " . model_no_from_pdb_name( $prpdbs[ $i ] );
         $allprnames[]    = end( $prnamesnormed );
         $prnamescomp[]   = end( $prnamesnormed ) . " comp";
         $prnamesinterp[] = end( $prnamesnormed ) . " interp";
-        $prpdbs[ $i ] = "preselected/" . $prpdbs[ $i ];
+        $prpdbs[ $i ]    = "preselected/" . $prpdbs[ $i ];
+        if ( file_exists( end( $prfiles ) ) ) {
+            $prfileexists[ $i ] = true;
+        } else {
+            $prfileexists[ $i ] = false;
+            $prnamestocomp[] = end( $prnamescomp );
+        }
     }
 
-    $sas->compute_pr_many( $prpdbs, $prnamescomp );
+    if ( count( $prnamestocomp ) ) {
+        $sas->compute_pr_many( $prpdbs, $prnamestocomp );
+    }
 
     for ( $i = 0; $i < $usecount; ++$i ) {
-        $sas->interpolate( $prnamescomp[$i], "Comp.", $prnamesinterp[$i] );
-        $sas->norm_pr( $prnamesinterp[$i], floatval( $cgstate->state->output_load->mw ), $prnamesnormed[$i] );
+        if ( $prfileexists[ $i ] ) {
+            $sas->load_file( SAS::PLOT_PR, $prnamesnormed[$i], $prfiles[$i] );
+        } else {
+            $sas->interpolate( $prnamescomp[$i], "Comp.", $prnamesinterp[$i] );
+            $sas->norm_pr( $prnamesinterp[$i], floatval( $cgstate->state->output_load->mw ), $prnamesnormed[$i] );
+            $sas->remove_data( $prnamescomp[$i] );
+            $sas->remove_data( $prnamesinterp[$i] );
+            $sas->save_file( $prnamesnormed[$i], $prfiles[ $i ] );
+        }
         $sas->add_plot( "P(r) all mmc", $prnamesnormed[$i] );
-        $sas->remove_data( $prnamescomp[$i] );
-        $sas->remove_data( $prnamesinterp[$i] );
     }
 }
 
+#$ga->tcpmessage(
+#    [
+#     "_textarea" => json_encode( $prfiles , JSON_PRETTY_PRINT ) . "\n"
+#    ]
+#    );
+
 dt_store_now( "P(r) end" );
+
+$output->pr_plotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
 
 $ga->tcpmessage(
     [
-     "pr_plotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
+     "pr_plotallhtml" => $output->pr_plotallhtml
     ]
     );
 
@@ -413,10 +449,11 @@ if ( isset( $input->prerrors ) ) {
     }
 
     $output->prwe_results = nnls_results_to_html( $prweresults );
+    
 
     ### save results to state
 
-    $cgstate->state->nnlsprweresults = $prweresults;
+    $cgstate->state->prwe_nnlsresults = $prweresults;
 
     $sasprwename = $bname . "_pr_w_sd.csv";
 
@@ -448,6 +485,7 @@ if ( isset( $input->prerrors ) ) {
 
 } else {
     unset( $cgstate->state->nnlsprweresults );
+    unset( $cgstate->state->prwe_nnlsresults );
     $output->prwe_results = "";
 }
 
@@ -477,11 +515,13 @@ foreach ( $input->iqmethod as $iqmethod ) {
     $pos           = 0;
         
     progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
+    
+    $output->{$mdata->tags->header_id} ="<hr><strong>I(q) $mdata->title results section</strong><hr>";
 
     $ga->tcpmessage(
         [
          "processing_progress" => .4
-         ,$mdata->tags->header_id => "<hr>I(q) $mdata->title results section<hr>"
+         ,$mdata->tags->header_id => $output->{$mdata->tags->header_id}
         ]);
 
     $alliqnames[$iqmethod] = [];
@@ -582,9 +622,12 @@ foreach ( $input->iqmethod as $iqmethod ) {
 
     # $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
 
+    $output->{$mdata->tags->plotallhtml} = plot_to_image( $sas->plot( $mdata->plotallname ) );
+
+
     $ga->tcpmessage(
         [
-         $mdata->tags->plotallhtml => plot_to_image( $sas->plot( $mdata->plotallname ) )
+         $mdata->tags->plotallhtml => $output->{$mdata->tags->plotallhtml}
          ,"processing_progress" => .8
          #     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
         ]
@@ -667,52 +710,6 @@ foreach ( $input->iqmethod as $iqmethod ) {
 
     $cgstate->state->{$mdata->tags->nnlsresults} = $iqresults;
 }
-
-## rebuild final plots
-
-# $output->pr_plotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
-# $output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
-
-/* replaced by method
-## setup csvdownloads
-
-$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
-$sasprname = $bname . "_pr.csv";
-$sasiqname = $bname . "_iq.csv";
-
-if ( $input->prerrors ) {
-    $sas->save_data_csv(
-        array_merge( [ "Exp. P(r)", "P(r) NNLS fit", "P(r) NNLS fit w/SDs" ], $allprnames )
-        ,$sasprname
-        ,$cgstate->state->output_load->mw
-        ,'/P\(r\) /'
-        ,"$bname "
-        );
-} else {
-    $sas->save_data_csv(
-        array_merge( [ "Exp. P(r)", "P(r) NNLS fit" ], $allprnames )
-        ,$sasprname
-        ,$cgstate->state->output_load->mw
-        ,'/P\(r\) /'
-        ,"$bname "
-        );
-}
-
-$sas->save_data_csv(
-    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqnames )
-    ,$sasiqname
-    ,1
-    ,'/I\(q\) /'
-    ,"$bname "
-    );
-   
-$output->csvdownloads =
-    "<div>"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasprname )
-    . "</div>"
-    ;
-*/
 
 ## save state
 

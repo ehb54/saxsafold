@@ -2,31 +2,40 @@
 
 {};
 
+require_once "computeiqpr_defines.php";
+
 function initial_model_set( &$results, &$errormsg ) {
     global $cgstate;
-    if ( !isset( $cgstate->state->nnlsiqresults )
-         || !isset( $cgstate->state->nnlsprresults ) ) {
-        $errormsg = "No results found";
-        return false;
-    }
+    global $mdatas;
 
     $results = [];
 
-    foreach ( $cgstate->state->nnlsiqresults as $k => $v ) {
-        $modv = explode( ' ', $k );
-        $results[] = intval( end( $modv ) );
+    foreach ( $mdatas as $mdata ) {
+        if ( isset( $cgstate->state->{$mdata->tag->nnlsresults} ) ) {
+            foreach ( $cgstate->state->{$mdata->tag->nnlsresults} as $k => $v ) {
+                $modv = explode( ' ', $k );
+                $results[] = intval( end( $modv ) );
+            }
+        }
     }
-
-    foreach ( $cgstate->state->nnlsprresults as $k => $v ) {
-        $modv = explode( ' ', $k );
-        $results[] = intval( end( $modv ) );
-    }
-        
-    if ( isset( $cgstate->state->nnlsprweresults ) ) {
-        foreach ( $cgstate->state->nnlsprweresults as $k => $v ) {
+    
+    if ( isset( $cgstate->state->pr_nnlsresults ) ) {
+        foreach ( $cgstate->state->pr_nnlsresults as $k => $v ) {
             $modv = explode( ' ', $k );
             $results[] = intval( end( $modv ) );
         }
+    }
+        
+    if ( isset( $cgstate->state->prwe_nnlsresults ) ) {
+        foreach ( $cgstate->state->prwe_nnlsresults as $k => $v ) {
+            $modv = explode( ' ', $k );
+            $results[] = intval( end( $modv ) );
+        }
+    }
+        
+    if ( !count( $results ) ) {
+        $errormsg = "No results found";
+        return false;
     }
 
     $results = array_unique( $results, SORT_NUMERIC );
