@@ -74,8 +74,9 @@ if ( !$cgstate->state->mmcdownloaded || !$cgstate->state->mmcextracted || !strle
 $ga->tcpmessage( [
                      'processing_progress' => 0.01
                      ,"progress_text"      => ''
-                     ,"iqresults"          => ''
-                     ,"prresults"          => ''
+                     ,"iq_p_results"       => ''
+                     ,"iq_c3_results"      => ''
+                     ,"pr_results"         => ''
                  ]);
 
 ## initial plots
@@ -86,7 +87,7 @@ $sas = new SAS();
 
 $plots = (object) [];
 
-require "$scriptdir/plotly_computeiqpr.php";
+require "$scriptdir/computeiqpr_funcs.php";
 
 setup_computeiqpr_plots( $plots );
 
@@ -107,16 +108,29 @@ $tmpout->iqplot       = $plots->iqplot;
 
 $tmpout->prplot       = $plots->prplot;
 # $tmpout->prplotall    = $sas->plot( "P(r) all mmc" );
-# $tmpout->prplotsel    = $plots->prplotsel;
+# $tmpout->pr_plotsel    = $plots->pr_plotsel;
 
 $ga->tcpmessage( $tmpout );
 
 ## process inputs here to produce output
 
+$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
+
+$ga->tcpmessage( [ '_textarea' => "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
+
+if ( !isset( $input->iqmethod ) ) {
+    error_exit( "At least one <i>I(q) computation method</i> must be selected" );
+}
+if ( !is_array( $input->iqmethod ) ) {
+    error_exit( "Internal error - iqmethod is not an array" );
+}
+
+$ga->tcpmessage( [ "_message" => [ "text" =>  "This module is under development/modification" ] ] );
+
 ### check if crysol selected and if so, verify academic usage
 
-if ( $input->iqmethod == "crysol3"
-   || $input->iqmethod == "crysol2"
+if ( in_array( "crysol3", $input->iqmethod )
+     || in_array( "crysol2", $input->iqmethod ) 
    ) {
     require_once "$input->_webroot/$input->_application/ajax/ga_db_lib.php";
 
@@ -186,11 +200,7 @@ if ( $input->iqmethod == "crysol3"
     }
 }
 
-#if ( $input->iqmethod != "pepsi" ) {
-#    error_exit( "Only PEPSI-SAXS currently supported" );
-#}
-
-## compute Iq
+### pdb collection
 
 $pdbs = run_cmd( "cd preselected 2> /dev/null && ls *.pdb", false, true );
 if ( $run_cmd_last_error_code ) {
@@ -212,7 +222,9 @@ if ( $count_pdbs > $max_frames ) {
     error_exit( "Number of Frames ($count_pdbs) to process is greater than the current limit ($max_frames).<br>Rerun <i>Retrieve MMC</i>.<br>Be sure to check <i>Extract Frames</i> and <br>set <i>Stride</i> to ensure the number of Frames subselected is less than the limit." );
 }
     
-progress_text( "Computing P(r)" );
+
+
+#### P(r) start #####
 
 dt_store_now( "P(r) start" );
 
@@ -239,7 +251,8 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     $ga->tcpmessage(
         [
          "processing_progress" => 0 + .4 * ( ( $pos + .5 * $usecount ) / $count_pdbs )
-         ,"prplotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
+         ,"pr_header" => "<hr>P(r) results section<hr>"
+         ,"pr_plotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
         ]
         );
 
@@ -270,126 +283,7 @@ dt_store_now( "P(r) end" );
 
 $ga->tcpmessage(
     [
-     "prplotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
-    ]
-    );
-
-# $ga->tcpmessage( [ "_textarea" => "P(r) time " . dhms_from_minutes( dt_store_duration( "P(r) start", "P(r) end" ) ) . "\n" ] );
-
-dt_store_now( "I(q) start" );
-
-$pos           = 0;
-
-progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
-
-$ga->tcpmessage(
-    [
-     "processing_progress" => .4
-    ]);
-
-$alliqnames = [];
-
-$textarea_key = "_textarea";
-
-$crysol_cb = function( $line ) {
-    global $ga;
-    global $textarea_key;
-#    $ga->tcpmessage( [
-#                         $textarea_key => $line
-#                     ] );
-};
-
-foreach ( $pdbs as $pdb ) {
-    ++$pos;
-
-    switch( $input->iqmethod ) {
-        case 'pepsi' : {
-            # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
-            $cmd    = "cd preselected && Pepsi-SAXS"
-                . " -ms " . $cgstate->state->qmax * $max_q_multiplier
-                . " -ns " . $cgstate->state->qpoints
-                . " $pdb";
-            $cmdres = run_cmd( $cmd, false );
-            if ( $run_cmd_last_error_code ) {
-                error_exit( "Error computing I(q) : $cmdres" );
-            }
-            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
-        }
-        break;
-
-        case 'crysol3' : {
-            run_crysol( "preselected/$pdb"
-                        ,(object)[
-                            'qpoints' => $cgstate->state->qpoints
-                            ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
-                            ,'solvent_e_density' => $cgstate->state->solvent_e_density
-                            ,'subdir' => 'preselected'
-                        ]
-                        ,$crysol_cb
-                );
-            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
-        }            
-        break;
-
-        case 'crysol2' : {
-            run_crysol2( "preselected/$pdb"
-                        ,(object)[
-                            'qpoints' => $cgstate->state->qpoints
-                            ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
-                            ,'solvent_e_density' => $cgstate->state->solvent_e_density
-                            ,'subdir' => 'preselected'
-                        ]
-                        ,$crysol_cb
-                );
-            $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
-        }            
-        break;
-    }                            
-            
-    if ( !file_exists( $iqfile ) ) {
-        error_exit( "Expected Iq file missing : $iqfile" );
-    }
-
-    $chi2  = -1;
-    $rmsd  = -1;
-    $scale = 0;
-    
-    $iqdataname   = "I(q) mod. " . model_no_from_pdb_name( $pdb );
-    $alliqnames[] = $iqdataname;
-        
-    $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
-    $sas->interpolate( "$iqdataname orig", "Exp. I(q)", "$iqdataname interp" );
-    $sas->scale_nchi2( "Exp. I(q)", "$iqdataname interp", $iqdataname, $chi2, $scale );
-    $sas->add_plot( "I(q) all mmc", $iqdataname );
-    
-    foreach ( [
-                  "$iqdataname orig"
-                  ,"$iqdataname interp"
-              ] as $v) {
-        $sas->remove_data( $v );
-    }
-
-    if ( !($pos % $update_iq_frequency ) ) {
-        $ga->tcpmessage(
-            [
-             "processing_progress" => .4 + .4 * ( ( $pos + .5 * $update_iq_frequency ) / $count_pdbs )
-             ,"iqplotallhtml" => plot_to_image( $sas->plot( "I(q) all mmc" ) )
-            ]
-            );
-
-        progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
-    }
-}
-
-dt_store_now( "I(q) end" );
-
-# $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
-
-$ga->tcpmessage(
-    [
-     "iqplotallhtml" => plot_to_image( $sas->plot( "I(q) all mmc" ) )
-     ,"processing_progress" => .8
-#     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
+     "pr_plotallhtml" => plot_to_image( $sas->plot( "P(r) all mmc" ) )
     ]
     );
 
@@ -433,82 +327,47 @@ if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( "P(r) sel", $annotate_msg );
 }
 
-$output->prresults = nnls_results_to_html( $prresults );
+$output->pr_results = nnls_results_to_html( $prresults );
 
 ### save results to state
 
-$cgstate->state->nnlsprresults = $prresults;
+### TODO join all results into a final set?
+
+$cgstate->state->pr_nnlsresults = $prresults;
+
+$csvname = "${bname}_pr.csv";
+
+$sas->save_data_csv(
+    array_merge( [ "Exp. P(r)", "P(r) NNLS fit" ], $allprnames )
+    ,$csvname
+    ,$cgstate->state->output_load->mw
+    ,'/P\(r\) /'
+    ,"$bname "
+    );
+
+## use prwe_downloads as they stay at the bottom of the section
+
+$output->prwe_downloads =
+    "<div>"
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvname )
+    ;
 
 $ga->tcpmessage(
     [
      "processing_progress" => .9
-     ,"prplotsel" => $sas->plot( "P(r) sel" )
+     ,"pr_plotsel" => $sas->plot( "P(r) sel" )
+     ,"pr_results" => nnls_results_to_html( $prresults )
+     ,"prwe_downloads" => $output->prwe_downloads
 #     ,"_textarea" => json_encode( $prresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
     
-$output->prplotsel = $sas->plot( "P(r) sel" );
+$output->pr_plotsel = $sas->plot( "P(r) sel" );
 
-## NNLS on I(q)
+# $ga->tcpmessage( [ "_textarea" => "P(r) time " . dhms_from_minutes( dt_store_duration( "P(r) start", "P(r) end" ) ) . "\n" ] );
 
-progress_text( "Running NNLS on I(q)" );
+##### NNLS on P(r) with errors (we) ####
 
-$iqresults = [];
-
-$sas->nnls( "Exp. I(q)", $alliqnames, "I(q) NNLS fit", $iqresults );
-
-$sas->add_plot( "I(q) sel", "I(q) NNLS fit" );
-
-foreach ( $iqresults as $k => $v ) {
-    $sas->add_plot( "I(q) sel", $k );
-}
-
-### residuals
-$chi2  = -1;
-$rmsd  = -1;
-$scale = 0;
-
-$sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
-$sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
-$sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
-$sas->add_plot_residuals( "I(q) sel", "I(q) fit Res./SD" );
-$sas->plot_trace_options( "I(q) sel", "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
-
-$rmsd = round( $rmsd, 3 );
-$chi2 = round( $chi2, 3 );
-$annotate_msg = "";
-if ( $rmsd != -1 ) {
-    $annotate_msg .= "RMSD $rmsd   ";
-}
-if ( $chi2 != -1 ) {
-    $annotate_msg .= "nChi^2 $chi2   ";
-}
-if ( strlen( $annotate_msg ) ) {
-    $sas->annotate_plot( "I(q) sel", $annotate_msg );
-}
-
-$ga->tcpmessage(
-    [
-     "iqplotsel" => $sas->plot( "I(q) sel" )
-#     ,"_textarea" => json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n"
-#     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
-#     . json_encode( $sas->plot_names(), JSON_PRETTY_PRINT ) . "\n"
-#     . $sas->data_summary( $sas->data_names() )
-    ]
-    );
-
-$output->iqplotsel = $sas->plot( "I(q) sel" );
-
-### summary results
-
-$output->iqresults = nnls_results_to_html( $iqresults );
-
-### save results to state
-
-$cgstate->state->nnlsiqresults = $iqresults;
-
-
-## NNLS on P(r) we
 if ( isset( $input->prerrors ) ) {
 
     progress_text( "Running NNLS on P(r) with SDs" );
@@ -553,31 +412,268 @@ if ( isset( $input->prerrors ) ) {
         $sas->annotate_plot( "P(r) we sel", $annotate_msg );
     }
 
-    $output->prweresults = nnls_results_to_html( $prweresults );
+    $output->prwe_results = nnls_results_to_html( $prweresults );
 
     ### save results to state
 
     $cgstate->state->nnlsprweresults = $prweresults;
 
+    $sasprwename = $bname . "_pr_w_sd.csv";
+
+    $sas->save_data_csv(
+        array_merge( [ "Exp. P(r)", "P(r) NNLS fit w/SDs" ], $allprnames )
+        ,$sasprwename
+        ,$cgstate->state->output_load->mw
+        ,'/P\(r\) /'
+        ,"$bname "
+        );
+
+## duplicate of pr data
+#    $output->prwe_downloads =
+#        "<div>"
+#        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) w/SDs csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasprwename )
+#        ;
+
     $ga->tcpmessage(
         [
          "processing_progress" => .95
-         ,"prweplotsel" => $sas->plot( "P(r) we sel" )
+         ,"prwe_plotsel" => $sas->plot( "P(r) we sel" )
+         ,"prwe_results" => nnls_results_to_html( $prweresults )
+#         ,"prwe_downloads" => $output->prwe_downloads
      #     ,"_textarea" => json_encode( $prweresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
 
-    $output->prweplotsel = $sas->plot( "P(r) we sel" );
+    $output->prwe_plotsel = $sas->plot( "P(r) we sel" );
+
 } else {
     unset( $cgstate->state->nnlsprweresults );
-    $output->prweresults = "";
+    $output->prwe_results = "";
+}
+
+#### I(q) section #####
+
+$textarea_key = "_textarea";
+
+$crysol_cb = function( $line ) {
+    global $ga;
+    global $textarea_key;
+#    $ga->tcpmessage( [
+#                         $textarea_key => $line
+#                     ] );
+};
+
+$alliqnames = [];
+
+foreach ( $input->iqmethod as $iqmethod ) {
+
+    if ( !isset( $mdatas->$iqmethod ) ) {
+        error_exit( "Method '$iqmethod' not properly setup" );
+    }
+    $mdata = $mdatas->$iqmethod;
+    
+    dt_store_now( "I(q) start" );
+    
+    $pos           = 0;
+        
+    progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
+
+    $ga->tcpmessage(
+        [
+         "processing_progress" => .4
+         ,$mdata->tags->header_id => "<hr>I(q) $mdata->title results section<hr>"
+        ]);
+
+    $alliqnames[$iqmethod] = [];
+    
+    foreach ( $pdbs as $pdb ) {
+        ++$pos;
+
+        $iqnewfile = "preselected/" . preg_replace( '/\.pdb$/', $mdata->datext, $pdb );
+
+        if ( !file_exists( $iqnewfile ) ) {
+            switch( $iqmethod ) {
+                case 'pepsi' : {
+                    # with exp data file: $cmd    = "cd preselected && Pepsi-SAXS " . $cgstate->state->saxsiqfile . " -ms " . $cgstate->state->qmax . " -ns " . $cgstate->state->qpoints . " $pdb";
+                    $cmd    = "cd preselected && Pepsi-SAXS"
+                        . " -ms " . $cgstate->state->qmax * $max_q_multiplier
+                        . " -ns " . $cgstate->state->qpoints
+                        . " $pdb";
+                    $cmdres = run_cmd( $cmd, false );
+                    if ( $run_cmd_last_error_code ) {
+                        error_exit( "Error computing I(q) : $cmdres" );
+                    }
+                    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.out', $pdb );
+                }
+                break;
+
+                case 'crysol3' : {
+                    run_crysol( "preselected/$pdb"
+                                ,(object)[
+                                    'qpoints' => $cgstate->state->qpoints
+                                    ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
+                                    ,'solvent_e_density' => $cgstate->state->solvent_e_density
+                                    ,'subdir' => 'preselected'
+                                ]
+                                ,$crysol_cb
+                        );
+                    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
+                }            
+                break;
+
+                case 'crysol2' : {
+                    run_crysol2( "preselected/$pdb"
+                                 ,(object)[
+                                     'qpoints' => $cgstate->state->qpoints
+                                     ,'maxq' => $cgstate->state->qmax * $max_q_multiplier
+                                     ,'solvent_e_density' => $cgstate->state->solvent_e_density
+                                     ,'subdir' => 'preselected'
+                                 ]
+                                 ,$crysol_cb
+                        );
+                    $iqfile  = "preselected/" . preg_replace( '/\.pdb$/', '.int', $pdb );
+                }            
+                break;
+            }                            
+            
+            if ( !file_exists( $iqfile ) ) {
+                error_exit( "Expected Iq file missing : $iqfile" );
+            }
+
+            if ( !rename( $iqfile, $iqnewfile ) ) {
+                error_exit( "Error moving $iqfile to $iqnewfile" );
+            }
+        }
+
+        $iqfile = $iqnewfile;
+
+        $chi2  = -1;
+        $rmsd  = -1;
+        $scale = 0;
+        
+        $iqdataname   = "$mdata->prefix mod. " . model_no_from_pdb_name( $pdb );
+        $alliqnames[$iqmethod][] = $iqdataname;
+        
+        $sas->load_file( SAS::PLOT_IQ, "$iqdataname orig", $iqfile, false );
+        $sas->interpolate( "$iqdataname orig", "Exp. I(q)", "$iqdataname interp" );
+        $sas->scale_nchi2( "Exp. I(q)", "$iqdataname interp", $iqdataname, $chi2, $scale );
+        $sas->add_plot( $mdata->plotallname, $iqdataname );
+        
+        foreach ( [
+                      "$iqdataname orig"
+                      ,"$iqdataname interp"
+                  ] as $v) {
+            $sas->remove_data( $v );
+        }
+
+        if ( !($pos % $update_iq_frequency ) ) {
+            $ga->tcpmessage(
+                [
+                 "processing_progress" => .4 + .4 * ( ( $pos + .5 * $update_iq_frequency ) / $count_pdbs )
+                 ,$mdata->tags->plotallhtml => plot_to_image( $sas->plot( $mdata->plotallname ) )
+                ]
+                );
+
+            progress_text( "Computing I(q) (" . ( $pos + 1 ) . "-" . min( $pos + $update_iq_frequency, $count_pdbs ). " of $count_pdbs)" );
+        }
+    }
+
+    dt_store_now( "I(q) end" );
+
+    # $ga->tcpmessage( [ "_textarea" => "I(q) time " . dhms_from_minutes( dt_store_duration( "I(q) start", "I(q) end" ) ) . "\n" ] );
+
+    $ga->tcpmessage(
+        [
+         $mdata->tags->plotallhtml => plot_to_image( $sas->plot( $mdata->plotallname ) )
+         ,"processing_progress" => .8
+         #     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
+        ]
+        );
+
+    ## NNLS on I(q)
+
+    progress_text( "Running NNLS on I(q) $mdata->title" );
+
+    $iqresults = [];
+
+    $sas->nnls( "Exp. I(q)", $alliqnames[$iqmethod], "$mdata->prefix NNLS fit", $iqresults );
+
+    $sas->add_plot( $mdata->plotselname, "$mdata->prefix NNLS fit" );
+
+    foreach ( $iqresults as $k => $v ) {
+        $sas->add_plot( $mdata->plotselname, $k );
+    }
+
+    ### residuals
+    $chi2  = -1;
+    $rmsd  = -1;
+    $scale = 0;
+
+    $sas->scale_nchi2( "Exp. I(q)", "$mdata->prefix NNLS fit", "$mdata->prefix NNLS fit-rescaled", $chi2, $scale );
+    $sas->rmsd( "Exp. I(q)", "$mdata->prefix NNLS fit", $rmsd );
+    $sas->calc_residuals( "Exp. I(q)", "$mdata->prefix NNLS fit", "$mdata->prefix fit Res./SD" );
+    $sas->add_plot_residuals( $mdata->plotselname, "$mdata->prefix fit Res./SD" );
+    $sas->plot_trace_options( $mdata->plotselname, "$mdata->prefix fit Res./SD", [ 'linecolor_number' => 1 ] );
+
+    $rmsd = round( $rmsd, 3 );
+    $chi2 = round( $chi2, 3 );
+    $annotate_msg = "";
+    if ( $rmsd != -1 ) {
+        $annotate_msg .= "RMSD $rmsd   ";
+    }
+    if ( $chi2 != -1 ) {
+        $annotate_msg .= "nChi^2 $chi2   ";
+    }
+    if ( strlen( $annotate_msg ) ) {
+        $sas->annotate_plot( $mdata->plotselname, $annotate_msg );
+    }
+
+    $csvname = "${bname}_{$mdata->csvnamesuffix}.csv";
+
+    $sas->save_data_csv(
+        array_merge( [ "Exp. I(q)", "$mdata->prefix NNLS fit" ], $alliqnames[ $iqmethod ] )
+        ,$csvname
+        ,$cgstate->state->output_load->mw
+        ,'/I\(q\)/'
+        ," $bname "
+        );
+
+    $output->{$mdata->tags->downloads} =
+        "<div>"
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>$mdata->prefix csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvname )
+        ;
+
+    $output->{$mdata->tags->results} = nnls_results_to_html( $iqresults );
+
+    $ga->tcpmessage(
+        [
+         $mdata->tags->plotsel => $sas->plot( $mdata->plotselname )
+         ,$mdata->tags->results => $output->{$mdata->tags->results}
+         ,$mdata->tags->downloads => $output->{$mdata->tags->downloads}
+         
+         #     ,"_textarea" => json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n"
+         #     ,"_textarea" => json_encode( $sas->data_names(), JSON_PRETTY_PRINT ) . "\n"
+         #     . json_encode( $sas->plot_names(), JSON_PRETTY_PRINT ) . "\n"
+         #     . $sas->data_summary( $sas->data_names() )
+        ]
+        );
+
+    $output->{$mdata->tags->plotsel} = $sas->plot( $mdata->plotselname );
+
+    ### summary results
+
+
+    ### save results to state
+
+    $cgstate->state->{$mdata->tags->nnlsresults} = $iqresults;
 }
 
 ## rebuild final plots
 
-$output->prplotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
-$output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
+# $output->pr_plotallhtml = plot_to_image( $sas->plot( "P(r) all mmc" ) );
+# $output->iqplotallhtml = plot_to_image( $sas->plot( "I(q) all mmc" ) );
 
+/* replaced by method
 ## setup csvdownloads
 
 $bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
@@ -616,6 +712,7 @@ $output->csvdownloads =
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasprname )
     . "</div>"
     ;
+*/
 
 ## save state
 
@@ -629,8 +726,8 @@ if ( !$cgstate->save() ) {
 
 ## log results to textarea
 
-# $output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
-# $output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
+# $output->_textarea = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
+# $output->_textarea .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 $output->processing_progress = 0;
 $output->progress_text = progress_text( 'Processing complete', '', true );

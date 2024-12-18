@@ -198,9 +198,12 @@
             ,"id"               : "iqmethod"
             ,"label"            : "I(q) computation method"
             ,"type"             : "listbox"
-            ,"help"             : "Select I(q) computation method"
+            ,"help"             : "Select I(q) computation method, multiple methods can be selected (try clicking with shift or the command key on mac)"
 #            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 2.8.4-1~crysol2~CRYSOL 3.2.1-1~crysol3"
-            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3.2.1-1~crysol3"            
+            ,"values"           : "PEPSI-SAXS~pepsi~CRYSOL 3.2.1-1~crysol3"
+            ,"default"           : "pepsi"
+            ,"multiple"         : "true"
+            ,"size"             : 2
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
@@ -211,6 +214,16 @@
             ,"label"            : "Perform a second P(r) NNLS fit using SDs"
             ,"type"             : "checkbox"
             ,"help"             : "For model preselection, P(r) can additionaly be fit with P(r) SDs"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "advanced"
+            ,"label"            : "Advanced options"
+            ,"type"             : "checkbox"
+            ,"help"             : "Advanced options will appear below if checked (none currently available)"
             ,"layout"     : {
                 "parent" : "inputpanel"
             }
@@ -268,75 +281,39 @@
                 ,"data" : [ 0, 2 ]
             }
         }
+
+# save for spacing   ,"labelmargintop"    : "0.5rem"
+
+### P(r) section
+
         ,{
             "role"              : "output"
             ,"label"             : ""
             ,"type"              : "html"
-            ,"id"                : "iqplotallhtml"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "html"
-            ,"id"                : "prplotallhtml"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "iqplotsel"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "prplotsel"
-#            ,"labelmargintop"    : "0.5rem"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "html"
-            ,"id"                : "iqresults"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "html"
-            ,"id"                : "prresults"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
-            }
-        }
-        ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "prweplotsel"
+            ,"id"                : "pr_header"
             ,"labelmargintop"    : "0.5rem"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "pr_plotallhtml"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "pr_plotsel"
+            ,"layout"           : {
+                "parent" : "resultpanel"
                 ,"data" : [ 0, 2 ]
             }
         }
@@ -344,7 +321,7 @@
             "role"              : "output"
             ,"label"             : ""
             ,"type"              : "html"
-            ,"id"                : "prweresults"
+            ,"id"                : "pr_results"
             ,"layout"           : {
                 "parent" : "resultpanel"
             }
@@ -353,11 +330,143 @@
             "role"              : "output"
             ,"label"             : ""
             ,"type"              : "html"
-            ,"id"                : "csvdownloads"
+            ,"id"                : "pr_downloads"
             ,"layout"           : {
                 "parent" : "resultpanel"
             }
         }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "prwe_plotsel"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "prwe_results"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "prwe_downloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        
+### I(q) PEPSI-SAXS section
+
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_p_header"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_p_plotallhtml"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iq_p_plotsel"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_p_results"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_p_downloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+
+### I(q) CRYSOL3 section
+
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_c3_header"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_c3_plotallhtml"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iq_c3_plotsel"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_c3_results"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iq_c3_downloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+            }
+        }
+
+### closing section
+
         ,{
             "role"        : "output"
             ,"id"         : "processing_progress"

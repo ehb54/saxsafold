@@ -357,8 +357,10 @@
             "label"    : "overlap basis",
             "type"    : "listbox",
             "values"  : "heavy atoms~c1~all~c2~backbone~c3~enter atom name~c4",
+#            "values"  : "heavy atoms~c1",
             "default" : "c1",
 	    "repeater" : "yes",
+            "readonly" : "true",
             "help" : "choose the type of overlap check you wish to use"
             ,"layout" : {
                 "parent" : "inputpanel"

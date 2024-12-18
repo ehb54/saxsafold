@@ -1014,7 +1014,7 @@ class SAS {
             return $this->plots->$name;
         }
 
-        $this->last_error = "plot() plot name '$name' does not existn";
+        $this->last_error = "plot() plot name '$name' does not exist";
         return $this->error_exit( $this->last_error );
     }
 

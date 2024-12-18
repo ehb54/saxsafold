@@ -425,7 +425,7 @@
             ,"role"      : "input"
             ,"help"      : "For AlphaFold structures only. Regions of confidence below this will be defined as flexible regions"
             ,"type"      : "float"
-            ,"default"   : 50
+            ,"default"   : 60
             ,"id"        : "autoflexconfidencelevel"
             ,"repeat"    : "autoflex"
             ,"layout" : {

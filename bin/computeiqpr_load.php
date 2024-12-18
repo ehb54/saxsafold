@@ -70,44 +70,46 @@ if ( !isset( $cgstate->state->output_loadsaxs->iqplot )
 }    
     
 require "$scriptdir/sas.php";
-require "$scriptdir/plotly_computeiqpr.php";
+require "$scriptdir/computeiqpr_funcs.php";
 
 $sas = new SAS();
 
-setup_computeiqpr_plots( $result );
+setup_computeiqpr_plots( $result, $mdata );
 
 if ( isset( $cgstate->state->output_iqpr ) ) {
-    if ( isset( $cgstate->state->output_iqpr->iqplotallhtml ) ) {
-        $result->iqplotallhtml = &$cgstate->state->output_iqpr->iqplotallhtml;
+    
+    foreach ( $mdatas as $mdata ) {
+        if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->plotallhtml} ) ) {
+            $result->{$mdata->tags->plotallhtml} = &$cgstate->state->output_iqpr->{$mdata->tags->plotallhtml};
+        }
+        if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->plotsel} ) ) {
+            $result->{$mdata->tags->plotsel} = &$cgstate->state->output_iqpr->{$mdata->tags->plotsel};
+        }
+        if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->results} ) ) {
+            $result->{$mdata->tags->results} = &$cgstate->state->output_iqpr->{$mdata->tags->results};
+        }
     }
-    if ( isset( $cgstate->state->output_iqpr->prplotallhtml ) ) {
-        $result->prplotallhtml = &$cgstate->state->output_iqpr->prplotallhtml;
+
+    if ( isset( $cgstate->state->output_iqpr->pr_plotallhtml ) ) {
+        $result->pr_plotallhtml = &$cgstate->state->output_iqpr->pr_plotallhtml;
     }
-    if ( isset( $cgstate->state->output_iqpr->iqplotsel ) ) {
-        $result->iqplotsel = &$cgstate->state->output_iqpr->iqplotsel;
+    if ( isset( $cgstate->state->output_iqpr->pr_results ) ) {
+        $result->pr_results = &$cgstate->state->output_iqpr->pr_results;
     }
-    if ( isset( $cgstate->state->output_iqpr->prplotsel ) ) {
-        $result->prplotsel = &$cgstate->state->output_iqpr->prplotsel;
+    if ( isset( $cgstate->state->output_iqpr->pr_plotsel ) ) {
+        $result->pr_plotsel = &$cgstate->state->output_iqpr->pr_plotsel;
     }
-    if ( isset( $cgstate->state->output_iqpr->iqresults ) ) {
-        $result->iqresults = &$cgstate->state->output_iqpr->iqresults;
-    }
-    if ( isset( $cgstate->state->output_iqpr->prresults ) ) {
-        $result->prresults = &$cgstate->state->output_iqpr->prresults;
-    }
-    if ( isset( $cgstate->state->output_iqpr->csvdownloads ) ) {
-        $result->csvdownloads = &$cgstate->state->output_iqpr->csvdownloads;
-    }
+
     if ( isset( $cgstate->state->computeiqpr_prerrors ) &&
          $cgstate->state->computeiqpr_prerrors ) {
-        if ( isset( $cgstate->state->output_iqpr->prweplotsel ) ) {
-            $result->prweplotsel = &$cgstate->state->output_iqpr->prweplotsel;
+        if ( isset( $cgstate->state->output_iqpr->prwe_plotsel ) ) {
+            $result->prwe_plotsel = &$cgstate->state->output_iqpr->prwe_plotsel;
         }
-        if ( isset( $cgstate->state->output_iqpr->prweresults ) ) {
-            $result->prweresults = &$cgstate->state->output_iqpr->prweresults;
+        if ( isset( $cgstate->state->output_iqpr->prwe_results ) ) {
+            $result->prwe_results = &$cgstate->state->output_iqpr->prwe_results;
         }
     } else {
-        unset( $result->prweplotsel );
+        unset( $result->prwe_plotsel );
     }
 }
 

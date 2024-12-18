@@ -9,7 +9,7 @@ $max_frames                             = 5000;
 $max_frame_digits                       = 7; 
 
 ## significant digits to keep
-$significant_digits_to_use              = 5;
+$significant_digits_to_use              = 7;
 
 ## extend max q for extrapolation issues
 $max_q_multiplier                       = 1.01;
@@ -24,7 +24,7 @@ $batch_run_pr_size                      = 50;
 $update_iq_frequency                    = 50;
 
 ## testing limits
-$test_limit_max_computeiqpr_frames      = 0;
+$test_limit_max_computeiqpr_frames      = 30;
 
 ## global waxsis configs
 
