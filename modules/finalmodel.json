@@ -206,9 +206,9 @@
             }
         }
         ,{
-            "label"             : "Downloads",
+            "label"             : "Downloads of processed loaded data",
             "role"              : "output",
-            "help"              : "",
+            "help"              : "The PDB is post-processed by Chimera<br>The mmCIF is created from the post-processed PDB<br>The I(q) and P(r) are exactly as loaded",
             "id"                : "downloads",
             "type"              : "html",
             "labelmargintop"    : "0.5rem"
@@ -219,12 +219,23 @@
         ,{
             "label"             : "Additional adjacent frame count",
             "role"              : "input",
-            "help"              : "",
             "id"                : "adjacent_frames",
             "min"               : 0,
             "default"           : 0,
             "type"              : "integer",
             "help"              : "This will include additional frames from the full MMC run adjacent to the preselected frames<br>It can not be greater that half the stride" 
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "label"             : "WAXSiS convergence mode [<a target=_blank href=https://waxsis.uni-saarland.de/help/#16>details</a>]",
+            "role"              : "input",
+            "help"              : "Quick convergence is useful to get results more quickly<br>Normal convergence is recommended, but will take some time to complete",
+            "id"                : "waxsis_convergence_mode",
+            "type"              : "listbox",
+            "values"            : "Normal~normal~Quick~quick",
+            "default"           : "normal"
             ,"layout" : {
                 "parent" : "resultpanel"
             }

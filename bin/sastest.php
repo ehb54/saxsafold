@@ -1715,7 +1715,7 @@ class SAS {
     }
 
     # save_data_csv() save the data to a csv suitable for loading in us_somo
-    function save_data_csv( $names, $csvname = 'sasdata.csv', $mw = 1, $namefromregexp = '', $nameto = '' ) {
+    function save_data_csv( $names, $csvname = 'sasdata-somo.csv', $mw = 1, $namefromregexp = '', $nameto = '' ) {
         $this->debug_msg( "SAS::save_data_csv( names[], '$csvname' )" );
         $this->last_error = "";
 
@@ -1761,7 +1761,7 @@ class SAS {
 
         $output .=
             implode( ',', $this->data->{ $names[0] }->x )
-            . ",,\"Plotted $iqpr curves\"\n\n"
+            . ",,\"Plotted $iqpr curves\"\n"
             ;
         
         foreach ( $names as $name ) {
@@ -1776,14 +1776,12 @@ class SAS {
                     "\"$usename\",\"$iqpr\","
                     . implode( ',', $this->data->$name->y )
                     . "\n"
-                    . "\n"
                     ;
 
                 if ( isset( $this->data->$name->error_y ) ) {
                     $output .=
                         "\"$usename\",\"$iqpr sd\","
                         . implode( ',', $this->data->$name->error_y )
-                        . "\n"
                         . "\n"
                         ;
                 }
@@ -1796,7 +1794,6 @@ class SAS {
                     . "\"$iqpr\","
                     . implode( ',', $this->data->$name->y )
                     . "\n"
-                    . "\n"
                     ;
 
                 if ( isset( $this->data->$name->error_y ) ) {
@@ -1806,7 +1803,6 @@ class SAS {
                         . ','
                         . "\"$iqpr sd\","
                         . implode( ',', $this->data->$name->error_y )
-                        . "\n"
                         . "\n"
                         ;
                 }
@@ -1820,6 +1816,89 @@ class SAS {
         
         return false;
     }
+
+    # save_data_csv_tr() save the data to a csv suitable for normal users
+    function save_data_csv_tr( $names, $csvname = 'sasdata-col.csv', $mw = 1, $namefromregexp = '', $nameto = '' ) {
+        $this->debug_msg( "SAS::save_data_csv_tr( names[], '$csvname' )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $this->last_error = "SAS::save_data_csv_tr() argument \$names is not an array";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !count( $names ) ) {
+            $this->last_error = "SAS::save_data_csv_tr() array \$names is empty";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $type = $this->data->{ $names[0] }->type;
+
+        foreach ( $names as $name ) {
+            if ( $this->data->$name->type != $type ) {
+                $this->last_error = "SAS::save_data_csv_tr() data must all be the same type";
+                return $this->error_exit( $this->last_error );
+            }
+                
+            if ( !$this->data_name_exists( $name ) ) {
+                $this->last_error = "SAS::save_data_csv_tr() name '$name' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        if ( !$this->common_grids( $names ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        $iqpr =
+            $type == self::PLOT_IQ
+            ? "I(q)"
+            : "P(r)"
+            ;
+
+        $output =
+            $type == self::PLOT_IQ
+            ? '"q [1/Angstrom]",'
+            : '"r [Angstrom]",'
+            ;
+
+        foreach ( $names as $name ) {
+            if ( strlen( $namefromregexp ) ) {
+                $usename = preg_replace( $namefromregexp, $nameto, $name );
+            } else {
+                $usename = $name;
+            }
+
+            $output .= "\"$usename\",";
+            if ( isset( $this->data->$name->error_y ) ) {
+                $output .= "\"$usename SD\",";
+            }
+        }
+        $output .= "\n";
+        
+        $len = count( $this->data->{$names[0]}->x );
+
+        for ( $i = 0; $i < $len; ++$i ) {
+            $output .= $this->data->{$names[0]}->x[$i] . ',';
+            
+            foreach ( $names as $name ) {
+                $output .= $this->data->{$names[0]}->y[$i] . ',';
+                if ( isset( $this->data->$name->error_y ) ) {
+                    $output .= $this->data->{$names[0]}->error_y[$i] . ',';
+                }
+            }
+            $output .= "\n";
+        }
+        
+        if ( !file_put_contents( $csvname, $output ) ) {
+            $this->last_error = "SAS::save_data_csv_tr() error trying to create output file '$csvname'";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        return false;
+    }
+
+
 
     # data_summary() - data summary info
     function data_summary( $names ) {
@@ -2428,6 +2507,7 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
     echo $sas->data_summary( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
 
     $sas->save_data_csv( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
+    $sas->save_data_csv_tr( array_merge( [ "Exp. P(r)", "fit curve" ], $names  ) );
     
     file_put_contents( "dump_data.json", $sas->dump_data() );
 }

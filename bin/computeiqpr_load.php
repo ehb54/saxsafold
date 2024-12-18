@@ -109,7 +109,7 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
         $result->pr_header = &$cgstate->state->output_iqpr->pr_header;
     }
     if ( isset( $cgstate->state->output_iqpr->pr_downloads ) ) {
-        $result->pr_downloads = &$cgstate->state->output_iqpr->prwe_downloads;
+        $result->pr_downloads = &$cgstate->state->output_iqpr->pr_downloads;
     }
     if ( isset( $cgstate->state->output_iqpr->prwe_downloads ) ) {
         $result->prwe_downloads = &$cgstate->state->output_iqpr->prwe_downloads;

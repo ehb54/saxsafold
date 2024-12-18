@@ -365,9 +365,9 @@
             }
         }
         ,{
-            "label" : "Downloads",
+            "label"             : "Downloads of processed loaded data",
             "role" : "output",
-            "help" : "",
+            "help" : "The PDB is post-processed by Chimera<br>The mmCIF is created from the post-processed PDB<br>The I(q) and P(r) are exactly as loaded",
             "id" : "downloads",
             "type" : "html",
             "labelmargintop" : "0.5rem"

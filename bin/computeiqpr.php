@@ -379,21 +379,29 @@ $output->pr_results = nnls_results_to_html( $prresults );
 
 $cgstate->state->pr_nnlsresults = $prresults;
 
-$csvname = "${bname}_pr.csv";
+$csvsomoname = "${bname}_somo_pr.csv";
+$csvcolname = "${bname}_pr.csv";
 
 $sas->save_data_csv(
     array_merge( [ "Exp. P(r)", "P(r) NNLS fit" ], $allprnames )
-    ,$csvname
+    ,$csvsomoname
     ,$cgstate->state->output_load->mw
     ,'/P\(r\) /'
     ,"$bname "
     );
 
-## use prwe_downloads as they stay at the bottom of the section
+$sas->save_data_csv_tr(
+    array_merge( [ "Exp. P(r)", "P(r) NNLS fit" ], $allprnames )
+    ,$csvcolname
+    ,$cgstate->state->output_load->mw
+    ,'/P\(r\) /'
+    ,"$bname "
+    );
 
-$output->prwe_downloads =
+$output->pr_downloads =
     "<div>"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $csvcolname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvsomoname )
     ;
 
 $ga->tcpmessage(
@@ -401,7 +409,7 @@ $ga->tcpmessage(
      "processing_progress" => .9
      ,"pr_plotsel" => $sas->plot( "P(r) sel" )
      ,"pr_results" => nnls_results_to_html( $prresults )
-     ,"prwe_downloads" => $output->prwe_downloads
+     ,"pr_downloads" => $output->pr_downloads
 #     ,"_textarea" => json_encode( $prresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
@@ -463,28 +471,37 @@ if ( isset( $input->prerrors ) ) {
 
     $cgstate->state->prwe_nnlsresults = $prweresults;
 
-    $sasprwename = $bname . "_pr_w_sd.csv";
+    $sassomoprwename = $bname . "_somo_pr_w_sd.csv";
+    $sascolprwename = $bname . "_pr_w_sd.csv";
 
     $sas->save_data_csv(
         array_merge( [ "Exp. P(r)", "P(r) NNLS fit w/SDs" ], $allprnames )
-        ,$sasprwename
+        ,$sassomoprwename
         ,$cgstate->state->output_load->mw
         ,'/P\(r\) /'
         ,"$bname "
         );
 
-## duplicate of pr data
-#    $output->prwe_downloads =
-#        "<div>"
-#        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) w/SDs csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasprwename )
-#        ;
+    $sas->save_data_csv_tr(
+        array_merge( [ "Exp. P(r)", "P(r) NNLS fit w/SDs" ], $allprnames )
+        ,$sascolprwename
+        ,$cgstate->state->output_load->mw
+        ,'/P\(r\) /'
+        ,"$bname "
+        );
+
+    $output->prwe_downloads =
+        "<div>"
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) w/SDs csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascolprwename )
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>P(r) w/SDs SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoprwename )
+        ;
 
     $ga->tcpmessage(
         [
          "processing_progress" => .95
          ,"prwe_plotsel" => $sas->plot( "P(r) we sel" )
          ,"prwe_results" => nnls_results_to_html( $prweresults )
-#         ,"prwe_downloads" => $output->prwe_downloads
+         ,"prwe_downloads" => $output->prwe_downloads
      #     ,"_textarea" => json_encode( $prweresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
@@ -679,11 +696,20 @@ foreach ( $input->iqmethod as $iqmethod ) {
         $sas->annotate_plot( $mdata->plotselname, $annotate_msg );
     }
 
-    $csvname = "${bname}_{$mdata->csvnamesuffix}.csv";
+    $csvsomoname = "${bname}_somo_{$mdata->csvnamesuffix}.csv";
+    $csvcolname = "${bname}_{$mdata->csvnamesuffix}.csv";
 
     $sas->save_data_csv(
         array_merge( [ "Exp. I(q)", "$mdata->prefix NNLS fit" ], $alliqnames[ $iqmethod ] )
-        ,$csvname
+        ,$csvsomoname
+        ,$cgstate->state->output_load->mw
+        ,'/I\(q\)/'
+        ," $bname "
+        );
+
+    $sas->save_data_csv_tr(
+        array_merge( [ "Exp. I(q)", "$mdata->prefix NNLS fit" ], $alliqnames[ $iqmethod ] )
+        ,$csvcolname
         ,$cgstate->state->output_load->mw
         ,'/I\(q\)/'
         ," $bname "
@@ -691,7 +717,8 @@ foreach ( $input->iqmethod as $iqmethod ) {
 
     $output->{$mdata->tags->downloads} =
         "<div>"
-        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>$mdata->prefix csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvname )
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>$mdata->prefix csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $csvcolname )
+        . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>$mdata->prefix SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $csvsomoname )
         ;
 
     $output->{$mdata->tags->results} = nnls_results_to_html( $iqresults );

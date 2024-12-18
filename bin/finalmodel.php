@@ -422,22 +422,25 @@ $cgstate->state->nnlsiqresultswaxsis = $iqresults;
 ## setup csvdownloads
 
 $bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
-$sasiqname = $bname . "_waxsis_iq.csv";
+$sassomoiqname = $bname . "_waxsis_somo_iq.csv";
+$sascoliqname = $bname . "_waxsis_iq.csv";
 
 $sas->save_data_csv(
     array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqframes )
-    ,$sasiqname
+    ,$sassomoiqname
+    ,1
+    ,'/I\(q\) /'
+    ,"$bname "
+    );
+
+$sas->save_data_csv_tr(
+    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqframes )
+    ,$sascoliqname
     ,1
     ,'/I\(q\) /'
     ,"$bname "
     );
    
-$output->csvdownloads =
-    "<div>"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
-    . "</div>"
-    ;
-
 ## setup pdb
 
 $pdboutname = "waxsisfinalset.pdb";
@@ -479,10 +482,12 @@ if ( !file_put_contents( $pdboutname, $pdbout ) ) {
     error_exit( "error creating '$pdboutname'" );
 }    
 
+$output->downloads = $cgstate->state->output_load->downloads;
 $output->csvdownloads =
     "<div>"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sasiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
     . "</div>"
     ;
 
