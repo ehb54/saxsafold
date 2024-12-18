@@ -269,10 +269,10 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
     $prnamescomp   = [];
     $prnamesinterp = [];
     $prnamesnormed = [];
-    $prnamesotcomp = [];
-    
+    $prnamestocomp = [];
     $prfiles       = [];
     $prfileexists  = [];
+    $prpdbstocomp  = [];
 
     for ( $i = 0; $i < $usecount; ++$i ) {
         $prfiles[ $i ]   = "preselected/${bname}-m" . padded_model_no_from_pdb_name( $prpdbs[ $i ] ) . "-somo-pr.dat";
@@ -286,11 +286,19 @@ for ( $pos = 0; $pos < $count_pdbs; $pos += $batch_run_pr_size ) {
         } else {
             $prfileexists[ $i ] = false;
             $prnamestocomp[] = end( $prnamescomp );
+            $prpdbstocomp[] =  $prpdbs[$i];
         }
     }
 
     if ( count( $prnamestocomp ) ) {
-        $sas->compute_pr_many( $prpdbs, $prnamestocomp );
+#        $ga->tcpmessage( [
+#                             "_textarea" =>
+#                             "compute_pr_many() setup\n"
+#                             . json_encode( $prpdbstocomp, JSON_PRETTY_PRINT ) . "\n"
+#                             . json_encode( $prnamestocomp, JSON_PRETTY_PRINT ) . "\n"
+#                         ] );
+                             
+        $sas->compute_pr_many( $prpdbstocomp, $prnamestocomp );
     }
 
     for ( $i = 0; $i < $usecount; ++$i ) {

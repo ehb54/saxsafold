@@ -24,7 +24,7 @@ $batch_run_pr_size                      = 50;
 $update_iq_frequency                    = 50;
 
 ## testing limits
-$test_limit_max_computeiqpr_frames      = 30;
+$test_limit_max_computeiqpr_frames      = 0;
 
 ## global waxsis configs
 
