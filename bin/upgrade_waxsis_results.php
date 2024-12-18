@@ -45,7 +45,7 @@ foreach ( $argv as $f ) {
     }
 
     $base = preg_replace( '/(^.*-m)\d+-waxsis\.dat$/', '$1', $f );
-    $newfile = $base . padded_model_no_from_frame( $modelnum + 1 ) . "_waxsis_q.dat";
+    $newfile = $base . padded_model_no_from_frame( $modelnum + 1 ) . "-waxsis_q.dat";
     echo "$f => model $modelnum  base '$base' newfile '$newfile'\n";
     if ( !rename( $f, $newfile ) ) {
         echo "error renaming $f => $newfile\n";

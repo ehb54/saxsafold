@@ -10,9 +10,9 @@ function initial_model_set( &$results, &$errormsg ) {
 
     $results = [];
 
-    foreach ( $mdatas as $mdata ) {
-        if ( isset( $cgstate->state->{$mdata->tag->nnlsresults} ) ) {
-            foreach ( $cgstate->state->{$mdata->tag->nnlsresults} as $k => $v ) {
+    foreach ( $mdatas as $k => $mdata ) {
+        if ( isset( $cgstate->state->{$mdata->tags->nnlsresults} ) ) {
+            foreach ( $cgstate->state->{$mdata->tags->nnlsresults} as $k => $v ) {
                 $modv = explode( ' ', $k );
                 $results[] = intval( end( $modv ) );
             }
