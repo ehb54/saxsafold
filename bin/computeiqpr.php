@@ -186,6 +186,10 @@ if ( in_array( "crysol3", $input->iqmethod )
             exit;
         }
 
+        if ( isset( $response->error ) && strlen( $response->error ) ) {
+            error_exit( "Please submit again" );
+        }
+
         # update db
 
         if ( !isset( $userdoc->academicAgree ) ) {

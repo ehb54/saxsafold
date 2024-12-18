@@ -59,6 +59,11 @@ if ( $cgstate->state->loaded ) {
             )
         );
     
+
+    if ( isset( $response->error ) && strlen( $response->error ) ) {
+        error_exit( "Please submit again" );
+    }
+
     if ( $response->_response->button == "keeppreviousresults" &&
          $cgstate->state->description != $input->desc ) {
         if ( strlen( trim( $input->desc ) ) ) {
@@ -85,6 +90,10 @@ if ( $cgstate->state->loaded ) {
             $ga->tcpmessage( [ "desc" => $cgstate->state->description ] );
         }
     }            
+
+    if ( isset( $response->error ) && strlen( $response->error ) ) {
+        error_exit( "Please submit again" );
+    }
 
     if ( $response->_response->button == "erasepreviousresults" ) {
         $cgstate->state               = (object)[];

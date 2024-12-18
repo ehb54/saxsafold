@@ -156,6 +156,10 @@ if ( !isset( $input->searchkey )
             );
 
 
+        if ( isset( $response->error ) && strlen( $response->error ) ) {
+            error_exit( "Please submit again" );
+        }
+
         if (
             isset( $response->_response )
             && isset( $response->_response->button )
@@ -292,6 +296,9 @@ if ( !isset( $input->searchkey )
                 )
             );
 
+        if ( isset( $response->error ) && strlen( $response->error ) ) {
+            error_exit( "Please submit again" );
+        }
 
         if (
             isset( $response->_response )

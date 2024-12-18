@@ -178,9 +178,12 @@ $response =
                  ]
              ]
             ]
-
         )
     );
+
+if ( isset( $response->error ) && strlen( $response->error ) ) {
+    error_exit( "Please submit again" );
+}
 
 if ( $response->_response->button == "cancelfornow" ) {
     $output->_textarea = "Processing canceled by user request\n";
