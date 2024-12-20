@@ -318,8 +318,8 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
             $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-            $plot->layout->yaxis2->domain     = [ 0.5, .95 ];
-            $plot->layout->yaxis3->domain     = [ 0.95, 1 ];
+            $plot->layout->yaxis2->domain     = [ 0.5, .9 ];
+            $plot->layout->yaxis3->domain     = [ 0.915, 1 ];
             $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
 #            $plot->layout->barmode            = "group";
@@ -407,9 +407,12 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             }
 
             $rgdata->{$avgrg_key} = $avgrg_value;
+            $rg_use_ordinate = [];
+            
             foreach ( $rgdata as $k => $v ) {
+                $rg_use_ordinate[ $v->Rg ]      = isset( $rg_use_ordinate[ $v->Rg ] ) ? $rg_use_ordinate[ $v->Rg ] + .2 : 1;
                 $plot->data[3]->x[]             = floatval( sprintf( "%.1f", $v->Rg ) );
-                $plot->data[3]->y[]             = 1;
+                $plot->data[3]->y[]             = $rg_use_ordinate[ $v->Rg ];
                 $plot->data[3]->customdata[]    = $k;
                 $plot->data[3]->marker->color[] = $v->color;
             }
