@@ -193,12 +193,18 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
             $plot2->data[0]->name = "All MMC<br>" . count( $plot->data[0]->x ) . " Frames";
 
             if ( $stride ) {
-                $plot->data[1]->name  = "Stride $stride<br>" . count( $plot->data[1]->x ) . " Frames";
-                $plot2->data[1]->name = "Stride $stride<br>" . count( $plot->data[1]->x ) . " Frames";
+                $plot->data[1]->name  = "Stride $stride<br>";
+                $plot2->data[1]->name = "Stride $stride<br>";
                 if ( $offset ) {
-                    $plot->data[1]->name  = "Stride $stride<br>Offset $offset<br>" . count( $plot->data[1]->x ) . " Frames";
-                    $plot2->data[1]->name = "Stride $stride<br>Offset $offset<br>" . count( $plot->data[1]->x ) . " Frames";
+                    $plot->data[1]->name  .= "Offset $offset<br>";
+                    $plot2->data[1]->name .= "Offset $offset<br>";
                 }
+                if ( $adjacent ) {
+                    $plot->data[1]->name  .= "$adjacent Adjacent frames included<br>";
+                    $plot2->data[1]->name .= "$adjacent Adjacent frames included<br>";
+                }
+                $plot->data[1]->name .= count( $plot->data[1]->x ) . " Frames";
+                $plot2->data[1]->name .= count( $plot->data[1]->x ) . " Frames";
             }
 
             if ( isset( $papercolors ) && $papercolors ) {

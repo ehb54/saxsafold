@@ -94,6 +94,16 @@ if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
 $procdir = "waxsissets";
 $waxsis_data_name = "I(q) WAXSiS mod. 0";
 
+## clear output
+$ga->tcpmessage( [
+                     'processing_progress' => 0.01
+                     ,"progress_text"      => ''
+                     ,"histplotfinal"      => ''
+                     ,"iqplotwaxsis"       => ''
+                     ,"csvdownloads"       => ''
+                     ,"struct"             => ''
+                 ] );
+
 ### build up set of models
 
 include "finalmodel_funcs.php";
