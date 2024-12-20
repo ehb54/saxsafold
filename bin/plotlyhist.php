@@ -410,11 +410,12 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $rg_use_ordinate = [];
             
             foreach ( $rgdata as $k => $v ) {
-                $rg_use_ordinate[ $v->Rg ]      = isset( $rg_use_ordinate[ $v->Rg ] ) ? $rg_use_ordinate[ $v->Rg ] + .2 : 1;
-                $plot->data[3]->x[]             = floatval( sprintf( "%.1f", $v->Rg ) );
-                $plot->data[3]->y[]             = $rg_use_ordinate[ $v->Rg ];
-                $plot->data[3]->customdata[]    = $k;
-                $plot->data[3]->marker->color[] = $v->color;
+                $rg_abscissa                     = sprintf( "%.1f", $v->Rg );
+                $rg_use_ordinate[ $rg_abscissa ] = isset( $rg_use_ordinate[ $rg_abscissa ] ) ? $rg_use_ordinate[ $rg_abscissa ] + .2 : 1;
+                $plot->data[3]->x[]              = floatval( $rg_abscissa );
+                $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_abscissa ];
+                $plot->data[3]->customdata[]     = $k;
+                $plot->data[3]->marker->color[]  = $v->color;
             }
 
             $result->histplotfinal = $plot;
