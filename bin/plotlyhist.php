@@ -151,10 +151,13 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                 if ( count( $linevals ) >= 2 ) {
                     $plot->data[0]->x[] = floatval($linevals[0]);
                     $plot->data[0]->y[] = floatval($linevals[1]);
-                    if ( $stride && !(( $line + $offset ) % $stride )) {
-                        $plot->data[1]->x[] = floatval($linevals[0]);
-                        $plot->data[1]->y[] = floatval($linevals[1]);
-                    }                        
+                    for ( $adj = -$adjacent; $adj <= $adjacent; ++$adj ) {
+                        if ( $stride && !(( $line + $offset + $adj) % $stride )) {
+                            $plot->data[1]->x[] = floatval($linevals[0]);
+                            $plot->data[1]->y[] = floatval($linevals[1]);
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -226,7 +229,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
     return "";
 }
 
-function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
+function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjacent = 0 ) {
     global $cgstate;
 
     if ( $cgstate->state->mmcdownloaded ) {
@@ -234,7 +237,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
         $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
         if ( file_exists( $histname ) ) {
             $reshist = (object)[];
-            $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
+            $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset, $adjacent );
             $plot = $reshist->histplot2;
 
             $plot->layout =

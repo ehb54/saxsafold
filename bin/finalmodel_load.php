@@ -76,6 +76,9 @@ if ( isset( $cgstate->state->output_final ) ) {
     if ( isset( $cgstate->state->output_final->struct ) ) {
         $result->struct = &$cgstate->state->output_final->struct;
     }
+    if ( isset( $cgstate->state->output_final->histplotfinal ) ) {
+        $result->histplotfinal = &$cgstate->state->output_final->histplotfinal;
+    }
 }
 
 $result->desc                      = $cgstate->state->description;
@@ -83,54 +86,40 @@ $result->pname                     = $request->_project;
 $result->downloads                 = $cgstate->state->output_load->downloads;
 
 #### can replace with $cgstate->state->output_final->histplotfinal if isset ... leaving now for legacy checks
+if ( !isset( $result->histplotfinal ) ) {
+    require_once "plotlyhist.php";
 
-require_once "plotlyhist.php";
+    $rgdata = (object) [];
 
-$rgdata = (object) [];
+    if ( isset( $cgstate->state->output_load->Rg ) ) {
+        $rgdata->{ "Original model<br>SOMO computed" } =
+            (object) [
+                "Rg" => $cgstate->state->output_load->Rg
+                ,"color" => "blue"
+            ];
+    };
 
-if ( isset( $cgstate->state->output_load->Rg ) ) {
-    $rgdata->{ "Original model<br>SOMO computed" } =
-        (object) [
-            "Rg" => $cgstate->state->output_load->Rg
-            ,"color" => "blue"
-        ];
-};
+    if ( isset( $cgstate->state->output_load->prplot ) ) {
+        require_once "sas.php";
+        $sas = new SAS();
+        $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot );
+        $prrg = 0;
+        $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
+        $rgdata->{ "Exp. P(r)<br>SOMO computed on regular grid" } =
+            (object) [
+                "Rg" => $prrg
+                ,"color" => "brown"
+            ];
+    }
 
-if ( isset( $cgstate->state->output_load->prplot ) ) {
-    require_once "sas.php";
-    $sas = new SAS();
-    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot );
-    $prrg = 0;
-    $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
-    $rgdata->{ "Exp. P(r)<br>SOMO computed on regular grid" } =
-        (object) [
-            "Rg" => $prrg
-            ,"color" => "brown"
-        ];
-}
-
-if ( isset( $cgstate->state->iq_waxsis_nnlsresults )
-     && isset( $cgstate->state->iq_waxsis_nnlsresults_colors )
-    ) {
-    final_hist( $result, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata );
-} else if ( isset( $cgstate->state->nnlsiqresultswaxsis ) ) {
-    final_hist( $result, $cgstate->state->nnlsiqresultswaxsis, array_fill( 0, count( $cgstate->state->nnlsiqresultswaxsis ), "black" ), $rgdata );
-}
-
-/*
-if ( $cgstate->state->mmcdownloaded ) {
-    ## histogram
-    $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
-    if ( file_exists( $histname ) ) {
-        require_once "plotlyhist.php";
-        $reshist = (object)[];
-        $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
-        $result->histplotfinal = $reshist->histplot2;
+    if ( isset( $cgstate->state->iq_waxsis_nnlsresults )
+         && isset( $cgstate->state->iq_waxsis_nnlsresults_colors )
+        ) {
+        final_hist( $result, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata );
+    } else if ( isset( $cgstate->state->nnlsiqresultswaxsis ) ) {
+        final_hist( $result, $cgstate->state->nnlsiqresultswaxsis, array_fill( 0, count( $cgstate->state->nnlsiqresultswaxsis ), "black" ), $rgdata );
     }
 }
-*/
-
-
 
 echo json_encode( $result );
 exit;

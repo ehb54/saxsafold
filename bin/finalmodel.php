@@ -563,7 +563,8 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
         ];
 }
 
-final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata );
+final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames );
+$cgstate->state->final_adjacent_frames = $input->adjacent_frames;
 
 ## save state
 
