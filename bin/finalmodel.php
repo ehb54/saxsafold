@@ -518,7 +518,7 @@ $output->struct = (object) [
 $pos = 0;
 
 ## for color match
-$cgstate->state->iq_waxsis_nnlsresults_colors = [];
+$cgstate->state->iq_waxsis_nnlsresults_colors = (object)[];
 
 foreach ( $iqresults as $name => $conc ) {
     if ( $name == $waxsis_data_name ) {
@@ -527,7 +527,7 @@ foreach ( $iqresults as $name => $conc ) {
         $tmpname = explode( ' ', $name );
         $frame = end( $tmpname );
     }
-    $cgstate->state->iq_waxsis_nnlsresults_colors[ $name ] = get_color( $pos );
+    $cgstate->state->iq_waxsis_nnlsresults_colors->$name = get_color( $pos );
     $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
 }
 $output->struct->script .= "frame all;";
@@ -535,6 +535,35 @@ $output->struct->script .= "frame all;";
 # $output->_textarea .= "script : " . $output->struct->script . "\n";
 
 #$output->struct = "results/users/$logon/$base_dir/$pdboutname";
+
+## final rg plot
+
+require_once "plotlyhist.php";
+
+$rgdata = (object) [];
+
+if ( isset( $cgstate->state->output_load->Rg ) ) {
+    $rgdata->{ "Original model<br>SOMO computed" } =
+        (object) [
+            "Rg" => $cgstate->state->output_load->Rg
+            ,"color" => "blue"
+        ];
+};
+
+if ( isset( $cgstate->state->output_load->prplot ) ) {
+    require_once "sas.php";
+    $sas = new SAS();
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot );
+    $prrg = 0;
+    $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
+    $rgdata->{ "Exp. P(r)<br>SOMO computed on regular grid" } =
+        (object) [
+            "Rg" => $prrg
+            ,"color" => "brown"
+        ];
+}
+
+final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata );
 
 ## save state
 

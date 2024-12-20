@@ -82,6 +82,7 @@ $result->desc                      = $cgstate->state->description;
 $result->pname                     = $request->_project;
 $result->downloads                 = $cgstate->state->output_load->downloads;
 
+#### can replace with $cgstate->state->output_final->histplotfinal if isset ... leaving now for legacy checks
 
 require_once "plotlyhist.php";
 

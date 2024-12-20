@@ -142,6 +142,7 @@ function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) 
     return true;
 }
 
+/*
 function final_hist( &$results ) {
     global $cgstate;
 
@@ -156,7 +157,7 @@ function final_hist( &$results ) {
         }
     }
 }
-
+*/
 
 ## testing
 /*
