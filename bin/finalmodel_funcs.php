@@ -142,6 +142,21 @@ function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) 
     return true;
 }
 
+function final_hist( &$results ) {
+    global $cgstate;
+
+    if ( $cgstate->state->mmcdownloaded ) {
+        ## histogram
+        $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+        if ( file_exists( $histname ) ) {
+            require_once "plotlyhist.php";
+            $reshist = (object)[];
+            $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
+            $results->histplotfinal = $reshist->histplot2;
+        }
+    }
+}
+
 
 ## testing
 /*

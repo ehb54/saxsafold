@@ -80,5 +80,27 @@ $result->desc                      = $cgstate->state->description;
 $result->pname                     = $request->_project;
 $result->downloads                 = $cgstate->state->output_load->downloads;
 
+
+require_once "plotlyhist.php";
+
+if ( isset( $cgstate->state->nnlsiqresultswaxsis ) ) {
+    final_hist( $result, $cgstate->state->nnlsiqresultswaxsis );
+}
+
+/*
+if ( $cgstate->state->mmcdownloaded ) {
+    ## histogram
+    $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+    if ( file_exists( $histname ) ) {
+        require_once "plotlyhist.php";
+        $reshist = (object)[];
+        $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
+        $result->histplotfinal = $reshist->histplot2;
+    }
+}
+*/
+
+
+
 echo json_encode( $result );
 exit;

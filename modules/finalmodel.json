@@ -304,9 +304,20 @@
             }
         }
         ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "histplotfinal"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
             "width"              : "100%",
             "height"             : "500",
-            "label"              : "Structure",
+#            "label"              : "Structure",
+            "label"              : "",
             "help"               : "Right click on structure for more options",
             "role"               : "output",
             "id"                 : "struct",
@@ -315,7 +326,9 @@
 #            "jsmoladd"           : "background white;ribbon only;",
             "labelmargintop"     : "0.5rem"
             ,"layout" : {
-                "parent" : "structure"
+#                "parent" : "structure"
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
             }
         }
     ]
