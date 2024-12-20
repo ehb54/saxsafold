@@ -50,15 +50,17 @@ if ( !isset( $cgstate->state->mmcdownloaded )
     error_exit_hook( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
-if ( !isset( $cgstate->state->nnlsiqresults )
-    || !isset( $cgstate->state->nnlsprresults ) ) {
-    error_exit_hook( "No preselected results found, Please run <i>Compute I(q)/P(r)</i> first" );
+if ( !isset( $cgstate->state->output_iqpr ) ) {
+    error_exit_hook( "Please run <i>Compute I(q)/P(r)</i> first" );
 }
 
-if ( isset( $cgstate->state->output_load ) ) {
-    if ( isset( $cgstate->state->output_load->iqplot ) ) {
-        $result->iqplot = &$cgstate->state->output_load->iqplot;
-    }
+#if ( !isset( $cgstate->state->nnlsiqresults )
+#    || !isset( $cgstate->state->nnlsprresults ) ) {
+#    error_exit_hook( "No preselected results found, Please run <i>Compute I(q)/P(r)</i> first" );
+#}
+
+if ( isset( $cgstate->state->output_load->iqplot ) ) {
+    $result->iqplot = &$cgstate->state->output_load->iqplot;
 }
 
 if ( isset( $cgstate->state->output_final ) ) {
@@ -83,8 +85,35 @@ $result->downloads                 = $cgstate->state->output_load->downloads;
 
 require_once "plotlyhist.php";
 
-if ( isset( $cgstate->state->nnlsiqresultswaxsis ) ) {
-    final_hist( $result, $cgstate->state->nnlsiqresultswaxsis );
+$rgdata = (object) [];
+
+if ( isset( $cgstate->state->output_load->Rg ) ) {
+    $rgdata->{ "Original model<br>SOMO computed" } =
+        (object) [
+            "Rg" => $cgstate->state->output_load->Rg
+            ,"color" => "blue"
+        ];
+};
+
+if ( isset( $cgstate->state->output_load->prplot ) ) {
+    require_once "sas.php";
+    $sas = new SAS();
+    $sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot );
+    $prrg = 0;
+    $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
+    $rgdata->{ "Exp. P(r)<br>SOMO computed on regular grid" } =
+        (object) [
+            "Rg" => $prrg
+            ,"color" => "brown"
+        ];
+}
+
+if ( isset( $cgstate->state->iq_waxsis_nnlsresults )
+     && isset( $cgstate->state->iq_waxsis_nnlsresults_colors )
+    ) {
+    final_hist( $result, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata );
+} else if ( isset( $cgstate->state->nnlsiqresultswaxsis ) ) {
+    final_hist( $result, $cgstate->state->nnlsiqresultswaxsis, array_fill( 0, count( $cgstate->state->nnlsiqresultswaxsis ), "black" ), $rgdata );
 }
 
 /*

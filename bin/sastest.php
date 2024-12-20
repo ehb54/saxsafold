@@ -1569,6 +1569,55 @@ class SAS {
         return true;
     }
 
+    function compute_rg_from_pr( $name, &$rg ) {
+        $this->debug_msg( "SAS::compute_rg_from_pr( '$name' )" );
+        $this->last_error = "";
+        
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::compute_rg_from_pr() data name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data->$name->type != self::PLOT_PR ) {
+            $this->last_error = "SAS::compute_rg_from_pr() data name '$name' is not a P(r) curve";
+            return $this->error_exit( $this->last_error );
+        }
+   
+        if ( count( $this->data->$name->x ) < 2 ) {
+            $this->last_error = "SAS::compute_rg_from_pr() data name '$name' has too few points";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $pts = count( $this->data->$name->x );
+
+        if ( $pts != count( $this->data->$name->y ) ) {
+            $this->last_error = "SAS::compute_rg_from_pr() data name '$name' has a mismatch in data length";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $intgrl_r2_pr = 0;
+        $intgrl_pr    = 0;
+   
+        $r = $this->data->$name->x;
+        $pr = $this->data->$name->y;
+
+        $dr = $r[1] - $r[0];
+
+        for ( $i = 0; $i < $pts; ++$i ) {
+            $intgrl_r2_pr += $r[ $i ] * $r[ $i ] * $pr[ $i ] * $dr;
+            $intgrl_pr    += $pr[ $i ] * $dr;
+        }
+
+        if ( $intgrl_pr <= 0 ) {
+            $this->last_error = "SAS::compute_rg_from_pr() data name '$name' integral of p(r) is zero or negative";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $rg = sqrt( $intgrl_r2_pr / ( 2.0 * $intgrl_pr ) );
+
+        return true;
+    }
+
     # compute_pr_many() - call somo to compute p(r) multiple structures
     function compute_pr_many( $pdbnames, $prnames, $binsize = 1 ) {
         $this->debug_msg( "SAS::compute_pr_many( pdbnames[], prnames[], $binsize )" );
@@ -2513,10 +2562,15 @@ if ( isset( $do_testing_nnls ) && $do_testing_nnls ) {
 }
 
 /*
-    $sas = new SAS( true );
+$sas = new SAS( true );
 $sas->load_file( SAS::PLOT_IQ, "sas_g_ang iq", "SAS_G_ang.dat" );
 $sas->load_file( SAS::PLOT_PR, "sas_g_ang pr", "SAS_G_ang.out" );
 echo $sas->data_summary( [ "sas_g_ang iq" ] );
 $sas->save_file( "sas_g_ang iq", "test_iq.dat" );
 $sas->save_file( "sas_g_ang pr", "test_pr.dat" );
+
+$rg = 0;
+$sas->compute_rg_from_pr( "sas_g_ang pr", $rg );
+echo "rg is $rg\n";
+
 */

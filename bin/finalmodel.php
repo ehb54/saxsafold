@@ -80,10 +80,10 @@ if ( !isset( $cgstate->state->output_iqpr ) ) {
     error_exit( "Did you <i>Compute I(q)/P(r)</i>?" );
 }
 
-if ( !isset( $cgstate->state->nnlsiqresults )
-    || !isset( $cgstate->state->nnlsprresults ) ) {
-    error_exit( "Did you successfully <i>Compute I(q)/P(r)</i>?" );
-}
+#if ( !isset( $cgstate->state->nnlsiqresults )
+#    || !isset( $cgstate->state->nnlsprresults ) ) {
+#    error_exit( "Did you successfully <i>Compute I(q)/P(r)</i>?" );
+#}
 
 ## process inputs here to produce output
 
@@ -435,7 +435,7 @@ $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
 ### save results to state
 
-$cgstate->state->nnlsiqresultswaxsis = $iqresults;
+$cgstate->state->iq_waxsis_nnlsresults = $iqresults;
 
 ## setup csvdownloads
 
@@ -509,18 +509,6 @@ $output->csvdownloads =
     . "</div>"
     ;
 
-function get_color( $pos ) {
-    $colors = [
-        "red"
-        ,"orange"
-        ,"yellow"
-        ,"green"
-        ,"blue"
-        ];
-
-    return $colors[ $pos % count( $colors ) ];
-}
-
 $output->struct = (object) [
     "file" => "results/users/$logon/$base_dir/$pdboutname"
     #    ,"script" => "background white;ribbon only;select */29; color blue; select */30; color green; frame all"
@@ -528,6 +516,10 @@ $output->struct = (object) [
     ];
 
 $pos = 0;
+
+## for color match
+$cgstate->state->iq_waxsis_nnlsresults_colors = [];
+
 foreach ( $iqresults as $name => $conc ) {
     if ( $name == $waxsis_data_name ) {
         $frame = $waxsis_model_number;
@@ -535,6 +527,7 @@ foreach ( $iqresults as $name => $conc ) {
         $tmpname = explode( ' ', $name );
         $frame = end( $tmpname );
     }
+    $cgstate->state->iq_waxsis_nnlsresults_colors[ $name ] = get_color( $pos );
     $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
 }
 $output->struct->script .= "frame all;";

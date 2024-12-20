@@ -226,7 +226,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
     return "";
 }
 
-function final_hist( $result, $nnlsresults ) {
+function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
     global $cgstate;
 
     if ( $cgstate->state->mmcdownloaded ) {
@@ -268,6 +268,30 @@ function final_hist( $result, $nnlsresults ) {
                                            ,"visible"        => true
                                            ,"showline"       => true
                                        ]
+                                       ,"xaxis3" => (object) [
+                                           "showgrid" => false
+                                           ,"type" => "linear"
+                                           ,"title" => [
+                                               "text" => ""
+                                               ,"font" => [
+                                                   "color"  => "rgb(0,5,80)"
+                                               ]
+                                           ]
+                                           ,"showticklabels" => false
+                                           ,"visible"        => false
+                                           ,"matches"        => "x"
+                                           ,"anchor"         => "y3"
+                                           ,"showline"       => false
+                                       ]
+                                       ,"yaxis3" => (object) [
+                                           "showgrid" => false
+                                           ,"type" => "linear"
+                                           ,"title" => [
+                                               "text" => ""
+                                           ]
+                                           ,"visible"        => false
+                                           ,"showline"       => false
+                                       ]
                                       ]
                 );
 
@@ -284,8 +308,14 @@ function final_hist( $result, $nnlsresults ) {
             $plot->layout->showlegend         = true;
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
-            $plot->layout->yaxis->domain      = [ 0, .45 ]; 
-            $plot->layout->yaxis2->domain     = [ 0.55, 1 ];
+            $plot->layout->yaxis->domain      = [ 0, .4 ]; 
+            $plot->layout->yaxis2->domain     = [ 0.5, .95 ];
+            $plot->layout->yaxis3->domain     = [ 0.95, 1 ];
+            $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
+
+#            $plot->layout->barmode            = "group";
+#            $plot->layout->barmode            = "stack";
+#            $plot->layout->barmode            = "overlay";
 
             $plot->data =
                 json_decode( json_encode(
@@ -294,26 +324,34 @@ function final_hist( $result, $nnlsresults ) {
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-#                                            "x" => [ 14.8, 15.1, 15.27 ]
-#                                            ,"y" => [ 5, 2, 7 ]
-#                                            ,"text" => [
-#                                                "Mod<br>22357"
-#                                                ,"Mod<br>1737"
-#                                                ,"Mod<br>205"
-#                                            ]
-#                                            ,"customdata" => [
-#                                                "Model 22357"
-#                                                ,"Model 1737"
-#                                                ,"Model 205"
-#                                            ]
                                             ,"hovertemplate" => '%{customdata}<br>%{y}%<br>Rg %{x}'
                                             ,"name" => "WAXSiS NNLS fit"
                                             ,"type" => "bar"
                                             ,"yaxis" =>  "y2"
-#                                            ,"width" =>  (15.5 - 14.5) / 20
+                                            ,"showlegend" => false
                                             ,"marker" => [
-                                                "color" => "rgb(158,202,225)"
-                                                ,"opacity" => 0.6
+                                                "color" => []
+#                                                ,"opacity" => 0.7
+                                                ,"line" => [
+                                                    "color" => "rgb(8,48,107)"
+                                                    ,"width" => 1.5
+                                                ]
+                                            ]
+                                        ]
+                                        ,
+                                        (object) [
+                                            "x" => []
+                                            ,"y" => []
+                                            ,"customdata" => []
+                                            ,"hovertemplate" => '%{customdata}<br>Rg %{x}'
+                                            ,"name" => ""
+                                            ,"yaxis" =>  "y3"
+                                            ,"mode"  => "markers"
+                                            ,"showlegend" => false
+                                            ,"marker" => [
+                                                "color" => []
+                                                ,"size" => 10
+                                                ,"symbol" => "triangle-down"
                                                 ,"line" => [
                                                     "color" => "rgb(8,48,107)"
                                                     ,"width" => 1.5
@@ -324,39 +362,106 @@ function final_hist( $result, $nnlsresults ) {
                                  )
                              ) );
             
+            
+            # need to sort nnlsresults
+
+
+            $pos = 0;
+            $avgrg = 0;
+
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
                 $model = end( $namev );
-                $plot->data[2]->x[]          = floatval( sprintf( "%.1f", $reshist->histplot->data[0]->y[ $model - 1 ] ) );
-                $plot->data[2]->y[]          = floatval( sprintf( "%.1f", 100 * $v ) );
-                $plot->data[2]->customdata[] = "Model $model";
+                $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $reshist->histplot->data[0]->y[ $model - 1 ] ) );
+                $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
+                $plot->data[2]->customdata[]    = "Model $model";
+                $plot->data[2]->marker->color[] =
+                    (
+                     isset( $nnlsresults_colors )
+                     && isset( $nnlsresults_colors->$k )
+                    )
+                    ? $nnlsresults_colors->$k
+                    : "black";
+                $avgrg += $v * $reshist->histplot->data[0]->y[ $model - 1 ];
             }
 
-            $plot->data[2]->width = ( max( $plot->data[2]->x ) - min( $plot->data[2]->x ) ) / (count( $plot->data[2]->x ) * 5 );
+            $plot->data[2]->width = ( max( $plot->data[0]->x ) - min( $plot->data[0]->x ) ) / (count( $plot->data[2]->x ) * 10 );
+
+            $avgrg_key  = "Weighted average of NNLS fit";
+            $avgrg_value = (object) [
+                "Rg" => $avgrg
+                ,"color" => "green"
+                ];
+
+            if ( !isset( $rgdata ) || !is_object( $rgdata ) ) {
+                $rgdata = (object)[];
+            }
+
+            $rgdata->{$avgrg_key} = $avgrg_value;
+            foreach ( $rgdata as $k => $v ) {
+                $plot->data[3]->x[]             = floatval( sprintf( "%.1f", $v->Rg ) );
+                $plot->data[3]->y[]             = 1;
+                $plot->data[3]->customdata[]    = $k;
+                $plot->data[3]->marker->color[] = $v->color;
+            }
 
             $result->histplotfinal = $plot;
 
-            # echo json_encode(  $reshist->histplot->data , JSON_PRETTY_PRINT ) . "\n\n";
-            # echo json_encode(  $plot->data[2] , JSON_PRETTY_PRINT ) . "\n\n";
+            # echo "\$reshist->histplot->data\n" . json_encode(  $reshist->histplot->data , JSON_PRETTY_PRINT ) . "\n\n";
+            # echo "\$plot->layout\n" . json_encode(  $plot->layout , JSON_PRETTY_PRINT ) . "\n\n";
+            # echo "\$plot->data[2]\n" . json_encode(  $plot->data[2] , JSON_PRETTY_PRINT ) . "\n\n";
+            # echo "\$plot\n" . json_encode(  $plot, JSON_PRETTY_PRINT ) . "\n\n";
 
         }
     }
 }
 
 /*
-    ### testing
+### testing
 
 require "common.php";
 $cgstate = new cgrun_state();
 
 $result = (object)[];
 
-final_hist( $result, $cgstate->state->nnlsiqresultswaxsis );
+#$nnlsresults = $cgstate->state->prwe_nnlsresults;
+#$nnlsresults = $cgstate->state->pr_nnlsresults;
+#$nnlsresults = $cgstate->state->iq_c3_nnlsresults;
+#$nnlsresults = $cgstate->state->iq_p_nnlsresults;
+#$nnlsresults = $cgstate->state->nnlsprresults;
+$nnlsresults = $cgstate->state->iq_waxsis_nnlsresults;
 
-echo json_encode(  $cgstate->state->nnlsiqresultswaxsis , JSON_PRETTY_PRINT ) . "\n\n";
+require_once "sas.php";
+$sas = new SAS();
+$sas->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstate->state->output_load->prplot );
+$prrg = 0;
+$sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
+echo "rg is $prrg\n";
+
+$rgdata = (object) [
+    "Original model<br>SOMO computed" => (object) [
+        "Rg" => $cgstate->state->output_load->Rg
+        ,"color" => "blue"
+    ]
+    ,"Exp. P(r)<br>SOMO computed on regular grid" => (object) [
+        "Rg" => $prrg
+        ,"color" => "brown"
+    ]
+    ];
+
+
+$nnlsresults_colors = $cgstate->state->iq_waxsis_nnlsresults_colors;
+final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata );
+echo json_encode(  $nnlsresults , JSON_PRETTY_PRINT ) . "\n\n";
+echo json_encode(  $nnlsresults_colors , JSON_PRETTY_PRINT ) . "\n\n";
+
+#final_hist( $result, $cgstate->state->nnlsiqresultswaxsis );
+#echo json_encode(  $cgstate->state->nnlsiqresultswaxsis , JSON_PRETTY_PRINT ) . "\n\n";
 
 
 file_put_contents( "plotout.json", "\n" . json_encode( $result->histplotfinal ) . "\n\n" );
 
 echo "\ncat plotout.json\n\n";
+
+
 */

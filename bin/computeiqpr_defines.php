@@ -39,3 +39,15 @@ $mdatas = (object) [
         ]
     ]
     ];
+
+function get_color( $pos ) {
+    $colors = [
+        "red"
+        ,"orange"
+        ,"yellow"
+        ,"green"
+        ,"blue"
+        ];
+
+    return $colors[ $pos % count( $colors ) ];
+}
