@@ -415,6 +415,13 @@ $scale = 0;
 $sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
 $sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
 $sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
+
+## move NNLS fit to last curve, but before residuals
+$sas->remove_plot_data( $plotname, "I(q) NNLS fit" );
+$sas->recolor_plot( $plotname, [ 1 ] );
+$sas->add_plot( $plotname, "I(q) NNLS fit" );
+$sas->plot_trace_options( $plotname, "I(q) NNLS fit", [ 'linecolor_number' => 1 ] );
+
 $sas->add_plot_residuals( $plotname, "I(q) fit Res./SD" );
 $sas->plot_trace_options( $plotname, "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
 

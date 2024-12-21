@@ -346,10 +346,12 @@ $sas->nnls( "Exp. P(r)", $allprnames, "P(r) NNLS fit", $prresults, false );
 
 ### build up P(r) sel plot
 
-$sas->add_plot( "P(r) sel", "P(r) NNLS fit" );
+$plotname = "P(r) sel";
+
+$sas->add_plot( $plotname, "P(r) NNLS fit" );
 
 foreach ( $prresults as $k => $v ) {
-    $sas->add_plot( "P(r) sel", $k );
+    $sas->add_plot( $plotname, $k );
 }
 
 ### residuals
@@ -358,9 +360,16 @@ $chi2_pr = -1;
 $scale   = 0;
 
 $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit", "P(r) fit Resid.", $rmsd_pr );
-$sas->add_plot_residuals( "P(r) sel", "P(r) fit Resid." );
-$sas->plot_trace_options( "P(r) sel", "P(r) fit Resid.", [ 'linecolor_number' => 1 ] );
-$sas->plot_options( "P(r) sel", [ "yaxis2title" => "Resid." ] );
+
+## move NNLS fit to last curve, but before residuals
+$sas->remove_plot_data( $plotname, "P(r) NNLS fit" );
+$sas->recolor_plot( $plotname, [ 1 ] );
+$sas->add_plot( $plotname, "P(r) NNLS fit" );
+$sas->plot_trace_options( $plotname, "P(r) NNLS fit", [ 'linecolor_number' => 1 ] );
+
+$sas->add_plot_residuals( $plotname, "P(r) fit Resid." );
+$sas->plot_trace_options( $plotname, "P(r) fit Resid.", [ 'linecolor_number' => 1 ] );
+$sas->plot_options( $plotname, [ "yaxis2title" => "Resid." ] );
 
 $rmsd_pr = round( $rmsd_pr, 3 );
 $chi2_pr = round( $chi2_pr, 3 );
@@ -372,7 +381,7 @@ if ( $chi2_pr != -1 ) {
     $annotate_msg .= "nChi^2 $chi2_pr   ";
 }
 if ( strlen( $annotate_msg ) ) {
-    $sas->annotate_plot( "P(r) sel", $annotate_msg );
+    $sas->annotate_plot( $plotname, $annotate_msg );
 }
 
 $output->pr_results = nnls_results_to_html( $prresults );
@@ -411,14 +420,14 @@ $output->pr_downloads =
 $ga->tcpmessage(
     [
      "processing_progress" => .9
-     ,"pr_plotsel" => $sas->plot( "P(r) sel" )
+     ,"pr_plotsel" => $sas->plot( $plotname )
      ,"pr_results" => nnls_results_to_html( $prresults )
      ,"pr_downloads" => $output->pr_downloads
 #     ,"_textarea" => json_encode( $prresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
     
-$output->pr_plotsel = $sas->plot( "P(r) sel" );
+$output->pr_plotsel = $sas->plot( $plotname );
 
 # $ga->tcpmessage( [ "_textarea" => "P(r) time " . dhms_from_minutes( dt_store_duration( "P(r) start", "P(r) end" ) ) . "\n" ] );
 
@@ -436,10 +445,12 @@ if ( isset( $input->prerrors ) ) {
 
     ### build up P(r)-we sel plot
 
-    $sas->add_plot( "P(r) we sel", "P(r) NNLS fit w/SDs" );
+    $plotname = "P(r) we sel";
+
+    $sas->add_plot( $plotname, "P(r) NNLS fit w/SDs" );
 
     foreach ( $prweresults as $k => $v ) {
-        $sas->add_plot( "P(r) we sel", $k );
+        $sas->add_plot( $plotname, $k );
     }
 
     ### residuals
@@ -451,9 +462,16 @@ if ( isset( $input->prerrors ) ) {
     $sas->rmsd_residuals( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) fit w/SDs Resid.", $rmsd_prwe );
 #    $sas->rmsd( "Exp. P(r)", "P(r) NNLS fit w/SDs", $rmsd_prwe );
 #    $sas->calc_residuals( "Exp. P(r)", "P(r) NNLS fit w/SDs", "P(r) fit w/SDs Resid." );
-    $sas->add_plot_residuals( "P(r) we sel", "P(r) fit w/SDs Resid." );
-    $sas->plot_trace_options( "P(r) we sel", "P(r) fit w/SDs Resid.", [ 'linecolor_number' => 1 ] );
-    $sas->plot_options( "P(r) we sel", [ "yaxis2title" => "Resid." ] );
+
+    ## move NNLS fit to last curve, but before residuals
+    $sas->remove_plot_data( $plotname, "P(r) NNLS fit w/SDs" );
+    $sas->recolor_plot( $plotname, [ 1 ] );
+    $sas->add_plot( $plotname, "P(r) NNLS fit w/SDs" );
+    $sas->plot_trace_options( $plotname, "P(r) NNLS fit w/SDs", [ 'linecolor_number' => 1 ] );
+
+    $sas->add_plot_residuals( $plotname, "P(r) fit w/SDs Resid." );
+    $sas->plot_trace_options( $plotname, "P(r) fit w/SDs Resid.", [ 'linecolor_number' => 1 ] );
+    $sas->plot_options( $plotname, [ "yaxis2title" => "Resid." ] );
 
     $rmsd_prwe = round( $rmsd_prwe, 3 );
     $chi2_prwe = round( $chi2_prwe, 3 );
@@ -465,7 +483,7 @@ if ( isset( $input->prerrors ) ) {
         $annotate_msg .= "nChi^2 $chi2_prwe   ";
     }
     if ( strlen( $annotate_msg ) ) {
-        $sas->annotate_plot( "P(r) we sel", $annotate_msg );
+        $sas->annotate_plot( $plotname, $annotate_msg );
     }
 
     $output->prwe_results = nnls_results_to_html( $prweresults );
@@ -503,14 +521,14 @@ if ( isset( $input->prerrors ) ) {
     $ga->tcpmessage(
         [
          "processing_progress" => .95
-         ,"prwe_plotsel" => $sas->plot( "P(r) we sel" )
+         ,"prwe_plotsel" => $sas->plot( $plotname )
          ,"prwe_results" => nnls_results_to_html( $prweresults )
          ,"prwe_downloads" => $output->prwe_downloads
      #     ,"_textarea" => json_encode( $prweresults, JSON_PRETTY_PRINT ) . "\n"
     ]
     );
 
-    $output->prwe_plotsel = $sas->plot( "P(r) we sel" );
+    $output->prwe_plotsel = $sas->plot( $plotname );
 
 } else {
     unset( $cgstate->state->nnlsprweresults );
@@ -653,7 +671,6 @@ foreach ( $input->iqmethod as $iqmethod ) {
 
     $output->{$mdata->tags->plotallhtml} = plot_to_image( $sas->plot( $mdata->plotallname ) );
 
-
     $ga->tcpmessage(
         [
          $mdata->tags->plotallhtml => $output->{$mdata->tags->plotallhtml}
@@ -684,6 +701,13 @@ foreach ( $input->iqmethod as $iqmethod ) {
     $sas->scale_nchi2( "Exp. I(q)", "$mdata->prefix NNLS fit", "$mdata->prefix NNLS fit-rescaled", $chi2, $scale );
     $sas->rmsd( "Exp. I(q)", "$mdata->prefix NNLS fit", $rmsd );
     $sas->calc_residuals( "Exp. I(q)", "$mdata->prefix NNLS fit", "$mdata->prefix fit Res./SD" );
+
+    ## move NNLS fit to last curve, but before residuals
+    $sas->remove_plot_data( $mdata->plotselname, "$mdata->prefix NNLS fit" );
+    $sas->recolor_plot( $mdata->plotselname, [ 1 ] );
+    $sas->add_plot( $mdata->plotselname, "$mdata->prefix NNLS fit" );
+    $sas->plot_trace_options( $mdata->plotselname, "$mdata->prefix NNLS fit", [ 'linecolor_number' => 1 ] );
+    
     $sas->add_plot_residuals( $mdata->plotselname, "$mdata->prefix fit Res./SD" );
     $sas->plot_trace_options( $mdata->plotselname, "$mdata->prefix fit Res./SD", [ 'linecolor_number' => 1 ] );
 
