@@ -361,10 +361,10 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                                 "color" => []
                                                 ,"size" => 10
                                                 ,"symbol" => "triangle-down"
-                                                ,"line" => [
-                                                    "color" => "rgb(8,48,107)"
-                                                    ,"width" => 1.5
-                                                ]
+#                                                ,"line" => [
+#                                                    "color" => "rgb(8,48,107)"
+#                                                    ,"width" => 1.5
+#                                               ]
                                             ]
                                         ]
                                       ]
@@ -377,20 +377,35 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $pos    = 0;
             $avgrg2 = 0;
 
+            file_put_contents( "/tmp/checkrg", "plotlyhist final func() running\n",  FILE_APPEND );
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
                 $model = end( $namev );
-                $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $reshist->histplot->data[0]->y[ $model - 1 ] ) );
-                $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-                $plot->data[2]->customdata[]    = "Model $model";
-                $plot->data[2]->marker->color[] =
-                    (
-                     isset( $nnlsresults_colors )
-                     && isset( $nnlsresults_colors->$k )
-                    )
-                    ? $nnlsresults_colors->$k
-                    : "black";
-                $avgrg2 += $v * $reshist->histplot->data[0]->y[ $model - 1 ] * $reshist->histplot->data[0]->y[ $model - 1 ];
+                if ( $model == "WAXSiS" ) {
+                    $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $cgstate->state->output_load->Rg ) );
+                    $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
+                    $plot->data[2]->customdata[]    = "Model $model";
+                    $plot->data[2]->marker->color[] =
+                        (
+                         isset( $nnlsresults_colors )
+                         && isset( $nnlsresults_colors->$k )
+                        )
+                        ? $nnlsresults_colors->$k
+                        : "black";
+                    $avgrg2 += $v * $cgstate->state->output_load->Rg * $cgstate->state->output_load->Rg;
+                } else {
+                    $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $reshist->histplot->data[0]->y[ $model - 1 ] ) );
+                    $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
+                    $plot->data[2]->customdata[]    = "Model $model";
+                    $plot->data[2]->marker->color[] =
+                        (
+                         isset( $nnlsresults_colors )
+                         && isset( $nnlsresults_colors->$k )
+                        )
+                        ? $nnlsresults_colors->$k
+                        : "black";
+                    $avgrg2 += $v * $reshist->histplot->data[0]->y[ $model - 1 ] * $reshist->histplot->data[0]->y[ $model - 1 ];
+                }
             }
 
             $avgrg = sqrt( $avgrg2 );
