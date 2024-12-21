@@ -257,12 +257,11 @@ class SAS {
         }
     }
 
-    private function debug_json( $tag, $obj ) {
+    function debug_json( $tag, $obj ) {
         if ( $this->debug ) {
-            echo "$tag\n:" . json_encode( $obj, JSON_PRETTY_PRINT ) . "\n";
+            echo "$tag:\n" . json_encode( $obj, JSON_PRETTY_PRINT ) . "\n";
         }
     }
-
 
     # does the data have errors
     function data_has_errors( $name ) {
@@ -560,8 +559,51 @@ class SAS {
         return true;
     }
 
+    # recolor_plot
+    function recolor_plot( $name, $exclude_color_numbers = '' ) {
+        $this->debug_msg( "SAS::recolor_plot( '$name', exclude_color_numbers[] )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::recolor_plot() plot name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( is_array( $exclude_color_numbers ) ) {
+            $max_colors = count( self::PLOTLY_COLORS );
+            $any_valid_colors = false;
+            for ( $i = 0; $i < $max_colors; ++$i ) {
+                if ( !in_array( $i, $exclude_color_numbers ) ) {
+                    $any_valid_colors = true;
+                    break;
+                }
+            }
+            if ( !$any_valid_colors ) {
+                $this->last_error = "SAS::recolor_plot() all colors are excluded";
+                return $this->error_exit( $this->last_error );
+            }
+            $use_color = 0;
+            foreach ( $this->plots->$name->data as $v ) {
+                while( in_array( $use_color % $max_colors, $exclude_color_numbers ) ) {
+                    ++$use_color;
+                }
+                $this->plot_trace_options( $name, $v->name, [ 'linecolor_number' => $use_color ] );
+                ++$use_color;
+            }
+        } else {            
+            $use_color = 0;
+            foreach ( $this->plots->$name->data as $v ) {
+                $this->plot_trace_options( $name, $v->name, [ 'linecolor_number' => $use_color ] );
+                ++$use_color;
+            }
+        }
+        return true;
+    }
+
     # adds an annotation to a plot
     function annotate_plot( $plotname, $msg ) {
+        $this->debug_msg( "SAS::annotate_plot( '$plotname', '$msg' )" );
+        $this->last_error = "";
 
         if ( !isset( $this->plots->$plotname ) ) {
             $this->last_error = "annotate_plot() plot '$plotname' does not exist\n";
@@ -1752,7 +1794,7 @@ class SAS {
         $this->debug_msg( "SAS::data_names( '$regexp' )" );
         $this->last_error = "";
 
-        return preg_grep( $regexp, array_keys( (array) $this->data ) );
+        return array_values( preg_grep( $regexp, array_keys( (array) $this->data ) ) );
     }
 
     # plot_names() - names of all data names matching regexp, default all
@@ -2087,8 +2129,13 @@ class SAS {
             ,'sd_factor'  => $this->data->$targetname->type == self::PLOT_IQ ? "1/sd" : "1/sd"
             ];
 
+        $all_data_has_errors = true;
+
         foreach ( $names as $name ) {
             $nnlsobj->data->$name = &$this->data->$name->y;
+            if ( !isset( $this->data->$name->error_y ) ) {
+                $all_data_has_errors = false;
+            }
         }
 
         if ( false === file_put_contents( $nnlsfile, json_encode( $nnlsobj ) ) ) {
@@ -2119,14 +2166,8 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        if ( strlen( $combinedname ) ) {
-            $firstarray = $names[0];
-            $this->data->$combinedname = (object)[];
-            $this->data->$combinedname->type = $this->data->$firstarray->type;
-            $this->data->$combinedname->x    = $this->data->$firstarray->x;
-            $this->data->$combinedname->y    = $resobj->combined_fit_y;
-        }
-        
+        ## normalize results
+
         $sum = 0;
 
         $procobj = (object)[];
@@ -2168,10 +2209,91 @@ class SAS {
             $finalarray[ $v ] = $procobj->$v;
         }
 
+        $len = count( $this->data->{$names[0]}->x );
+
+        if ( $all_data_has_errors ) {
+            ## compute combined errors
+            echo "all data has SDs, will compute SDs for fit\n";
+            $error_y = array_fill( 0, $len, 0 );
+
+            foreach ( $finalarray as $k => $v ) {
+                if ( !$this->data_name_exists( $k ) ) {
+                    $this->last_error = "SAS::NNLS() - returned model not in data '$k'";
+                    return $this->error_exit( $this->last_error );
+                }
+                for ( $i = 0; $i < $len; ++$i ) {
+                    $error_y[$i] += $v * $v * $this->data->$k->error_y[$i] *  $this->data->$k->error_y[$i];
+                }
+            }
+            for ( $i = 0; $i < $len; ++$i ) {
+                $error_y[$i] = sqrt( $error_y[$i] );
+            }
+        }
+        
+        if ( strlen( $combinedname ) ) {
+            $firstarray = $names[0];
+            $this->data->$combinedname = (object)[];
+            $this->data->$combinedname->type = $this->data->$firstarray->type;
+            $this->data->$combinedname->x    = $this->data->$firstarray->x;
+            $this->data->$combinedname->y    = $resobj->combined_fit_y;
+            if ( $all_data_has_errors ) {
+                $this->data->$combinedname->error_y = $error_y;
+            }
+        }
+
         $results = $finalarray;
 
         # $this->debug_json( "finalarray", $finalarray );
 
+        return true;
+    }
+
+    # compare_data -
+    function compare_data( $name1, $name2, $compare_errors = true ) {
+        $this->debug_msg( "SAS::compare_data( '$name1', '$name2' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name1 ) ) {
+            $this->last_error = "SAS: name '$name1' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $name2 ) ) {
+            $this->last_error = "SAS: name '$name2' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name1->type != $this->data->$name2->type ) {
+            $this->last_error = "SAS: name '$name1' and '$name2' are different types";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name1->x != $this->data->$name2->x
+             || $this->data->$name1->y != $this->data->$name2->y
+            ) {
+            return false;
+        }
+
+        if ( $compare_errors ) {
+            if ( !isset( $this->data->$name1->error_y )
+                 && !isset( $this->data->$name2->error_y ) ) {
+                return true;
+            }
+            if (
+                (
+                 !isset( $this->data->$name1->error_y )
+                 && isset( $this->data->$name2->error_y )
+                )
+                ||
+                (
+                 isset( $this->data->$name1->error_y )
+                 && !isset( $this->data->$name2->error_y )
+                )
+                ) {
+                return false;
+            }
+            return $this->data->$name1->error_y == $this->data->$name2->error_y;
+        }
         return true;
     }
 
@@ -2573,4 +2695,31 @@ $rg = 0;
 $sas->compute_rg_from_pr( "sas_g_ang pr", $rg );
 echo "rg is $rg\n";
 
+*/
+
+/*
+$sas = new SAS( true );
+$cgstate = new cgrun_state();
+# $sas->debug_json( "output_final", $cgstate->state->output_final );
+$sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q) waxsis", $cgstate->state->output_final->iqplotwaxsis );
+$names = $sas->data_names( '/WAXSiS/' );
+echo $sas->data_summary( $names );
+$results = (object)[];
+$sas->nnls( "Exp. I(q)", $names, "I(q) NNLS fit WAXSiS", $results );
+$sas->debug_json( "results", $results );
+echo $sas->data_summary( $sas->data_names( '/(WAXSiS|NNLS)/' ) );
+echo $sas->compare_data( "I(q) NNLS fit", "I(q) NNLS fit WAXSiS", false ) ? "data matches\n" : "data doesn't match\n";
+echo $sas->compare_data( "I(q) NNLS fit", "I(q) NNLS fit WAXSiS" ) ? "errors match\n" : "errors don't match\n";
+echo $sas->compare_data( "I(q) NNLS fit", "I(q) WAXSiS mod. 1197" ) ? "different data match\n" : "different data doesn't match\n";
+*/
+
+/*
+
+$sas = new SAS( true );
+$cgstate = new cgrun_state();
+$plotname = "test";
+$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_final->iqplotwaxsis );
+$sas->recolor_plot( $plotname, range( 0, 20 ) );
+$outfile = "plotout.json";
+file_put_contents( $outfile, "\n" .  json_encode( $sas->plot( $plotname ) ) . "\n\n" );
 */
