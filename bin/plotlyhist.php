@@ -374,9 +374,8 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             
             # need to sort nnlsresults
 
-
-            $pos = 0;
-            $avgrg = 0;
+            $pos    = 0;
+            $avgrg2 = 0;
 
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
@@ -391,8 +390,10 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                     )
                     ? $nnlsresults_colors->$k
                     : "black";
-                $avgrg += $v * $reshist->histplot->data[0]->y[ $model - 1 ];
+                $avgrg2 += $v * $reshist->histplot->data[0]->y[ $model - 1 ] * $reshist->histplot->data[0]->y[ $model - 1 ];
             }
+
+            $avgrg = sqrt( $avgrg2 );
 
             $plot->data[2]->width = ( max( $plot->data[0]->x ) - min( $plot->data[0]->x ) ) / (count( $plot->data[2]->x ) * 10 );
 
