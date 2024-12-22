@@ -340,11 +340,10 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                             ,"showlegend" => false
                                             ,"marker" => [
                                                 "color" => []
-#                                                ,"opacity" => 0.7
-                                                ,"line" => [
-                                                    "color" => "rgb(8,48,107)"
-                                                    ,"width" => 1.5
-                                                ]
+#                                                ,"line" => [
+#                                                    "color" => "rgb(8,48,107)"
+#                                                    ,"width" => 1.5
+#                                                ]
                                             ]
                                         ]
                                         ,
@@ -381,7 +380,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
                 $model = end( $namev );
-                if ( $model == "WAXSiS" ) {
+                if ( $model == "WAXSiS" || $model == 0 ) {
                     $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $cgstate->state->output_load->Rg ) );
                     $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
                     $plot->data[2]->customdata[]    = "Model $model";
