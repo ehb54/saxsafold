@@ -193,6 +193,20 @@
                 ]
             }
         }
+        ,{
+            "buttonpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ]
+            }
+        }
     ]
     ,"fields"   : [
         {
@@ -526,6 +540,5 @@
                 ,"data" : [ 0, 2 ]
             }
         }
-
     ]
 }
