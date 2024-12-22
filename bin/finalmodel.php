@@ -303,11 +303,13 @@ switch( $input->waxsis_convergence_mode ) {
     case "quick"    : $waxsis_suffix = "_q"; break;
     default         : error_exit( "internal error - unknown or unsupported WAXSiS convergence mode" );
 }
+
+$tot_models_to_process_count = $models_to_process_count;
     
 foreach ( $names as $name ) {
     
     if ( $models_to_process_count ) {
-        $pos_frac = ( $models_processed + .5 ) / $models_to_process_count;
+        $pos_frac = ( $models_processed + .5 ) / $tot_models_to_process_count;
     } else {
         $pos_frac = .5;
     }
