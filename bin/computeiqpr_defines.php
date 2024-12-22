@@ -42,8 +42,8 @@ $mdatas = (object) [
 
 function get_color( $pos ) {
     $colors = [
-        "aqua" #00FFFF
-        ,"blueviolet" #8A2BE2
+#        "aqua" #00FFFF
+        "blueviolet" #8A2BE2
         ,"brown" #A52A2A
         ,"burlywood" #DEB887
         ,"cadetblue" #5F9EA0
