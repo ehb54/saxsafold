@@ -106,7 +106,9 @@ $ga->tcpmessage( [
 if ( $lresults && $cgstate->state->mmcdownloaded ) {
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 
-    if ( $input->extractframes ) {
+    if ( isset( $input->extractframes ) &&
+         $input->extractframes
+        ) {
         $tmpout = (object)[];
         $tmpout->_textarea = "MMC results available\n";
         $statsname         = $cgstate->state->mmcrunname . ".dcd.stats";
