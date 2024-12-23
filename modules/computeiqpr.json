@@ -530,7 +530,7 @@
             "id" : "b_reset"
         },
         {
-            "onclick"     : "ga.util.jobadmin.modulecancel();document.getElementById(`processing_progress`).style.width=0;document.getElementById(`progress_text`).innerHTML=``;",
+            "onclick"     : "ga.util.jobadmin.modulecancel( () => { document.getElementById(`processing_progress`).style.width=0;document.getElementById(`progress_text`).innerHTML=``; } )",
             "buttontext" : "Cancel",
             "buttonstyle" : "reset",
             "margin" : "1px",
