@@ -159,6 +159,20 @@
                 ]
             }
         }
+        ,{
+            "buttonpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ]
+            }
+        }
     ]
     ,"fields"   : [
         {
@@ -425,6 +439,45 @@
             ,"layout" : {
                 "parent" : "resultpanel"
             }
+        }
+
+        ,{
+            "buttontext" : "Submit",
+            "buttonstyle" : "submit",
+            "margin" : "1px",
+            "role" : "input",
+            "layout" : {
+                "parent" : "buttonpanel"
+                ,"data" : [ 1, 1 ]
+            },
+            "type" : "button",
+            "id" : "b_submit"
+        },
+        {
+            "buttontext" : "Reset",
+            "buttonstyle" : "reset",
+            "margin" : "1px",
+            "role" : "input",
+            "layout" : {
+                "parent" : "buttonpanel"
+                ,"data" : [ 0, 2 ]
+            },
+            "type" : "button",
+            "id" : "b_reset"
+        },
+        {
+            "onclick"     : "ga.util.jobadmin.modulecancel( () => { setTimeout( () => {document.getElementById(`progress_output`).style.width=0;}, 1000 ) } );",
+            "buttontext" : "Cancel",
+            "buttonstyle" : "reset",
+            "margin" : "1px",
+            "role" : "input",
+            "layout" : {
+                "parent" : "buttonpanel"
+                ,"data" : [ -1, 3 ]
+            },
+            "type" : "button",
+            "id" : "b_cancel",
+            "disabled" : "true"
         }
     ]
 }
