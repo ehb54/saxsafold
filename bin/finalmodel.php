@@ -440,6 +440,7 @@ if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( $plotname, $annotate_msg );
 }
 
+/* save for after color assignment
 $ga->tcpmessage(
     [
      "iqplotwaxsis" => $sas->plot( $plotname )
@@ -447,6 +448,8 @@ $ga->tcpmessage(
     );
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
+*/
+
 
 ### summary results
 
@@ -547,6 +550,8 @@ foreach ( $iqresults as $name => $conc ) {
         $frame = end( $tmpname );
     }
     $cgstate->state->iq_waxsis_nnlsresults_colors->$name = get_color( $pos );
+    $sas->plot_trace_options( $plotname, $name, [ 'linecolor' => get_color( $pos ) ] );
+
     $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
 }
 $output->struct->script .= "frame all;";
@@ -554,6 +559,14 @@ $output->struct->script .= "frame all;";
 # $output->_textarea .= "script : " . $output->struct->script . "\n";
 
 #$output->struct = "results/users/$logon/$base_dir/$pdboutname";
+
+$ga->tcpmessage(
+    [
+     "iqplotwaxsis" => $sas->plot( $plotname )
+    ]
+    );
+
+$output->iqplotwaxsis = $sas->plot( $plotname );
 
 ## final rg plot
 
