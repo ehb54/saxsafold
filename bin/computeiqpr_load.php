@@ -74,7 +74,7 @@ require "$scriptdir/computeiqpr_funcs.php";
 
 $sas = new SAS();
 
-setup_computeiqpr_plots( $result, $mdata );
+setup_computeiqpr_plots( $result );
 
 if ( isset( $cgstate->state->output_iqpr ) ) {
     
@@ -126,8 +126,13 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     } else {
         unset( $result->prwe_plotsel );
     }
-}
-
+} else {
+    unset( $result->pr_plotsel );
+    unset( $result->prwe_plotsel );
+    foreach ( $mdatas as $mdata ) {
+        unset( $result->{ $mdata->tags->plotsel } );
+    }
+}                      
 
 ## unset() below can be removed, but keeping for legacy run testing
 unset( $result->iq_p_plotall );
