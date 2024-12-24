@@ -28,12 +28,12 @@
       <h2>Fields in the Compute I(q) and P(r) Tab</h2>
       <p>Besides the standard <strong>Project Name</strong> and <strong>Description</strong> fields, the tab contains the following:</p>
       <ul>
-        <li><strong>I(q) Computation Method:</strong> Offers two mutually exclusive options:
+        <li><strong>I(q) Computation Method:</strong> Offers two options, that can also be run sequentially:
           <ul>
             <li>PEPSI-SAXS</li>
             <li>CRYSOL 3.2.1-1</li>
           </ul>
-          Note: Performing a computation with one method will erase any previous results from the other method.
+          
         </li>
         <li><strong>Perform a Second P(r) NNLS Fit Using SDs:</strong> A switch enabling a second P(r) NNLS fit using the standard deviations (SDs) associated with the experimental P(r) data as weights. Default: not active.</li>
       </ul>
@@ -43,7 +43,7 @@
       <h2>Steps to Compute I(q) and P(r)</h2>
       <ol>
         <li>
-          <strong>Set I(q) Computation Method:</strong> Select the desired computation method (PEPSI-SAXS or CRYSOL 3.2.1-1).
+          <strong>Set I(q) Computation Method:</strong> Select the desired computation method (PEPSI-SAXS or CRYSOL 3.2.1-1), or both (ctrl click).
         </li>
         <li>
           <strong>Activate Second P(r) NNLS Fit (Optional):</strong> Enable the switch if a second P(r) NNLS fit is required.
@@ -51,8 +51,10 @@
         <li>
           <strong>Start the Calculation:</strong> Press the <em>Submit</em> button to begin the P(r) and I(q) calculations. Progress is monitored in real time with:
           <ul>
-            <li><strong>P(r) Calculations:</strong> Graphs appear first on the right as calculations progress.</li>
-            <li><strong>I(q) Calculations:</strong> Graphs appear on the left once P(r) computations are complete.</li>
+            <li><strong>P(r) Original I(q) and P(r) graphs:</strong> Graphs are always displayed in the <b>Starting model selection</b> section</li><p>
+            <li><strong>P(r) Calculations:</strong> P(r) (if selected) updates are first displayed on the left side in the <b>P(r) results section</b> as calculations progress.</li><p>
+            <li><strong>I(q) Calculations:</strong> I(q) PEPSI-SAXS (if selected) updates appear as the calculations progress in the <b>I(q) PEPSI-SAXS results section</b> on the left side, once P(r) computations are complete.</li><p>
+            <li><strong>I(q) Calculations:</strong> I(q) CRYSOL 3.2.1 (if selected) updates appear as the calculations progress in the <b>I(q) CRYSOL results section</b> on the left side, once I(q) PEPSI-SAXS computations are complete  .</li>
           </ul>
         </li>
       </ol>
@@ -64,7 +66,7 @@
         To avoid overloading the internet connection with interactive plots containing thousands of calculated curves, images are generated in blocks of 50 curves. A progress bar and associated messages below the updating images provide status updates.
       </p>
       <p>
-        Once calculations are complete, the NNLS fitting procedure runs automatically. Results are displayed graphically and numerically, including:
+        Once calculations are complete, the NNLS fitting procedure runs automatically. Results are displayed graphically on the right side of the respecive advancement plots, and numerically, including:
       </p>
       <ul>
         <li>Goodness of NNLS fits.</li>
@@ -79,6 +81,8 @@
       <p>
         The plots are interactive, allowing individual curves to be toggled on or off by clicking their symbol in the legend. This feature enables detailed exploration of specific models and their contributions to the NNLS fit.
       </p>
+      <p>
+        All the calculated P(r) and I(q) can be downloaded in csv formatted files from the links provided at the bottom of each section. Two formats are available: "regular" csv where the data are saved in columns, and US-SOMO-compatible csv where the data are saved in lines.</p> 
     </section>
 
     <section class="mt-5">
@@ -87,7 +91,6 @@
   </article>
 
   <footer class="text-center mt-5">
-    <p>&copy; 2024 Emre Brookes</p>
   </footer>
 </div>
 </body>

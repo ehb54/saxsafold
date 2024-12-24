@@ -9,8 +9,8 @@
 <body>
 <div class="container mt-5">
   <header class="text-center mb-4">
-    <h1 class="display-5">Final Model Selection Using WAXSiS</h1>
-    <p class="lead">Instructions for finalizing and selecting the best model in SAXS-A-FOLD.</p>
+    <h1 class="display-5">Final Models Selection Using WAXSiS</h1>
+    <p class="lead">Instructions for finalizing and selecting the best models in SAXS-A-FOLD.</p>
   </header>
 
   <article>
@@ -31,6 +31,12 @@
             <li>Using this option significantly increases the computation time, with progress monitored via a progress bar and associated messages.</li>
           </ul>
         </li>
+        <li><strong>WAXSiS convergence mode [details]:</strong> Two options are available from a pull-down menu: <b>Quick</b> and <b>Normal</b>. Default: <b>Normal</b>.
+          <ul>
+            <li><b>Quick</b> convergence is useful to get a first final set of models more quickly.</li>
+            <li><b>Normal</b> convergence is recommended, but using this option significantly increases the computation time.</li>
+          </ul>
+        </li>
       </ul>
     </section>
 
@@ -39,6 +45,9 @@
       <ol>
         <li>
           <strong>Set Additional Adjacent Frames:</strong> Adjust the <strong>Additional Adjacent Frames Count</strong> field if needed. Use caution, as increasing this count will prolong computation time.
+        </li>
+        <li>
+          <strong>Select WAXSiS Convergence mode:</strong> Select between <b>Quick</b> and <b>Normal</b>. Be aware that <b>Normal</b> will require roughly twice the time to complete.
         </li>
         <li>
           <strong>Start Computations:</strong> Press <em>Submit</em> to compute I(q) profiles for NNLS-selected models and any additional frames. Progress is tracked in real time, and the projected computation time is updated as more runs are completed.
@@ -60,13 +69,21 @@
           </ul>
           Users can toggle individual curves on/off by clicking their corresponding entry in the legend.
         </li>
+        
         <li>
           Below the plot, a list of NNLS-selected models is displayed, along with their percent contribution to the fit.
         </li>
         <li>
+          To the left of the NNLS-fit numerical results, two stacked histogram plots, showing:
+          <ul>
+            <li>On the top, the % contribution of each NNLS-selected model as a function of their Rg value, color coded as the curves shown in the NNLS fit graph. Three inverted triangle report the Rg values of the starting structure (blue), the weighted average of the selected models (green), and that calculated from the experimentally-derived P(r) (brown). Hovering with the mouse on each bar or triangle will reveal its legend, including the Rg values and for the bars the model's % contribution.</li>
+            <li>Below it, the Rg values frequency of the entire pool and of the sub-selected pool are reproduced.</li>
+          </ul>
+        </li>
+        <li>
           Options to download:
           <ul>
-            <li>The entire dataset of I(q) profiles shown in the plot.</li>
+            <li>The entire dataset of WAXSiS-calculated I(q) profiles, including those shown in the plot.</li>
             <li>The selected models in a single NMR-style file.</li>
           </ul>
         </li>
@@ -76,7 +93,7 @@
       </p>
       <ul>
         <li>Models are spatially aligned on the previously chosen sequence.</li>
-        <li>Each model is colored differently and displayed in ribbons mode by default.</li>
+        <li>Each model is colored as its corresponding curve in the NNLS-fit graph and bar in the histogram plot, and displayed in ribbons mode by default.</li>
         <li>Users can access additional viewing options, such as showing only a particular model, by right-clicking on the viewer.</li>
       </ul>
     </section>
@@ -87,7 +104,6 @@
   </article>
 
   <footer class="text-center mt-5">
-    <p>&copy; 2024 Emre Brookes</p>
   </footer>
 </div>
 </body>
