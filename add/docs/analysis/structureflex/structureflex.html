@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structure info flexible regions - SAXS-A-FOLD Help</title>
+  <link rel="stylesheet" href="../../../add/scss/ga-bootstrap-bootswatch-somoaf.css">
+</head>
+<body>
+<div class="container mt-5">
+  <header class="text-center mb-4">
+    <h1 class="display-5">Structural Info / Flexible Regions</h1>
+    <p class="lead">Instructions for exploring and defining flexible regions in SAXS-A-FOLD.</p>
+  </header>
+
+  <article>
+    <section class="mb-4">
+      <h2>Overview</h2>
+      <p>
+        The <em>Structural info / Flexible regions</em> tab is used to analyze flexible regions in structural models. It allows users to auto-compute flexible regions from AlphaFold residue confidence values or manually define them.
+      </p>
+      <p>
+        This tab is the first that should be re-accessed after returning to a project. After selecting a project in the <em>Define Project</em> tab, this tab displays previously computed structural parameters along with the I(q) and P(r) plots from the earlier tab.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2>Steps to Analyze Flexible Regions</h2>
+      <ol>
+        <li>
+          <strong>View Structural Data:</strong>
+          At the top of the webpage, structural parameters and the I(q) and P(r) plots from the previous tab are re-shown for reference.
+        </li>
+        <li>
+          <strong>Explore the Structure:</strong>
+          The structure is displayed again below the plots in a JSmol interactive representation.
+        </li>
+        <li>
+          <strong>Auto Compute Flexible Regions:</strong>
+          <ul>
+            <li>Enable the <em>Auto compute flexible regions from AlphaFold residue confidence</em> switch (works only on AlphaFold-generated structures).</li>
+            <li>Enter a confidence threshold in the <em>Confidence level for Auto compute</em> field (default: 50). This threshold identifies sequences of at least five consecutive residues with confidence levels below the chosen value.</li>
+            <li>Press <em>Compute flexible regions</em> to analyze the structure. This generates additional fields corresponding to the number of flexible regions found, as indicated in the <em>Number of flexible regions</em> field (default: 1).</li>
+            <li>The identified flexible regions will be listed in the <em>Flexible region start,end [#]</em> field(s). These regions will be highlighted in green in the updated JSmol plot.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Manually Define Flexible Regions (Optional):</strong>
+          <ul>
+            <li>If the auto-compute results are unsatisfactory, turn off the auto-compute switch.</li>
+            <li>Manually populate the <em>Number of flexible regions</em> and <em>Flexible region start,end [#]</em> fields. For example, to define one flexible region, enter the start and end residue numbers (e.g., 170, 210).</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Submit Flexible Regions:</strong>
+          Press <em>Submit</em> to store the final choice for the flexible regions parameters.
+        </li>
+      </ol>
+    </section>
+
+    <section class="mb-4">
+      <h2>Tips for Exploration</h2>
+      <p>
+        Users can experiment with different threshold values in the auto-compute routine to refine the flexible regions. Each modification updates the JSmol plot and provides immediate feedback on the impact of the chosen threshold.
+      </p>
+    </section>
+
+    <section class="mt-5">
+      <a href="../analysis.html" class="btn btn-primary">Return to Main Help</a>
+    </section>
+  </article>
+
+  <footer class="text-center mt-5">
+    <p>&copy; 2024 Emre Brookes</p>
+  </footer>
+</div>
+</body>
+</html>
