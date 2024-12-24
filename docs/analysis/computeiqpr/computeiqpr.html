@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compute I(q) and P(r) - SAXS-A-FOLD Help</title>
+  <link rel="stylesheet" href="../../../add/scss/ga-bootstrap-bootswatch-somoaf.css">
+</head>
+<body>
+<div class="container mt-5">
+  <header class="text-center mb-4">
+    <h1 class="display-5">Compute I(q) and P(r)</h1>
+    <p class="lead">Instructions for calculating I(q) and P(r) data in SAXS-A-FOLD.</p>
+  </header>
+
+  <article>
+    <section class="mb-4">
+      <h2>Overview</h2>
+      <p>
+        The <em>Compute I(q) and P(r)</em> tab is used to calculate scattering intensity, I(q), and pair distribution functions, P(r), from sub-selected MMC structures. This step refines the computational models and aligns them with experimental data for improved analysis.
+      </p>
+      <p>
+        At this stage, SAXS-A-FOLD is ready to compute the P(r) and I(q) of all sub-selected structures. If this task was previously performed, the complete results will be shown upon accessing the tab. Otherwise, only the starting I(q) and P(r) plots will be displayed.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2>Fields in the Compute I(q) and P(r) Tab</h2>
+      <p>Besides the standard <strong>Project Name</strong> and <strong>Description</strong> fields, the tab contains the following:</p>
+      <ul>
+        <li><strong>I(q) Computation Method:</strong> Offers two mutually exclusive options:
+          <ul>
+            <li>PEPSI-SAXS</li>
+            <li>CRYSOL 3.2.1-1</li>
+          </ul>
+          Note: Performing a computation with one method will erase any previous results from the other method.
+        </li>
+        <li><strong>Perform a Second P(r) NNLS Fit Using SDs:</strong> A switch enabling a second P(r) NNLS fit using the standard deviations (SDs) associated with the experimental P(r) data as weights. Default: not active.</li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Steps to Compute I(q) and P(r)</h2>
+      <ol>
+        <li>
+          <strong>Set I(q) Computation Method:</strong> Select the desired computation method (PEPSI-SAXS or CRYSOL 3.2.1-1).
+        </li>
+        <li>
+          <strong>Activate Second P(r) NNLS Fit (Optional):</strong> Enable the switch if a second P(r) NNLS fit is required.
+        </li>
+        <li>
+          <strong>Start the Calculation:</strong> Press the <em>Submit</em> button to begin the P(r) and I(q) calculations. Progress is monitored in real time with:
+          <ul>
+            <li><strong>P(r) Calculations:</strong> Graphs appear first on the right as calculations progress.</li>
+            <li><strong>I(q) Calculations:</strong> Graphs appear on the left once P(r) computations are complete.</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <section class="mb-4">
+      <h2>Progress and Visualization</h2>
+      <p>
+        To avoid overloading the internet connection with interactive plots containing thousands of calculated curves, images are generated in blocks of 50 curves. A progress bar and associated messages below the updating images provide status updates.
+      </p>
+      <p>
+        Once calculations are complete, the NNLS fitting procedure runs automatically. Results are displayed graphically and numerically, including:
+      </p>
+      <ul>
+        <li>Goodness of NNLS fits.</li>
+        <li>Contributing models (numbered based on their position in the MMC output).</li>
+        <li>Percent contribution of each model to the NNLS fit.</li>
+        <li>Individual P(r) and I(q) profiles for each contributing model.</li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Interactive Plots</h2>
+      <p>
+        The plots are interactive, allowing individual curves to be toggled on or off by clicking their symbol in the legend. This feature enables detailed exploration of specific models and their contributions to the NNLS fit.
+      </p>
+    </section>
+
+    <section class="mt-5">
+      <a href="../analysis.html" class="btn btn-primary">Return to Main Help</a>
+    </section>
+  </article>
+
+  <footer class="text-center mt-5">
+    <p>&copy; 2024 Emre Brookes</p>
+  </footer>
+</div>
+</body>
+</html>

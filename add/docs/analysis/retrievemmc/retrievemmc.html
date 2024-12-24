@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retrieve MMC - SAXS-A-FOLD Help</title>
+  <link rel="stylesheet" href="../../../add/scss/ga-bootstrap-bootswatch-somoaf.css">
+</head>
+<body>
+<div class="container mt-5">
+  <header class="text-center mb-4">
+    <h1 class="display-5">Retrieve MMC Results</h1>
+    <p class="lead">Instructions for accessing and interpreting Monomer Monte Carlo (MMC) results in SAXS-A-FOLD.</p>
+  </header>
+
+  <article>
+    <section class="mb-4">
+      <h2>Overview</h2>
+      <p>
+        The <em>Retrieve MMC Results</em> tab is used to access the results of previously performed MMC simulations. This tab enables users to refine and analyze the MMC-generated structures, sub-selecting representative structures from the larger pool.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2>Fields in the Retrieve MMC Results Tab</h2>
+      <p>
+        Below the standard <strong>Project Name</strong>, <strong>Description</strong>, and <strong>Downloads</strong> fields (as seen in the <em>Run MMC</em> tab), the following fields and a switch are available:
+      </p>
+      <ul>
+        <li><strong>Stride:</strong> Enter the number of structures to skip, starting from the structure defined in the <strong>Offset</strong> field. Default value: 10.</li>
+        <li><strong>Offset:</strong> Defines the starting structure for applying the stride. Default value: 1.</li>
+        <li><strong>Extract Frames Switch:</strong> Leave this switch off during initial testing of the stride and offset values.</li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Steps to Process MMC Results</h2>
+      <ol>
+        <li>
+          <strong>Configure Stride and Offset:</strong> Set the desired stride and offset values in their respective fields.
+        </li>
+        <li>
+          <strong>Test Stride and Offset:</strong> Press <em>Process</em> to apply the stride and offset values. The results will be displayed in two graphs:
+          <ul>
+            <li><strong>Left Graph:</strong> Shows the histogram of Rg values, helping to verify that the sub-selected frames represent the overall distribution of Rg values in the complete MMC-generated pool.</li>
+            <li><strong>Right Graph:</strong> Plots the Rg values as a function of frame number.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Refine Sub-Selection:</strong> Adjust stride and offset values to achieve satisfactory agreement between the sub-selected frames and the overall distribution.
+        </li>
+      </ol>
+    </section>
+
+    <section class="mb-4">
+      <h2>Sub-Selection and Extraction</h2>
+      <p>
+        Once a satisfactory agreement is reached:
+      </p>
+      <ul>
+        <li>Turn on the <strong>Extract Frames</strong> switch.</li>
+        <li>Press <em>Process</em> to extract the sub-selected structures from the large MMC-generated pool. This is a time-intensive process monitored by a progress bar.</li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Outputs and Statistics</h2>
+      <p>
+        At the bottom of the tab, the statistics of the MMC run are reported. These include:
+      </p>
+      <ul>
+        <li>Number of structures generated during the MMC run.</li>
+        <li>Number of structures accepted based on the selection criteria.</li>
+        <li>Details of the extracted structures for further analysis.</li>
+      </ul>
+    </section>
+
+    <section class="mt-5">
+      <a href="../analysis.html" class="btn btn-primary">Return to Main Help</a>
+    </section>
+  </article>
+
+  <footer class="text-center mt-5">
+    <p>&copy; 2024 Emre Brookes</p>
+  </footer>
+</div>
+</body>
+</html>

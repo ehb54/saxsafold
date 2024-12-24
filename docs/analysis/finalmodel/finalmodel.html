@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Model - SAXS-A-FOLD Help</title>
+  <link rel="stylesheet" href="../../../add/scss/ga-bootstrap-bootswatch-somoaf.css">
+</head>
+<body>
+<div class="container mt-5">
+  <header class="text-center mb-4">
+    <h1 class="display-5">Final Model Selection Using WAXSiS</h1>
+    <p class="lead">Instructions for finalizing and selecting the best model in SAXS-A-FOLD.</p>
+  </header>
+
+  <article>
+    <section class="mb-4">
+      <h2>Overview</h2>
+      <p>
+        The <em>Final Models Selection Using WAXSiS</em> tab is the final step in SAXS-A-FOLD, allowing the computation of I(q) profiles for NNLS-selected models and optional adjacent frames from the original MMC run. This ensures a comprehensive analysis and selection of the best models for SAXS data interpretation.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2>Fields in the Final Models Tab</h2>
+      <p>Besides the standard <strong>Project Name</strong>, <strong>Description</strong>, and <strong>Downloads</strong> fields, this tab includes the following:</p>
+      <ul>
+        <li><strong>Additional Adjacent Frames Count:</strong> Specifies the number of structures flanking the NNLS-selected models to include in the computation. Default value: 0.
+          <ul>
+            <li>This feature captures potentially overlooked models that may better contribute to the NNLS fitting procedure.</li>
+            <li>Using this option significantly increases the computation time, with progress monitored via a progress bar and associated messages.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Steps to Finalize Model Selection</h2>
+      <ol>
+        <li>
+          <strong>Set Additional Adjacent Frames:</strong> Adjust the <strong>Additional Adjacent Frames Count</strong> field if needed. Use caution, as increasing this count will prolong computation time.
+        </li>
+        <li>
+          <strong>Start Computations:</strong> Press <em>Submit</em> to compute I(q) profiles for NNLS-selected models and any additional frames. Progress is tracked in real time, and the projected computation time is updated as more runs are completed.
+        </li>
+      </ol>
+    </section>
+
+    <section class="mb-4">
+      <h2>Outputs and Visualization</h2>
+      <p>
+        Once the I(q) calculations are completed, a final NNLS fit is automatically performed. The results include:
+      </p>
+      <ul>
+        <li>
+          A new plot to the right of the original data plot, showing:
+          <ul>
+            <li>WAXSiS-calculated I(q) profiles for each NNLS-selected structure, scaled to the experimental I(q) curve.</li>
+            <li>The reconstructed I(q) curve based on the percent contribution of each computed I(q) curve, including propagated SD.</li>
+          </ul>
+          Users can toggle individual curves on/off by clicking their corresponding entry in the legend.
+        </li>
+        <li>
+          Below the plot, a list of NNLS-selected models is displayed, along with their percent contribution to the fit.
+        </li>
+        <li>
+          Options to download:
+          <ul>
+            <li>The entire dataset of I(q) profiles shown in the plot.</li>
+            <li>The selected models in a single NMR-style file.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>
+        The selected models are visualized in an interactive JSmol viewer:
+      </p>
+      <ul>
+        <li>Models are spatially aligned on the previously chosen sequence.</li>
+        <li>Each model is colored differently and displayed in ribbons mode by default.</li>
+        <li>Users can access additional viewing options, such as showing only a particular model, by right-clicking on the viewer.</li>
+      </ul>
+    </section>
+
+    <section class="mt-5">
+      <a href="../analysis.html" class="btn btn-primary">Return to Main Help</a>
+    </section>
+  </article>
+
+  <footer class="text-center mt-5">
+    <p>&copy; 2024 Emre Brookes</p>
+  </footer>
+</div>
+</body>
+</html>
