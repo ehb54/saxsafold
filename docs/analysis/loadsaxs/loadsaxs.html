@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Load SAXS Data - SAXS-A-FOLD Help</title>
+  <link rel="stylesheet" href="../../../add/scss/ga-bootstrap-bootswatch-somoaf.css">
+</head>
+<body>
+<div class="container mt-5">
+  <header class="text-center mb-4">
+    <h1 class="display-5">Load SAXS Data</h1>
+    <p class="lead">Instructions for loading SAXS I(q) and P(r) data in SAXS-A-FOLD.</p>
+  </header>
+
+  <article>
+    <section class="mb-4">
+      <h2>Overview</h2>
+      <p>
+        The "Load SAXS Data" tab allows users to upload or retrieve SAXS data files, including I(q) and P(r), for analysis. These files are essential for plotting and comparing experimental data with computational models.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2>Steps to Load SAXS Data</h2>
+      <ol>
+        <li>
+          <strong>Access the Load SAXS Data Tab:</strong> Navigate to the <em>Load SAXS</em> tab from the main interface.
+        </li>
+        <li>
+          <strong>Upload or Retrieve Files:</strong>
+          <ul>
+            <li><strong>SAXS I(q) File:</strong> Use the <em>Browse local files</em> button to upload a file from your computer, or the <em>Browse server</em> button to retrieve previously uploaded files from the server.</li>
+            <li><strong>SAXS P(r) File:</strong> Follow the same steps as above to upload or retrieve a P(r) file.</li>
+          </ul>
+          <p class="text-muted">
+            If no user-generated P(r) file is available, a link is provided to the <a href="https://somo.chem.utk.edu/bayesapp" target="_blank">BayesApp</a> website for calculating P(r) from I(q) data.
+          </p>
+        </li>
+        <li>
+          <strong>Submit the Data:</strong> Click the "Submit" button to upload and process the selected files. The data will be plotted as interactive graphs, with I(q) displayed in log-log mode.
+        </li>
+      </ol>
+    </section>
+
+    <section class="mb-4">
+      <h2>Notes for Returning Users</h2>
+      <ul>
+        <li>If working on an existing project, previously uploaded I(q) and P(r) files will be available and do not need to be re-uploaded unless changes are required.</li>
+        <li>The uploaded file names will appear next to their respective <em>Browse</em> buttons after selection.</li>
+      </ul>
+    </section>
+
+    <section class="mb-4">
+      <h2>Data Visualization</h2>
+      <p>
+        Upon submission, the data is plotted as interactive graphs:
+      </p>
+      <ul>
+        <li><strong>I(q):</strong> Displayed in log-log mode for clear visualization of the scattering data.</li>
+        <li><strong>P(r):</strong> (If provided) Displayed alongside the I(q) graph to analyze the pair distribution function.</li>
+      </ul>
+    </section>
+
+    <section class="mt-5">
+      <a href="../analysis.html" class="btn btn-primary">Return to Main Help</a>
+    </section>
+  </article>
+
+  <footer class="text-center mt-5">
+    <p>&copy; 2024 Emre Brookes</p>
+  </footer>
+</div>
+</body>
+</html>
