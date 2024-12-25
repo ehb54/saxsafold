@@ -238,7 +238,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
 function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjacent = 0 ) {
     global $cgstate;
 
-    if ( $cgstate->state->mmcdownloaded ) {
+    if ( isset( $cgstate->state->mmcdownloaded ) ) {
         ## histogram
         $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
         if ( file_exists( $histname ) ) {

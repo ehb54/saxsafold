@@ -46,33 +46,37 @@ $cgstate = new cgrun_state();
 
 ## make sure project is loaded
 
-if ( !$cgstate->state->loaded ) {
+if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project" );
 }
 
-if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+if ( !isset( $cgstate->state->saxsiqfile )
+     || !isset( $cgstate->state->saxsprfile ) ) {
     error_exit( "Please <i>'Load SAXS'</i> first" );
 }    
 
 ## does the project already exist ?
 
-if ( !$cgstate->state->loaded ) {
+if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project" );
 }
 
-if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+if ( !isset( $cgstate->state->saxsiqfile )
+     || !isset( $cgstate->state->saxsprfile ) ) {
     error_exit( "Please <i>'Load SAXS'</i> first" );
 }    
 
-if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+if ( !isset( $cgstate->state->saxsiqfile )
+     || !isset( $cgstate->state->saxsprfile ) ){
     error_exit( "Please <i>'Load SAXS'</i> first" );
 }    
 
-if ( !$cgstate->state->flex || !count( $cgstate->state->flex ) ) {
+if ( !isset( $cgstate->state->flex )
+     || !count( $cgstate->state->flex ) ) {
     error_exit( "No Flexible regions have been defined, Please run <i>'Structure info & flexible regions SAXS'</i> first" );
 }    
 
-if ( !$cgstate->state->mmcrunname ) {
+if ( !isset( $cgstate->state->mmcrunname ) ) {
     error_exit( "No MMC run name found, did you <i>Run MMC</i>?" );
 }
 
@@ -103,7 +107,7 @@ $ga->tcpmessage( [
                      ,"progress_text"      => ''
                  ]);
 
-if ( $lresults && $cgstate->state->mmcdownloaded ) {
+if ( $lresults && isset( $cgstate->state->mmcdownloaded ) ) {
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 
     if ( isset( $input->extractframes ) &&

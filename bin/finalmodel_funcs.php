@@ -146,7 +146,7 @@ function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) 
 function final_hist( &$results ) {
     global $cgstate;
 
-    if ( $cgstate->state->mmcdownloaded ) {
+    if ( isset( $cgstate->state->mmcdownloaded ) ) {
         ## histogram
         $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
         if ( file_exists( $histname ) ) {

@@ -37,7 +37,7 @@ $cgstate = new cgrun_state();
 
 ## make sure project is loaded
 
-if ( !$cgstate->state->loaded ) {
+if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
