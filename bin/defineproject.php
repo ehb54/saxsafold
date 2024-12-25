@@ -35,7 +35,7 @@ $cgstate = new cgrun_state();
 
 ## does the project already exist ?
 
-if ( $cgstate->state->loaded ) {
+if ( isset( $cgstate->state->loaded ) ) {
     $response =
         json_decode(
             $ga->tcpquestion(
