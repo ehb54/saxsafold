@@ -16,7 +16,7 @@ if ( $request === NULL ) {
     error_exit_hook( "Invalid JSON input provided" );
 }
 
-if ( !strlen( $request->_project ) ) {
+if ( !isset( $request->_project ) || !strlen( $request->_project ) ) {
     error_exit_hook( "A project must be selected!" );
 }
 
@@ -28,15 +28,15 @@ $scriptdir = dirname( __FILE__ );
 require "$scriptdir/common.php";
 $cgstate = new cgrun_state();
 
-if ( !$cgstate->state->output_load ) {
+if ( !isset( $cgstate->state->output_load ) ) {
     error_exit_hook( "Project $request->_project has been defined, but apparently not been loaded, Please <i>'Load structure'</i> first" );
 }    
 
-if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+if ( !isset( $cgstate->state->saxsiqfile ) || !isset( $cgstate->state->saxsprfile ) ) {
     error_exit_hook( "Please <i>'Load SAXS'</i> first" );
 }    
 
-if ( !$cgstate->state->flex || !count( $cgstate->state->flex ) ) {
+if ( !isset( $cgstate->state->flex ) || !count( $cgstate->state->flex ) ) {
     error_exit_hook( "No Flexible regions have been defined, Please run <i>'Structure info & flexible regions SAXS'</i> first" );
 }    
 
