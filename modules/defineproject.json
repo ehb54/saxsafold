@@ -12,6 +12,7 @@
 #        ,{ "cpan" : "JSON" }
 #    ]
     ,"addproject" : "true"
+    ,"nojobcontrol" : "true"
     ,"panels" : [
         {
             "root" : {
