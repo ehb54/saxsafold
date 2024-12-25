@@ -56,8 +56,7 @@ if ( isprojectlocked( $input->_base_directory ) ) {
             ];
     }
 
-    $output->_success = true;
-
+    $output->_textarea = "Current project is set to $input->pname\n";
     echo json_encode( $output );
     exit;
 }
