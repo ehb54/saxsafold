@@ -37,7 +37,7 @@ $cgstate = new cgrun_state();
 
 ## make sure project is defined
 
-if ( !$cgstate->state->loaded ) {
+if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
@@ -58,7 +58,7 @@ if ( count( $input->flexrange ) ) {
 
 $output->_textarea = "Flexible regions saved\n";
 
-if ( $cgstate->state->mmcdownloaded ) {
+if ( isset( $cgstate->state->mmcdownloaded ) ) {
    unset( $cgstate->state->mmcdownloaded );
    $output->_textarea .= "Note: previous MMC results have already been retrieved, you will need to Run MMC & Retrieve MMC again for further processing\n";
 }

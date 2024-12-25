@@ -85,11 +85,18 @@ $ga->tcpmessage( [
 
 ## note - $output is fully reset, so only top-level state info needs to be cleared
 
-unset( $cg->state->pr_nnlsresults );
-unset( $cg->state->prwe_nnlsresults );
+if ( isset( $cg->state->pr_nnlsresults ) ) {
+    unset( $cg->state->pr_nnlsresults );
+}
+
+if ( isset( $cg->state->prwe_nnlsresults ) ) {
+    unset( $cg->state->prwe_nnlsresults );
+}
 
 foreach ( $mdatas as $mdata ) {
-    unset( $cg->state->{$mdata->tags->nnlsresults} );
+    if ( isset( $cg->state->{$mdata->tags->nnlsresults} ) ) {
+        unset( $cg->state->{$mdata->tags->nnlsresults} );
+    }
 }
 
 ## initial plots

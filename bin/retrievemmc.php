@@ -152,9 +152,10 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
         ## create ref pdb
         
         ## just a cleanup from legacy runs
-        if ( file_exists( "monomer_monte_carlo/$mmcextracted" ) ) {
-            unlink( "monomer_monte_carlo/$mmcextracted" );
-        }
+        ### 2024.12.24 - commented out, $mmcextracted isn't even defined
+        #if ( file_exists( "monomer_monte_carlo/$mmcextracted" ) ) {
+        #unlink( "monomer_monte_carlo/$mmcextracted" );
+        #}
 
         $extracted = 0;
 
@@ -200,7 +201,7 @@ if ( $lresults && $cgstate->state->mmcdownloaded ) {
     exit();
 }
 
-if ( $input->extractframes ) {
+if ( isset( $input->extractframes ) ) {
     $ga->tcpmessage( [
                          'processing_progress' => 0
                      ]);
@@ -250,7 +251,7 @@ if ( $run_cmd_last_error_code ) {
 $output->_textarea = "Results downloaded\n";
 */
 
-$output->_textarea .= "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
+$output->_textarea = "\n" . `cat monomer_monte_carlo/$statsname 2> /dev/null`;
 
 $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 $res = plotly_hist( $histname, $output, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );

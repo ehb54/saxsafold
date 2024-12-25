@@ -28,7 +28,7 @@ $scriptdir = dirname( __FILE__ );
 require "$scriptdir/common.php";
 $cgstate = new cgrun_state();
 
-if ( !$cgstate->state->output_load ) {
+if ( !isset( $cgstate->state->output_load ) ) {
     error_exit_hook( "Project $request->_project has been defined, but apparently not been loaded, Please <i>'Load structure'</i> first" );
 }    
 
