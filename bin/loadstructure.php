@@ -114,7 +114,7 @@ if ( !isset( $input->searchkey )
 
     ## get list of files possible, make $ids[]
 
-    $cmd = "(gsutil ls gs://public-datasets-deepmind-alphafold-v4/AF-G*.cif | head -$MAX_RESULTS) 2> /dev/null";
+    $cmd = "(gsutil ls gs://public-datasets-deepmind-alphafold-v4/${searchkey}*.cif | head -$MAX_RESULTS) 2> /dev/null";
     $res = run_cmd( $cmd, true, true );
     $ids = preg_replace( '/-model.*cif$/', '', preg_replace( '/^.*\/AF-/', '', preg_grep( '/\.cif$/', $res ) ) );
     
