@@ -3,6 +3,8 @@
 use File::Basename;
 my $dirname = dirname(__FILE__);
 
+# $debug++;
+
 $notes = "usage: $0 confidence-level minimum-length pdb
 
 creates ranges of residues in pdb that are below the confidence level
@@ -48,13 +50,14 @@ foreach $l ( @l ) {
         $flex_end  {$regionnum} = $resseq;
     }
         
-    print "$chainid $resseq $tf\n" if $debug;
+    print "$regionnum $chainid $resseq $tf\n" if $debug;
 }
 
 $out = "";
     
 for ( $i = 0; $i <= $regionnum; ++$i ) {
-    if ( $flex_start{ $regionnum }
+    print "regionnum $regionnum " . $flex_start{ $i } . "  " . $flex_end{ $i } . "\n" if $debug;
+    if ( $flex_start{ $i }
          && ( $flex_end{ $i } - $flex_start{ $i } ) >= $minlength - 1
         ) {
         $out .= sprintf( "%d,%d\n", $flex_start{ $i }, $flex_end{ $i } );
