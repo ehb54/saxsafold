@@ -98,6 +98,11 @@ if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
 $procdir = "waxsissets";
 $waxsis_data_name = "I(q) WAXSiS mod. 0";
 
+## does the project already exist ?
+
+require_once "remove.php";
+question_prior_results( __FILE__ );
+
 ## clear output
 $ga->tcpmessage( [
                      'processing_progress' => 0.01

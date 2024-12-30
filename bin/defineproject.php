@@ -63,6 +63,10 @@ if ( isprojectlocked( $input->_base_directory ) ) {
 
 ## does the project already exist ?
 
+require_once "remove.php";
+question_prior_results( __FILE__ );
+
+/*
 if ( isset( $cgstate->state->loaded ) ) {
 
     $response =
@@ -133,6 +137,7 @@ if ( isset( $cgstate->state->loaded ) ) {
     $cgstate->state->loaded       = true;
     $cgstate->state->description  = $input->desc;
 }
+*/
 
 ## process inputs here to produce output
 

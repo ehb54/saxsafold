@@ -41,6 +41,9 @@ if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
+require_once "remove.php";
+question_prior_results( __FILE__ );
+
 ## process inputs here to produce output
 
 ## clean up filenames
@@ -58,6 +61,18 @@ if (
     $sas->load_file( SAS::PLOT_IQ, "Exp. I(q)", $iqfile )
     && $sas->create_plot( SAS::PLOT_IQ, "I(q)", [ "Exp. I(q)" ] )
     ) {
+    if ( isset( $input->saxsiq_in_nm ) ) {
+       $sas->data_convert_nm_to_angstrom( "Exp. I(q)" );
+    }
+    $qmin = "";
+    $qmax = "";
+    $sas->minq( "Exp. I(q)", $qmin );
+    $sas->maxq( "Exp. I(q)", $qmax );
+
+    $qmax = sprintf( "%.4f", $qmax );
+    
+    $sas->annotate_plot( "I(q)", "<i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
+
     $output->iqplot = $sas->plot( "I(q)" );
 } else {
     error_exit( $sas->last_error );
@@ -69,6 +84,9 @@ if (
     $sas->load_file( SAS::PLOT_PR, "Exp. P(r)", $prfile )
     && $sas->create_plot( SAS::PLOT_PR, "P(r)", [ "Exp. P(r)" ] )
     ) {
+    if ( isset( $input->saxspr_in_nm ) ) {
+       $sas->data_convert_nm_to_angstrom( "Exp. P(r)" );
+    }
     $output->prplot = $sas->plot( "P(r)" );
 } else {
     error_exit( $sas->last_error );

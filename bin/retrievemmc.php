@@ -93,6 +93,9 @@ if ( !strlen( $input->mmcoffset ) ) {
 
 $statsname = $cgstate->state->mmcrunname . ".dcd.stats";
 
+require_once "remove.php";
+question_prior_results( __FILE__ );
+
 ## do we have results locally?
 $lpath      = "monomer_monte_carlo/$statsname";
 $lresults   = file_exists( $lpath );

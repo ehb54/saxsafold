@@ -41,6 +41,9 @@ if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project " );
 }
 
+require_once "remove.php";
+question_prior_results( __FILE__ );
+
 function mod_ranges( $a, $b ) {
     $av = explode( ',', $a );
     $bv = explode( ',', $b );

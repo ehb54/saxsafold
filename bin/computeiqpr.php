@@ -35,9 +35,6 @@ $scriptdir = dirname(__FILE__);
 require "common.php";
 $cgstate = new cgrun_state();
 
-## does the project already exist ?
-
-
 ## make sure project is loaded
 
 if ( !isset( $cgstate->state->loaded ) ) {
@@ -77,7 +74,12 @@ if ( !isset( $cgstate->state->mmcdownloaded )
     error_exit( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
-require "computeiqpr_defines.php";
+require_once "computeiqpr_defines.php";
+
+## does the project already exist ?
+
+require_once "remove.php";
+question_prior_results( __FILE__ );
 
 ## clear output
 $ga->tcpmessage( [

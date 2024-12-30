@@ -56,8 +56,6 @@ require "waxsis.php";
 
 $cgstate = new cgrun_state();
 
-## does the project already exist ?
-
 ## make sure project is loaded
 
 if ( !isset( $cgstate->state->loaded ) ) {
@@ -68,6 +66,11 @@ if ( !isset( $cgstate->state->saxsiqfile )
      || !isset( $cgstate->state->saxsprfile ) ) {
     error_exit( "Please <i>'Load SAXS'</i> first" );
 }    
+
+## does the project already exist ?
+
+require_once "remove.php";
+question_prior_results( __FILE__ );
 
 ## clear output
 $ga->tcpmessage( [

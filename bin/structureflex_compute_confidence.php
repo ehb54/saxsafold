@@ -47,7 +47,7 @@ if ( !file_exists( $pdbfile ) ) {
 
 ## read and process
 
-$cmd = "$scriptdir/calcs/compute_flexible_regions.pl " .$request->{'autoflex-autoflexconfidencelevel'} . " 5 $pdbfile 2> /dev/null";
+$cmd = "$scriptdir/calcs/compute_flexible_regions.pl " . $request->{'autoflex-autoflexconfidencelevel'} . " 5 $pdbfile 2> /dev/null";
 $cmdres = explode( "\n", trim( `$cmd` ) );
 
 $selects = "";
