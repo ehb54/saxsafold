@@ -487,6 +487,90 @@ class SAS {
         return true;
     }
 
+    # maxq / sets $q argument to maxq
+    function maxq( $name, &$q ) {
+        $this->debug_msg( "SAS::maxq( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::maxq() curve name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::maxq() curve name '$name' is not an I(q)";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !count( $this->data->$name->x ) ) {
+            $this->last_error = "SAS::maxq() curve name '$name' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $q = end( $this->data->$name->x );
+        return true;
+    }        
+
+    # minq / sets $q argument to minq
+    function minq( $name, &$q ) {
+        $this->debug_msg( "SAS::minq( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::minq() curve name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::minq() curve name '$name' is not an I(q)";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( !count( $this->data->$name->x ) ) {
+            $this->last_error = "SAS::minq() curve name '$name' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        $q = $this->data->$name->x[0];
+        return true;
+    }        
+
+    # dmax / sets $r argument to d-max from P(r)
+    function dmax( $name, &$r ) {
+        $this->debug_msg( "SAS::dmax( '$name' )" );
+        $this->last_error = "";
+        
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::dmax() curve name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_PR ) {
+            $this->last_error = "SAS::dmax() curve name '$name' is not a P(r)";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( !count( $this->data->$name->x ) ) {
+            $this->last_error = "SAS::dmax() curve name '$name' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $pos = count( $this->data->$name->x ) - 1;
+
+        while( $pos > 0 && $this->data->$name->y[ $pos ] <= 0 ) {
+            --$pos;
+        }
+
+        if ( $pos >= 0 ) {
+            $r = $pos;
+        } else {
+            $this->last_error = "SAS::dmax() curve name '$name' does not appear to have any positive values";
+            return $this->error_exit( $this->last_error );
+        }
+
+        return true;
+    }        
+
     # calc_residuals / SD using SD of $targetdata, make as $residualname
     function calc_residuals( $targetname, $fromname, $residualname ) {
         $this->debug_msg( "SAS::calc_residuals( '$targetname', '$fromname' )" );
@@ -2001,7 +2085,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        $fmt = " %-25s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s\n";
+        $fmt = " %-30s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n";
         $out =
             sprintf( $fmt
                      ,"Data name"
@@ -2012,14 +2096,30 @@ class SAS {
                      ,"sum y"
                      ,"sum e"
                      ,"min e"
+                     ,"min q"
+                     ,"max q or dmax"
             );
         
-        $out .= str_repeat( "-", 124 ) . "\n";
+        $out .= str_repeat( "-", 163 ) . "\n";
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
                 $this->last_error = "SAS::data_summary() name '$name' does not exist";
                 return $this->error_exit( $this->last_error );
+            }
+
+            $data = (object) [
+                "minq" => 'n/a' 
+                ,"maxq" => 'n/a'
+                ,"dmax" => 'n/a'
+                ];
+
+            if ( $this->data->$name->type == self::PLOT_IQ ) {
+                $this->minq( $name, $data->minq );
+                $this->maxq( $name, $data->maxq );
+            } 
+            if ( $this->data->$name->type == self::PLOT_PR ) {
+                $this->dmax( $name, $data->dmax );
             }
 
             $out .= sprintf( $fmt
@@ -2030,11 +2130,13 @@ class SAS {
                              ,array_sum( $this->data->$name->x )
                              ,sprintf( "%.2f", array_sum( $this->data->$name->y ) )
                              ,( isset( $this->data->$name->error_y ) ? sprintf( "%.2g", array_sum( $this->data->$name->error_y ) ) : "n/a" )
-                             ,( isset( $this->data->$name->error_y ) ? min( $this->data->$name->error_y ) : "n/a" )
+                             ,( isset( $this->data->$name->error_y ) ? sprintf( "%.2g", min( $this->data->$name->error_y ) ) : "n/a" )
+                             ,$data->minq
+                             ,( $this->data->$name->type == self::PLOT_IQ ? $data->maxq : $data->dmax )
                 );
         }
 
-        $out .= str_repeat( "-", 124 ) . "\n";
+        $out .= str_repeat( "-", 163 ) . "\n";
 
         return $out;
     }
