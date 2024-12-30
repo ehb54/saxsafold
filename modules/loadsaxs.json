@@ -187,23 +187,43 @@
             ,"id"        : "saxsiqfile"
             ,"label"     : "SAXS I(q) file"
             ,"type"      : "lrfile"
-            ,"help"      : "N.B. the momentum transfer must be  <i>q</i> = 4&#x3c0;sin(&#x398;)/&#x3bb; with units &#x212B;<sup>-1</sup>"
+            ,"help"      : "N.B. the momentum transfer must be  <i>q</i> = 4&#x3c0;sin(&#x398;)/&#x3bb;"
             ,"required"  : "true"
             ,"layout" : {
                 "parent" : "inputpanel"
             }
         }
+#        ,{
+#            "role"       : "input"
+#            ,"id"        : "saxsiq_in_nm"
+#            ,"label"     : "I(q) data is in <strong>nm<sup>-1</sup></strong> units"
+#            ,"type"      : "checkbox"
+#            ,"help"      : "Check if your data is in <strong>nm<sup>-1</sup></strong> units"
+#            ,"layout" : {
+#                "parent" : "inputpanel"
+#            }
+#        }
         ,{
             "role"       : "input"
             ,"id"        : "saxsprfile"
             ,"label"     : "SAXS P(r) file <a target=_blank href=https://somo.chem.utk.edu/bayesapp>[compute using BayesApp]</a>"
             ,"type"      : "lrfile"
-            ,"help"      : "N.B. the <i>r</i> units must be &#x212B;<br>You can use BayesApp to compute a P(r) from an I(q) or download ATSAS and use GNOM"
+            ,"help"      : "You can use BayesApp to compute a P(r) from an I(q) or download ATSAS and use GNOM"
             ,"required"  : "true"
             ,"layout" : {
                 "parent" : "inputpanel"
             }
         }
+#        ,{
+#            "role"       : "input"
+#            ,"id"        : "saxspr_in_nm"
+#            ,"label"     : "P(r) data is in <strong>nm</strong> units"
+#            ,"type"      : "checkbox"
+#            ,"help"      : "Check if your P(r) data is in <strong>nm</strong> units"
+#            ,"layout" : {
+#                "parent" : "inputpanel"
+#            }
+#        }
         ,{
             "role"              : "output"
             ,"label"             : ""
