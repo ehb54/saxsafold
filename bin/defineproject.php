@@ -28,14 +28,43 @@ $base_dir  = preg_replace( '/^.*\//', '', $input->_base_directory );
 $logon     = $input->_logon;
 $scriptdir = dirname(__FILE__);
 
+## for isprojectlocked()
+$wdir      = preg_replace( "/\/results\/.*$/", "", $input->_base_directory );
+include "$wdir/ajax/joblog.php";
+
 ## get state
 
 require "common.php";
 $cgstate = new cgrun_state();
 
+if ( isprojectlocked( $input->_base_directory ) ) {
+    if (
+        (
+         isset( $cgstate->state->description )
+         && $input->desc != $cgstate->state->description
+         && strlen( $input->desc )
+        )
+        ||
+        (
+         !isset( $cgstate->state->description )
+         && strlen( $input->desc )
+        )
+        ) {
+        $output->_message =
+            [
+             "text" => "A job is currently running in this project<br>Your updated description will not be saved"
+            ];
+    }
+
+    $output->_textarea = "Current project is set to $input->pname\n";
+    echo json_encode( $output );
+    exit;
+}
+
 ## does the project already exist ?
 
-if ( $cgstate->state->loaded ) {
+if ( isset( $cgstate->state->loaded ) ) {
+
     $response =
         json_decode(
             $ga->tcpquestion(

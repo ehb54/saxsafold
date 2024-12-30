@@ -16,7 +16,7 @@ if ( $request === NULL ) {
     error_exit_hook( "Invalid JSON input provided" );
 }
 
-if ( !strlen( $request->_project ) ) {
+if ( !isset( $request->_project ) || !strlen( $request->_project ) ) {
     error_exit_hook( "A project must be selected!" );
 }
 
@@ -84,7 +84,10 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
         }
         if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->plotsel} ) ) {
             $result->{$mdata->tags->plotsel} = &$cgstate->state->output_iqpr->{$mdata->tags->plotsel};
+        } else {
+            unset( $result->{$mdata->tags->plotsel} );
         }
+            
         if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->results} ) ) {
             $result->{$mdata->tags->results} = &$cgstate->state->output_iqpr->{$mdata->tags->results};
         }

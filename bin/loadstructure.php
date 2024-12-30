@@ -60,11 +60,12 @@ $cgstate = new cgrun_state();
 
 ## make sure project is loaded
 
-if ( !$cgstate->state->loaded ) {
+if ( !isset( $cgstate->state->loaded ) ) {
    error_exit( "You must first <i>Define project</i> for this project $input->_project" );
 }
 
-if ( !$cgstate->state->saxsiqfile || !$cgstate->state->saxsprfile ) {
+if ( !isset( $cgstate->state->saxsiqfile )
+     || !isset( $cgstate->state->saxsprfile ) ) {
     error_exit( "Please <i>'Load SAXS'</i> first" );
 }    
 
@@ -113,7 +114,7 @@ if ( !isset( $input->searchkey )
 
     ## get list of files possible, make $ids[]
 
-    $cmd = "gsutil ls gs://${alphafold_dataset}/${searchkey}*.cif | head -$MAX_RESULTS";
+    $cmd = "(gsutil ls gs://public-datasets-deepmind-alphafold-v4/${searchkey}*.cif | head -$MAX_RESULTS) 2> /dev/null";
     $res = run_cmd( $cmd, true, true );
     $ids = preg_replace( '/-model.*cif$/', '', preg_replace( '/^.*\/AF-/', '', preg_grep( '/\.cif$/', $res ) ) );
     
@@ -473,8 +474,8 @@ $output->downloads .=
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/ultrascan/results/%s-somo.cif>mmCIF &#x21D3;</a>&nbsp;&nbsp;&nbsp;",         $base_name )
     ;
 
-if ( $cgstate->state->saxsiqfile
-     && $cgstate->state->saxsprfile
+if ( isset( $cgstate->state->saxsiqfile )
+     && isset( $cgstate->state->saxsprfile )
     ) {
     $output->downloads .=
         sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>Iq &#x21D3;</a>&nbsp;&nbsp;&nbsp;", preg_replace( '/^.*\//', '', $cgstate->state->saxsiqfile ) )
