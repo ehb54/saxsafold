@@ -562,7 +562,7 @@ class SAS {
         }
 
         if ( $pos >= 0 ) {
-            $r = $pos;
+            $r = $this->data->$name->x[ $pos ];
         } else {
             $this->last_error = "SAS::dmax() curve name '$name' does not appear to have any positive values";
             return $this->error_exit( $this->last_error );
@@ -571,6 +571,44 @@ class SAS {
         return true;
     }        
 
+    # data_convert_nm_to_angstrom - converts data in nm to angstrom
+    function data_convert_nm_to_angstrom( $name ) {
+        $this->debug_msg( "SAS::data_convert_nm_to_angstrom( '$name' )" );
+        $this->last_error = "";
+        
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::data_convert_nm_to_angstrom() curve name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !count( $this->data->$name->x ) ) {
+            $this->last_error = "SAS::data_convert_nm_to_angstrom() curve name '$name' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+    
+        switch( $this->data->$name->type ) {
+            case self::PLOT_PR : {
+                foreach ( $this->data->$name->x as $k => $v ) {
+                    $this->data->$name->x[ $k ] *= 10;
+                }
+            }
+            break;
+
+            case self::PLOT_IQ : {
+                foreach ( $this->data->$name->x as $k => $v ) {
+                    $this->data->$name->x[ $k ] *= .1;
+                }
+            }
+            break;
+
+            default : {
+                $this->last_error = "SAS::data_convert_nm_to_angstrom() curve name '$name' has an unknown type";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+        return true;
+    }
+                
     # calc_residuals / SD using SD of $targetdata, make as $residualname
     function calc_residuals( $targetname, $fromname, $residualname ) {
         $this->debug_msg( "SAS::calc_residuals( '$targetname', '$fromname' )" );
