@@ -5,9 +5,12 @@ class GenApp {
     private $input;
     private $output;
     
+    public $cache_obj;
+
     function __construct( $input, $output ) {
         $this->input  = $input;
         $this->output = $output;
+        $this->cache_obj = (object) [];
     }
 
     function tcpmessagebox( $message ) {
@@ -64,6 +67,18 @@ class GenApp {
         } else {
             $result->error = 'message must be a json string, array or object';
             return $result;
+        }
+
+        foreach ( $msg as $k => $v ) {
+            if ( $k == '_textarea' ) {
+                if ( isset( $this->cache_obj->$k ) ) {
+                    $this->cache_obj->$k .= $v;
+                } else {
+                    $this->cache_obj->$k = $v;
+                }
+            } else {
+                $this->cache_obj->$k = $v;
+            }
         }
 
         $msg->_uuid   = $this->input->_uuid;
@@ -136,6 +151,18 @@ class GenApp {
         } else {
             $result->error = 'message must be a json string, array or object';
             return $result;
+        }
+
+        foreach ( $msg as $k => $v ) {
+            if ( $k == '_textarea' ) {
+                if ( isset( $this->cache_obj->$k ) ) {
+                    $this->cache_obj->$k .= $v;
+                } else {
+                    $this->cache_obj->$k = $v;
+                }
+            } else {
+                $this->cache_obj->$k = $v;
+            }
         }
 
         $msg->_uuid   = $this->input->_uuid;

@@ -94,7 +94,48 @@ if ( !strlen( $input->mmcoffset ) ) {
 $statsname = $cgstate->state->mmcrunname . ".dcd.stats";
 
 require_once "remove.php";
-question_prior_results( __FILE__ );
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+    global $input;
+
+    $obj = (object)[];
+
+    $obj->desc                 = $cgstate->state->description;
+    $obj->pname                = $request->_project;
+    $obj->downloads            = $cgstate->state->output_load->downloads;
+    $obj->mmcstride            = $cgstate->state->mmcstride;
+    $obj->mmcoffset            = $cgstate->state->mmcoffset;
+    if ( !strlen( $obj->mmcoffset ) ) {
+        $obj->mmcoffset = 0;
+    }
+
+    if ( isset( $cgstate->state->mmcdownloaded ) ) {
+
+        $obj->_textarea        = "MMC results already retrieved\n\n";
+        $statsname                = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.stats";
+        if ( !file_exists( $statsname ) ) {
+            $obj->_textarea       .= "\nError: expected MMC stats file not found!\n";
+        }
+
+        $obj->_textarea       .= "\n" . `cat $statsname 2> /dev/null`;
+
+        ## histogram
+        $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+        require_once "plotlyhist.php";
+        $res = plotly_hist( $histname, $obj, $cgstate->state->mmcstride, $cgstate->state->mmcoffset );
+        if ( strlen( $res ) ) {
+            $obj->_textarea .= $res;
+        }
+    }
+
+    $obj->processing_progress = 0;
+
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 ## do we have results locally?
 $lpath      = "monomer_monte_carlo/$statsname";
@@ -110,6 +151,7 @@ $ga->tcpmessage( [
                      ,"progress_text"      => ''
                  ]);
 
+# if ( $lresults ) {
 if ( $lresults && isset( $cgstate->state->mmcdownloaded ) ) {
     $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
 

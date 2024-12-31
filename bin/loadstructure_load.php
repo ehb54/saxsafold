@@ -35,5 +35,9 @@ if ( !isset( $cgstate->state->saxsiqfile ) || !isset( $cgstate->state->saxsprfil
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
 
+if ( isset( $cgstate->state->output_load ) ) {
+    $result = $cgstate->state->output_load;
+}
+
 echo json_encode( $result );
 exit;

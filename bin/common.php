@@ -138,7 +138,11 @@ function json_exit() {
     exit;
 }    
 
-function error_exit( $msg, $nonotify = true ) {
+function error_exit( $msg, $nonotify = true, $cb = null ) {
+    if ( is_callable( $cb ) ) {
+        $cb();
+    }
+
     if ( !strlen( $msg ) ) {
         $msg = "Empty error message!";
     }

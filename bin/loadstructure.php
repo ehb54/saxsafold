@@ -69,9 +69,6 @@ if ( !isset( $cgstate->state->saxsiqfile )
 
 ## does the project already exist ?
 
-require_once "remove.php";
-question_prior_results( __FILE__ );
-
 ## clear output
 $ga->tcpmessage( [
                      'processing_progress' => 0.01
@@ -93,6 +90,30 @@ $ga->tcpmessage( [
                      ,"helix"              => ''
                      ,"downloads"          => ''
                  ] );
+
+
+require_once "remove.php";
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+    global $input;
+
+    $obj = (object)[];
+
+    $obj->desc  = $cgstate->state->description;
+    $obj->pname = $request->_project;
+
+    if ( isset( $cgstate->state->output_load ) ) {
+        $obj = $cgstate->state->output_load;
+    }
+    
+    $obj->processing_progress = 0;
+
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 
 ## process inputs here to produce output
@@ -161,7 +182,7 @@ if ( !isset( $input->searchkey )
 
 
         if ( isset( $response->error ) && strlen( $response->error ) ) {
-            error_exit( "Please submit again" );
+            error_exit( "Please submit again", true, $restore_old_data );
         }
 
         if (
@@ -200,7 +221,6 @@ if ( !isset( $input->searchkey )
         }
     }
 
-
     ## process
 
     $is_alphafold = true;
@@ -236,12 +256,15 @@ if ( !isset( $input->searchkey )
             ]
             );
     } catch ( MongoDB\Exception\UnsupportedException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     } catch ( MongoDB\Exception\InvalidArgumentException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     } catch ( MongoDB\Exception\RuntimeException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     }
@@ -252,6 +275,7 @@ if ( !isset( $input->searchkey )
     }
 
     if ( count( $ids ) == 0 ) {
+        $restore_old_data();
         $output->_message =
             [
              'text'  => $input->searchkey . ' did not match any records'
@@ -301,6 +325,7 @@ if ( !isset( $input->searchkey )
             );
 
         if ( isset( $response->error ) && strlen( $response->error ) ) {
+            $restore_old_data();
             error_exit( "Please submit again" );
         }
 
@@ -313,6 +338,7 @@ if ( !isset( $input->searchkey )
             ) {
             $output->searchkey = $response->_response->lb1;
         } else {
+            $restore_old_data();
             $output->_null = "";
             json_exit();
         }
@@ -324,12 +350,15 @@ if ( !isset( $input->searchkey )
     try {
         $found = $db_mongo->somo->afd->findOne( [ "_id" => $output->searchkey ] );
     } catch ( MongoDB\Exception\UnsupportedException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     } catch ( MongoDB\Exception\InvalidArgumentException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     } catch ( MongoDB\Exception\RuntimeException $e ) {
+        $restore_old_data();
         $output->errors = "Error finding " .  $e->getMessage();
         json_exit();
     }
@@ -340,7 +369,7 @@ if ( !isset( $input->searchkey )
     $somoaffile = "/host/somoaf/pdb/$basename-somo.pdb";
     
     if ( !file_exists( $somoaffile ) ) {
-        error_exit( "The post translationally modified structure was not found" );
+        error_exit( "The post translationally modified structure was not found", true, $restore_old_data );
     }
 
     run_cmd( "cp $somoaffile ./$basename.pdb" );
@@ -683,6 +712,10 @@ $cgstate->state->loaded            = true;
 $cgstate->state->output_load       = $output;
 $cgstate->state->is_alphafold      = $is_alphafold;
 $cgstate->state->solvent_e_density = floatval( $input->solvent_e_density );
+
+if ( isset( $ga->cache_obj->_textarea ) ) {
+    $cgstate->state->output_load->_textarea = $ga->cache_obj->_textarea;
+}
 
 if ( isset( $input->refpdb ) ) {
     $cgstate->state->refpdb = $input->refpdb;

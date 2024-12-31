@@ -96,13 +96,13 @@ function any_prior_results( $name, &$toclear, &$toremove ) {
     return count( $toclear ) + count( $toremove );
 }
 
-function question_prior_results( $name ) {
+function question_prior_results( $name, $removecb = null ) {
     global $ga;
     global $cgstate;
     global $input;
     
     if ( !isset( $ga ) || !isset( $cgstate ) || !isset( $input ) ) {
-        error_exit( "question_prior_results() requires \$ga, \$cgstate & \$input to be set" );
+        error_exit( "question_prior_results() requires \$ga, \$cgstate & \$input to be set", true, $removecb );
         return false;
     }
 
@@ -138,7 +138,7 @@ function question_prior_results( $name ) {
                      [
                       "id"          => "l1"
                       ,"type"       => "label"
-                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permenant!"
+                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permenant!<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All results, if any, for subsequent stages will also be lost!"
                       ,"align"      => "center"
                      ]
                  ]
@@ -148,7 +148,7 @@ function question_prior_results( $name ) {
         );
 
     if ( isset( $response->error ) && strlen( $response->error ) ) {
-        error_exit( "Please submit again" );
+        error_exit( "Please submit again", true, $removecb );
     }
 
     if ( $response->_response->button == "keeppreviousresults" ) {
@@ -181,7 +181,7 @@ function question_prior_results( $name ) {
             }            
 
             if ( isset( $response->error ) && strlen( $response->error ) ) {
-                error_exit( "Please submit again" );
+                error_exit( "Please submit again", true, $removecb );
             }
 
             if ( $response->_response->button == "erasepreviousresults" ) {
@@ -194,7 +194,7 @@ function question_prior_results( $name ) {
             return true;
         } else {
 #            error_exit( "Canceled '$usename'" );
-            error_exit( "Canceled" );
+            error_exit( "Canceled - prior results kept", true, $removecb );
         }
     }
 

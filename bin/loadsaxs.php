@@ -42,7 +42,26 @@ if ( !isset( $cgstate->state->loaded ) ) {
 }
 
 require_once "remove.php";
-question_prior_results( __FILE__ );
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+
+    $obj = (object)[];
+
+    if ( isset( $cgstate->state->output_loadsaxs ) ) {
+        if ( isset( $cgstate->state->output_loadsaxs->iqplot ) ) {
+            $obj->iqplot = $cgstate->state->output_loadsaxs->iqplot;
+        }
+        if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
+            $obj->prplot = $cgstate->state->output_loadsaxs->prplot;
+        }
+    }
+    
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 ## process inputs here to produce output
 
