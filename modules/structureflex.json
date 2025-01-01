@@ -469,5 +469,17 @@
                 "parent" : "resultpanel2"
             }
         }
+        ,{
+            "role"        : "output"
+            ,"id"         : "processing_progress"
+            ,"type"       : "progress"
+            ,"hidden"     : "true"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
     ]
 }

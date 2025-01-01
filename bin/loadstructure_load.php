@@ -32,12 +32,12 @@ if ( !isset( $cgstate->state->saxsiqfile ) || !isset( $cgstate->state->saxsprfil
     error_exit_hook( "Please <i>'Load SAXS'</i> first" );
 }    
 
-$result->desc  = $cgstate->state->description;
-$result->pname = $request->_project;
-
 if ( isset( $cgstate->state->output_load ) ) {
     $result = $cgstate->state->output_load;
 }
+
+$result->desc  = $cgstate->state->description;
+$result->pname = $request->_project;
 
 echo json_encode( $result );
 exit;

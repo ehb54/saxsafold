@@ -50,16 +50,18 @@ if ( !file_exists( $pdbfile ) ) {
 $cmd = "$scriptdir/calcs/compute_flexible_regions.pl " . $request->{'autoflex-autoflexconfidencelevel'} . " 5 $pdbfile 2> /dev/null";
 $cmdres = explode( "\n", trim( `$cmd` ) );
 
-$selects = "";
+$selects = "background white; color structure; ribbon only";
 
 $result->nflex = count( $cmdres );
 for ( $i = 0; $i < $result->nflex; ++$i ) {
     $result->{"nflex-flexrange-$i"} = $cmdres[ $i ];
-    $selects .= ";select " . str_replace( ",", "-", $cmdres[ $i ] ) . "; color green";
+    if ( strlen( trim( $cmdres[ $i ] ) ) ) {
+        $selects .= ";select " . str_replace( ",", "-", $cmdres[ $i ] ) . "; color green";
+    }
 }
 
 $result->struct = $cgstate->state->output_load->struct;
-$result->struct->script .= $selects;
+$result->struct->script = $selects;
 
 echo json_encode( $result );
 exit;

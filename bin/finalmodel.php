@@ -103,11 +103,13 @@ $waxsis_data_name = "I(q) WAXSiS mod. 0";
 require_once "remove.php";
 
 $restore_old_data = function() {
-    global $cgstate;
     global $ga;
     global $input;
 
     $obj = (object)[];
+
+    ## had to reload as we have already changed $cgstate when estimated time etc
+    $cgstate = new cgrun_state();
 
     if ( isset( $cgstate->state->output_load->iqplot ) ) {
         $obj->iqplot = &$cgstate->state->output_load->iqplot;
@@ -129,11 +131,14 @@ $restore_old_data = function() {
         if ( isset( $cgstate->state->output_final->histplotfinal ) ) {
             $obj->histplotfinal = &$cgstate->state->output_final->histplotfinal;
         }
+        if ( isset( $cgstate->state->output_final->_textarea ) ) {
+            $obj->_textarea = $cgstate->state->output_final->_textarea;
+        }
     }
 
 #    $obj->desc                      = $cgstate->state->description;
-#    $obj->pname                     = $request->_project;
-#    $obj->downloads                 = $cgstate->state->output_load->downloads;
+    $obj->pname                     = $input->_project;
+    $obj->downloads                 = $cgstate->state->output_load->downloads;
 
     $obj->processing_progress = 0;
 
@@ -244,10 +249,7 @@ if ( isset( $response->error ) && strlen( $response->error ) ) {
 }
 
 if ( $response->_response->button == "cancelfornow" ) {
-    $output->_textarea = "Processing canceled by user request\n";
-    $output->_disable_notify = true;
-    echo json_encode( $output );
-    exit;
+    error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
 }
 
 ## collect models
@@ -648,23 +650,6 @@ $cgstate->state->final_adjacent_frames = $input->adjacent_frames;
 
 ## save state
 
-$cgstate->state->final_waxsis_failures = $waxsis_failures;
-$cgstate->state->output_final  = $output;
-
-## unsaved outputs (since they were previously saved
-
-if ( isset( $cgstate->state->output_load ) 
-     && isset( $cgstate->state->output_load->iqplot ) ) {
-    $output->iqplot = &$cgstate->state->output_load->iqplot;
-}
-
-if ( !$cgstate->save() ) {
-    echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
-    exit;
-}
-
-## log results to textarea
-
 if ( count( $waxsis_failures ) ) {
     $msg =
         "WAXSiS simulation failures occured on " . count( $waxsis_failures ) . " Models:\n"
@@ -677,7 +662,27 @@ if ( count( $waxsis_failures ) ) {
         ,"icon" => "warning.png"
         ];
 
-    $output->_textarea = $msg;
+    $ga->tcpmessage( [ "_textarea" => $msg ] );
+}
+
+$cgstate->state->final_waxsis_failures = $waxsis_failures;
+$cgstate->state->output_final  = $output;
+
+if ( isset( $ga->cache_obj->_textarea ) ) {
+    $cgstate->state->output_final->_textarea = $ga->cache_obj->_textarea;
+}
+
+## unsaved outputs (since they were previously saved
+
+if ( isset( $cgstate->state->output_load ) 
+     && isset( $cgstate->state->output_load->iqplot ) ) {
+    $output->iqplot = &$cgstate->state->output_load->iqplot;
+}
+
+
+if ( !$cgstate->save() ) {
+    echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';
+    exit;
 }
 
 #$output->_textarea =
@@ -689,5 +694,6 @@ if ( count( $waxsis_failures ) ) {
 # $output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 $output->processing_progress = 0;
 $output->progress_text = progress_text( 'Processing complete', '', true );
+unset( $output->_textarea );
 
 echo json_encode( $output );

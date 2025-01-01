@@ -103,7 +103,7 @@ $restore_old_data = function() {
     $obj = (object)[];
 
     $obj->desc                 = $cgstate->state->description;
-    $obj->pname                = $request->_project;
+    $obj->pname                = $input->_project;
     $obj->downloads            = $cgstate->state->output_load->downloads;
     $obj->mmcstride            = $cgstate->state->mmcstride;
     $obj->mmcoffset            = $cgstate->state->mmcoffset;

@@ -240,11 +240,11 @@ if ( in_array( "crysol3", $input->iqmethod )
    ) {
     require_once "$input->_webroot/$input->_application/ajax/ga_db_lib.php";
 
-    if ( !ga_db_status( ga_db_open( $error_json_exit ) ) ) {
+    if ( !ga_db_status( ga_db_open() ) ) {
         error_exit( "failed to connect to db" );
     }
 
-    $userdoc = ga_db_output( ga_db_findOne( 'users', '', [ '_logon' => $input->logon ] ) );
+    $userdoc = ga_db_output( ga_db_findOne( 'users', '', [ 'name' => $input->_logon ] ) );
 
     # $output->_textarea = json_encode( $userdoc, JSON_PRETTY_PRINT ) . "\n----\n";
     ## remove the 1 || below to only ask once

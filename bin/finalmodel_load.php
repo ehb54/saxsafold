@@ -79,6 +79,9 @@ if ( isset( $cgstate->state->output_final ) ) {
     if ( isset( $cgstate->state->output_final->histplotfinal ) ) {
         $result->histplotfinal = &$cgstate->state->output_final->histplotfinal;
     }
+    if ( isset( $cgstate->state->output_final->_textarea ) ) {
+        $result->_textarea = $cgstate->state->output_final->_textarea;
+    }
 }
 
 $result->desc                      = $cgstate->state->description;
