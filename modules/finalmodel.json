@@ -1,7 +1,7 @@
 {
     "moduleid"    : "finalmodel"
     ,"label"      : "Final model selection using WAXSiS"
-    ,"help"       : "Compute Iq/Pr on selected structures"
+    ,"help"       : "Compute WAXSiS on preselected structures and perform NNLS"
     ,"executable" : "finalmodel.php"
 #    ,"resource"   : "docker-local"
 #    ,"dependencies" : [ 
