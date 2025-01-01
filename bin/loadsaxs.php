@@ -90,7 +90,7 @@ if (
 
     $qmax = sprintf( "%.4f", $qmax );
     
-    $sas->annotate_plot( "I(q)", "<i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
+    $sas->annotate_plot( "I(q)", pathinfo( $iqfile, PATHINFO_BASENAME ) . "  <i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
 
     $output->iqplot = $sas->plot( "I(q)" );
 } else {
@@ -106,6 +106,7 @@ if (
     if ( isset( $input->saxspr_in_nm ) ) {
        $sas->data_convert_nm_to_angstrom( "Exp. P(r)" );
     }
+    $sas->annotate_plot( "P(r)", pathinfo( $prfile, PATHINFO_BASENAME ) );
     $output->prplot = $sas->plot( "P(r)" );
 } else {
     error_exit( $sas->last_error );
