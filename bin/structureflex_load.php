@@ -33,6 +33,7 @@ if ( !isset( $cgstate->state->output_load ) ) {
 }    
 
 $result = $cgstate->state->output_load;
+unset( $result->_textarea );
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
 if ( isset( $cgstate->state->is_alphafold ) && $cgstate->state->is_alphafold ) {

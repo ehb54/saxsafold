@@ -42,7 +42,35 @@ if ( !isset( $cgstate->state->loaded ) ) {
 }
 
 require_once "remove.php";
-question_prior_results( __FILE__ );
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+    global $input;
+
+    $obj = (object)[];
+
+    $obj->desc  = $cgstate->state->description;
+    $obj->pname = $input->_project;
+
+    if ( isset( $cgstate->state->output_load ) ) {
+        $obj = $cgstate->state->output_load;
+        unset( $obj->_textarea );
+    }
+
+    if ( isset( $cgstate->state->flex ) && count( $cgstate->state->flex ) ) {
+        $obj->nflex = count( $cgstate->state->flex );
+        for ( $i = 0; $i < $obj->nflex; ++$i ) {
+            $obj->{"nflex-flexrange-$i"} = $cgstate->state->flex[ $i ];
+        }
+    }
+
+    $obj->processing_progress = 0;
+
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 function mod_ranges( $a, $b ) {
     $av = explode( ',', $a );

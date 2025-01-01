@@ -8,7 +8,7 @@ require_once "computeiqpr_defines.php";
 ## $toclear is an array of state variables
 ## $toremove is an array of subdirectories
 
-function any_prior_results( $name, &$toclear, &$toremove ) {
+function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults ) {
     global $cgstate;
     global $mdatas;
     
@@ -48,15 +48,15 @@ function any_prior_results( $name, &$toclear, &$toremove ) {
         }
         case  "runmmc" : {
             $toclear[] = "mmcrunname"; # , ... actually set in runmmc_load.php & save;
+            $toclear[] = "mmcdownloaded";
+            $toclear[] = "mmcstride";
+            $toclear[] = "mmcoffset";
             $toremove[] = "waxsissets";
             $toremove[] = "preselected";
         }
         case  "retrievemmc" : {
-            $toclear[] = "mmcstride";
-            $toclear[] = "mmcoffset";
             $toclear[] = "mmcextracted";
             $toclear[] = "mmcframecount";
-            $toclear[] = "mmcdownloaded";
         }
         case  "computeiqpr" : {
             $toclear[] = "computeiqpr_prerrors";
@@ -93,6 +93,112 @@ function any_prior_results( $name, &$toclear, &$toremove ) {
         }
     }
     
+    $moduleswithresults = [];
+    $reported = [];
+
+    foreach ( $toclear as $v ) {
+        
+        switch ( $v ) {
+            case "description" :
+            case "loaded" :
+                break;
+
+            case "qmin" :
+            case "qmax" :
+            case "qpoints" :
+            case "output_loadsaxs" :
+            case "saxsiqfile" :
+            case "saxsprfile" :
+            {
+                $title = "Load SAXS";
+                if ( !isset( $reported[ $title  ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;
+
+            case "solvent_e_density" :
+            case "is_alphafold" :
+            case "output_load" :
+            case "waxsis_last_run_time_minutes" :
+            {
+                $title = "Load structure";
+                if ( !isset( $reported[ $title  ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;
+
+            case "flex" :
+            case "output_flex" :
+            {
+                $title = "Structure info / flexible regions";
+                if ( !isset( $reported[ $title ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                 }
+            }
+            break;                  
+                                    
+            case "mmcrunname" :     
+            case "mmcdownloaded" :
+            case "mmcstride" :
+            case "mmcoffset" :
+            {
+                $title = "Run MMC";
+                if ( !isset( $reported[ $title ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;                 
+                                   
+            case "mmcextracted" :  
+            case "mmcframecount" :
+            {
+                $title = "Retrieve MMC";
+                if ( !isset( $reported[ $title ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;
+
+            case "computeiqpr_prerrors" :
+            case "output_iqpr" :
+            {
+                $title = "Compute I(q)/P(r) Preselect models";
+                if ( !isset( $reported[ $title ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;
+            
+            case "final_adjacent_frames" :
+            case "final_waxsis_failures" :
+            case "iq_waxsis_nnlsresults" :
+            case "output_final" :
+            case "iq_waxsis_nnlsresults_colors" :
+            {
+                $title = "Final model selection using WAXSiS";
+                if ( !isset( $reported[ $title ] ) ) {
+                    $moduleswithresults[] = $title;
+                    $reported[ $title ]   = true;
+                }
+            }
+            break;
+            
+# unless we want to add the $datas
+#            default : {
+#                error_exit( "any_prior_results() unknown field '$v'" );
+#                return false;
+#            }
+        }
+    }
+
     return count( $toclear ) + count( $toremove );
 }
 
@@ -106,12 +212,13 @@ function question_prior_results( $name, $removecb = null ) {
         return false;
     }
 
-    $toclear  = [];
-    $toremove = [];
+    $toclear            = [];
+    $toremove           = [];
+    $moduleswithresults = [];
 
     $usename = pathinfo( $name, PATHINFO_FILENAME );
 
-    if ( !any_prior_results( $name, $toclear, $toremove ) ) {
+    if ( !any_prior_results( $name, $toclear, $toremove, $moduleswithresults ) ) {
         ## nothing to clear
 
         if ( $usename == "defineproject" ) {
@@ -122,6 +229,9 @@ function question_prior_results( $name, $removecb = null ) {
         return true;
     }
 
+    $resultsfound = '<strong><i><br>' . implode( '<br>', $moduleswithresults ) . '<br><br></i></strong>';
+    # $resultsfound = '<br>' .implode( '<br>', $toclear );
+
     ## question user
     
     $response =
@@ -129,7 +239,7 @@ function question_prior_results( $name, $removecb = null ) {
             $ga->tcpquestion(
                 [
                  "id"           => "q1"
-                 ,"title"       => "<h5>Project '$input->_project' has existing previous results</h5>"
+                 ,"title"       => "<h5>Project '$input->_project' has existing previous results</h5>$resultsfound"
                  ,"icon"        => "warning.png"
                  ,"text"        => ""
                  ,"timeouttext" => "The time to respond has expired, please submit again."
@@ -138,7 +248,7 @@ function question_prior_results( $name, $removecb = null ) {
                      [
                       "id"          => "l1"
                       ,"type"       => "label"
-                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permenant!<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All results, if any, for subsequent stages will also be lost!"
+                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permenant!<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All results for subsequent stages indicated above for this project will be lost!"
                       ,"align"      => "center"
                      ]
                  ]
@@ -194,7 +304,7 @@ function question_prior_results( $name, $removecb = null ) {
             return true;
         } else {
 #            error_exit( "Canceled '$usename'" );
-            error_exit( "Canceled - prior results kept", true, $removecb );
+            error_exit( "Canceled - prior results kept", true, $removecb, 'information.png' );
         }
     }
 
@@ -202,11 +312,14 @@ function question_prior_results( $name, $removecb = null ) {
         unset( $cgstate->state->$v );
     }
 
-    foreach ( $toremove as $v ) {
-        $cmd .= "rm -fr $v 2>&1 > /dev/null\n";
+    if ( count( $toremove ) ) {
+        $cmd = '';
+        foreach ( $toremove as $v ) {
+            $cmd .= "rm -fr $v 2>&1 > /dev/null\n";
+        }
+        # $ga->tcpmessage( [ "_textarea" => $cmd ] );
+        `$cmd`;
     }
-    # $ga->tcpmessage( [ "_textarea" => $cmd ] );
-    `$cmd`;
 }
 
 /*

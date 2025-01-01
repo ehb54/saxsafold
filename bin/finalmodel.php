@@ -101,7 +101,46 @@ $waxsis_data_name = "I(q) WAXSiS mod. 0";
 ## does the project already exist ?
 
 require_once "remove.php";
-question_prior_results( __FILE__ );
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+    global $input;
+
+    $obj = (object)[];
+
+    if ( isset( $cgstate->state->output_load->iqplot ) ) {
+        $obj->iqplot = &$cgstate->state->output_load->iqplot;
+    }
+
+    if ( isset( $cgstate->state->output_final ) ) {
+        if ( isset( $cgstate->state->output_final->iqplotwaxsis ) ) {
+            $obj->iqplotwaxsis = &$cgstate->state->output_final->iqplotwaxsis;
+        }
+        if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
+            $obj->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
+        }
+        if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
+            $obj->csvdownloads = &$cgstate->state->output_final->csvdownloads;
+        }
+        if ( isset( $cgstate->state->output_final->struct ) ) {
+            $obj->struct = &$cgstate->state->output_final->struct;
+        }
+        if ( isset( $cgstate->state->output_final->histplotfinal ) ) {
+            $obj->histplotfinal = &$cgstate->state->output_final->histplotfinal;
+        }
+    }
+
+#    $obj->desc                      = $cgstate->state->description;
+#    $obj->pname                     = $request->_project;
+#    $obj->downloads                 = $cgstate->state->output_load->downloads;
+
+    $obj->processing_progress = 0;
+
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 ## clear output
 $ga->tcpmessage( [

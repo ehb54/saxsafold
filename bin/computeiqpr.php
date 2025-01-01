@@ -74,12 +74,98 @@ if ( !isset( $cgstate->state->mmcdownloaded )
     error_exit( "No retrieved and extracted MMC results found. Please run <i>'Retrieve MMC'</i> first" );
 }    
 
-require_once "computeiqpr_defines.php";
+include_once "limits.php";
+require "sas.php";
+include "crysol.php";
+require "computeiqpr_funcs.php";
+$sas = new SAS();
 
 ## does the project already exist ?
 
 require_once "remove.php";
-question_prior_results( __FILE__ );
+
+$restore_old_data = function() {
+    global $cgstate;
+    global $ga;
+    global $input;
+    global $mdatas;
+
+    $obj = (object)[];
+
+    setup_computeiqpr_plots( $obj );
+
+    if ( isset( $cgstate->state->output_iqpr ) ) {
+
+        foreach ( $mdatas as $mdata ) {
+            if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->plotallhtml} ) ) {
+                $obj->{$mdata->tags->plotallhtml} = &$cgstate->state->output_iqpr->{$mdata->tags->plotallhtml};
+            }
+            if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->plotsel} ) ) {
+                $obj->{$mdata->tags->plotsel} = &$cgstate->state->output_iqpr->{$mdata->tags->plotsel};
+            } else {
+                unset( $obj->{$mdata->tags->plotsel} );
+            }
+
+            if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->results} ) ) {
+                $obj->{$mdata->tags->results} = &$cgstate->state->output_iqpr->{$mdata->tags->results};
+            }
+            if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->header_id} ) ) {
+                $obj->{$mdata->tags->header_id} = &$cgstate->state->output_iqpr->{$mdata->tags->header_id};
+            }
+            if ( isset( $cgstate->state->output_iqpr->{$mdata->tags->downloads} ) ) {
+                $obj->{$mdata->tags->downloads} = &$cgstate->state->output_iqpr->{$mdata->tags->downloads};
+            }
+        }
+
+        if ( isset( $cgstate->state->output_iqpr->pr_plotallhtml ) ) {
+            $obj->pr_plotallhtml = &$cgstate->state->output_iqpr->pr_plotallhtml;
+        }
+        if ( isset( $cgstate->state->output_iqpr->pr_results ) ) {
+            $obj->pr_results = &$cgstate->state->output_iqpr->pr_results;
+        }
+        if ( isset( $cgstate->state->output_iqpr->pr_plotsel ) ) {
+            $obj->pr_plotsel = &$cgstate->state->output_iqpr->pr_plotsel;
+        }
+        if ( isset( $cgstate->state->output_iqpr->pr_header ) ) {
+            $obj->pr_header = &$cgstate->state->output_iqpr->pr_header;
+        }
+        if ( isset( $cgstate->state->output_iqpr->pr_downloads ) ) {
+            $obj->pr_downloads = &$cgstate->state->output_iqpr->pr_downloads;
+        }
+        if ( isset( $cgstate->state->output_iqpr->prwe_downloads ) ) {
+            $obj->prwe_downloads = &$cgstate->state->output_iqpr->prwe_downloads;
+        }
+
+        if ( isset( $cgstate->state->computeiqpr_prerrors ) &&
+             $cgstate->state->computeiqpr_prerrors ) {
+            if ( isset( $cgstate->state->output_iqpr->prwe_plotsel ) ) {
+                $obj->prwe_plotsel = &$cgstate->state->output_iqpr->prwe_plotsel;
+            }
+            if ( isset( $cgstate->state->output_iqpr->prwe_results ) ) {
+                $obj->prwe_results = &$cgstate->state->output_iqpr->prwe_results;
+            }
+        } else {
+            unset( $obj->prwe_plotsel );
+        }
+    } else {
+        unset( $obj->pr_plotsel );
+        unset( $obj->prwe_plotsel );
+        foreach ( $mdatas as $mdata ) {
+            unset( $obj->{ $mdata->tags->plotsel } );
+        }
+    }                      
+
+    unset( $obj->iq_p_plotall );
+    unset( $obj->iq_c3_plotall );
+    unset( $obj->iqplotall );
+    unset( $obj->prplotall );
+
+    $obj->processing_progress = 0;
+
+    $ga->tcpmessage( $obj );
+};
+
+question_prior_results( __FILE__, $restore_old_data );
 
 ## clear output
 $ga->tcpmessage( [
@@ -109,11 +195,6 @@ foreach ( $mdatas as $mdata ) {
 }
 
 ## initial plots
-include_once "limits.php";
-require "sas.php";
-include "crysol.php";
-require "computeiqpr_funcs.php";
-$sas = new SAS();
 
 $plots = (object) [];
 

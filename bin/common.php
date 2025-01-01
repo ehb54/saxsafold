@@ -138,7 +138,7 @@ function json_exit() {
     exit;
 }    
 
-function error_exit( $msg, $nonotify = true, $cb = null ) {
+function error_exit( $msg, $nonotify = true, $cb = null, $icon = "toast.png" ) {
     if ( is_callable( $cb ) ) {
         $cb();
     }
@@ -149,7 +149,7 @@ function error_exit( $msg, $nonotify = true, $cb = null ) {
     $msgobj = (object) [
         "_disable_notify" => $nonotify
         ,"_message" => (object) [
-            "icon" => "toast.png"
+            "icon" => $icon
             ,"text" => $msg
         ]
         ];

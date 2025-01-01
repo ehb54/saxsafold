@@ -102,7 +102,7 @@ $restore_old_data = function() {
     $obj = (object)[];
 
     $obj->desc  = $cgstate->state->description;
-    $obj->pname = $request->_project;
+    $obj->pname = $input->_project;
 
     if ( isset( $cgstate->state->output_load ) ) {
         $obj = $cgstate->state->output_load;
