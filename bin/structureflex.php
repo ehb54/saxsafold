@@ -65,6 +65,10 @@ $restore_old_data = function() {
         }
     }
 
+    if ( isset( $cgstate->state->output_flex ) && isset( $cgstate->state->output_flex->struct ) ) {
+        $obj->struct = $cgstate->state->output_flex->struct;
+    }
+
     $obj->processing_progress = 0;
 
     $ga->tcpmessage( $obj );
@@ -95,7 +99,7 @@ if ( isset( $cgstate->state->mmcdownloaded ) ) {
 }
 
 $cgstate->state->mmcstride = 10;
-$output->struct = $cgstate->state->output_load->struct;
+$output->struct = unserialize( serialize( $cgstate->state->output_load->struct ) );
 $output->struct->script = "background white; color structure; ribbon only";
 if ( isset( $cgstate->state->flex ) && count( $cgstate->state->flex ) ) {
     $output->struct->script .= "; select ";

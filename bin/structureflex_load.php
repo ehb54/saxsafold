@@ -47,5 +47,9 @@ if ( isset( $cgstate->state->flex ) && count( $cgstate->state->flex ) ) {
     }
 }
 
+if ( isset( $cgstate->state->output_flex ) && isset( $cgstate->state->output_flex->struct ) ) {
+    $result->struct = $cgstate->state->output_flex->struct;
+}
+
 echo json_encode( $result );
 exit;
