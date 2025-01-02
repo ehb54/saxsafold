@@ -1268,7 +1268,7 @@ class SAS {
                  || $this->data->$fromname->x[0] > $this->data->$toname->x[0]
                  )
             ) {
-            ## from grid is longer, extend to grid permenantly by its spacing
+            ## from grid is longer, extend to grid permanently by its spacing
             if ( end( $this->data->$fromname->x ) > end( $this->data->$toname->x ) ) {
                 if ( !$this->regular_grid( $toname ) ) {
                     $this->last_error = "SAS::interpolate() to curve '$toname' has a shorter grid than '$fromname', but doesn't have equal spacing";

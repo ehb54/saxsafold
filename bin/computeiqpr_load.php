@@ -137,7 +137,6 @@ if ( isset( $cgstate->state->output_iqpr ) ) {
     }
 }                      
 
-## unset() below can be removed, but keeping for legacy run testing
 unset( $result->iq_p_plotall );
 unset( $result->iq_c3_plotall );
 unset( $result->iqplotall );
