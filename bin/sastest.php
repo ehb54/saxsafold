@@ -1102,6 +1102,30 @@ class SAS {
         return false;
     }
 
+    # copy data 
+    function copy_data( $fromname, $toname, $deep = false ) {
+        $this->debug_msg( "SAS::copy_data( '$fromname', '$toname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::copy_data() name $fromname is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data_name_exists( $toname ) ) {
+            $this->last_error = "SAS::copy_data() name $toname already exists\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $deep ) {
+            $this->data->$toname = unserialize( serialize( $this->data->$fromname ) );
+        } else {
+            $this->data->$toname = $this->data->$fromname;
+        }
+
+        return true;
+    }
+
     # rename data 
     function rename_data( $fromname, $toname ) {
         $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );
@@ -2225,9 +2249,51 @@ class SAS {
         return $ai > $bi;
     }
 
+    # sum_data - sums data if grids are compatible
+
+    function sum_data( $names, $combinedname ) {
+        $this->debug_msg( "SAS::sum_data( names[], '$combinedname' )" );
+        $this->last_error = "";
+
+        if ( strlen( $combinedname ) && $this->data_name_exists( $combinedname ) ) {
+            $this->last_error = "SAS::sum_data() data name '$combinedname' already exists";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        $names_count = count( $names );
+
+        if ( $names_count == 0 ) {
+            $this->last_error = "SAS::sum_data() empty names[]";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        if ( $names_count == 1 ) {
+            ## single curve, ok to copy
+            return $this->copy_data( $names[ 0 ], $combinedname, true );
+        }
+
+        if ( !$this->common_grids( $names ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->copy_data( $names[ 0 ], $combinedname, true ) ) {
+            return $this->error_exit( $this->last_error );
+        }            
+
+        $datasize = count( $this->data->$combinedname->y );
+
+        for ( $i = 1; $i < $names_count; ++$i ) {
+            for ( $j = 0; $j < $datasize; ++$j ) {
+                $this->data->$combinedname->y[ $j ] += $this->data->{ $names[ $i ] }->y[ $j ];
+            }
+        }
+
+        return true;
+    }
+
     # NNLS - 
     function nnls( $targetname, $names, $combinedname, &$results, $use_errors = true, $cutthreshhold = 0.0045, $normalize = true ) {
-        $this->debug_msg( "SAS::NNLS( '$targetname', names[], &\$results[] )" );
+        $this->debug_msg( "SAS::nnls( '$targetname', names[], &\$results[] )" );
         $this->last_error = "";
         global $run_cmd_last_error_code;
 
@@ -2879,3 +2945,76 @@ foreach ( $sas->data_names( '/(Exp| mod)/' ) as $v ) {
 }
 echo $sas->data_summary( $sas->data_names( '/(Exp| mod)/' ) );
 */
+
+## test new pr plot with results
+
+$outfile        = "plotout.json";
+$plotname       = "P(r)";
+$plotnamewaxsis = "P(r) waxsis reconstruct";
+
+$sas = new SAS( true );
+$cgstate = new cgrun_state();
+$sas->create_plot_from_plot( SAS::PLOT_PR, $plotname, $cgstate->state->output_load->prplot );
+$sas->create_plot_from_plot( SAS::PLOT_PR, $plotnamewaxsis, $cgstate->state->output_load->prplot );
+$sas->remove_plot_data( $plotnamewaxsis, "Comp." );
+$sas->remove_plot_data( $plotnamewaxsis, "Resid." );
+$sas->plot_options( $plotnamewaxsis,
+    [
+    "titlefontsize" => 16
+    ,"title" => "P(r)<br>Expt. + all computed (dry) on preselected models" 
+    ] );
+$sas->annotate_plot( $plotnamewaxsis, "" );
+
+echo $sas->data_summary( $sas->data_names() );
+$sas->debug_json( '$cgstate->state->iq_waxsis_nnlsresults', $cgstate->state->iq_waxsis_nnlsresults );
+$sas->debug_json( '$cgstate->state->waxsis_final_pdb_names', $cgstate->state->waxsis_final_pdb_names );
+
+$prfiles = array_values( (array)$cgstate->state->waxsis_final_pdb_names);
+$prnames = [];
+foreach ( $prfiles as $k => $v ) {
+    $prnames[ $k ] = "notnormed P(r) mod. " . model_no_from_pdb_name( $v );
+}
+
+$sas->compute_pr_many( $prfiles, $prnames );
+$sas->extend_pr( array_merge( $prnames, [ "Exp. P(r)" ] ) );
+
+$scalednames = [];
+
+foreach ( $prnames as $v ) {
+    $frame = frame_no_from_data_name( $v );
+#    if ( $frame == 0 ) {
+#        $frame = 'waxsis';
+#    }
+    $normedname = substr( $v, 10 );
+    $scaledname = "scaled $normedname";
+
+    $sas->norm_pr( $v, $cgstate->state->output_load->mw, $normedname );
+
+    if ( isset( $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" } ) ) {
+        $sas->add_plot( $plotnamewaxsis, $normedname );
+
+        $sas->norm_pr( $v, $cgstate->state->output_load->mw * $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" }, $scaledname );
+        $scalednames[] = $scaledname;
+    }
+    $sas->remove_data( $v );
+}
+
+## create sum (maybe a class function ?)
+
+$combinedname = "P(r) dry comb.";
+$residname = "P(r) dry comb. Resid.";
+$sas->sum_data( $scalednames, $combinedname );
+$sas->add_plot( $plotnamewaxsis, $combinedname );
+
+$rmsd = 1e99;
+$sas->rmsd_residuals( "Exp. P(r)", $combinedname, $residname, $rmsd );
+$sas->add_plot_residuals( $plotnamewaxsis, $residname );
+$rmsd = sprintf( "%.2f", $rmsd );
+$sas->annotate_plot( $plotnamewaxsis, "RMSD $rmsd" );
+
+
+## TODO MATCH COLORS
+
+echo $sas->data_summary( $sas->data_names() );
+file_put_contents( $outfile, "\n" .  json_encode( $sas->plot( $plotnamewaxsis ) ) . "\n\n" );
+

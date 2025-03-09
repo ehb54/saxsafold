@@ -538,14 +538,23 @@ $pdbout     = "";
 
 # $ga->tcpmessage( [ "_textarea" => "nnlsresults :\n" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
 
+$pdbnames = (object)[];
+
 foreach ( $iqresults as $name => $conc ) {
     $tmpname = explode( ' ', $name );
     $frame = end( $tmpname );
+
+    ## for testing
+    $pdbname = "${bname}-somo.pdb";
+    $pdbnames->waxsis = $pdbname;
+    ## end for testing  
+
     if ( $name == $waxsis_data_name ) {
         $pdbname = "${bname}-somo.pdb";
         if ( !file_exists( "$pdbname" ) ) {
             error_exit( "expected file '$pdbname' not found" );
         }
+        $pdbnames->waxsis = $pdbname;
 
         $pdbout .= "MODEL $waxsis_model_number\n"
             . run_cmd( "grep -P '^(ATOM|HETATM)' $pdbname" )
@@ -558,6 +567,7 @@ foreach ( $iqresults as $name => $conc ) {
         if ( !file_exists( "$procdir/$pdbname" ) ) {
             error_exit( "expected file '$procdir/$pdbname' not found" );
         }
+        $pdbnames->$frame = "$procdir/$pdbname";
 
         $pdbout .= "MODEL $frame\n"
             . run_cmd( "grep -P '^(ATOM|HETATM)' $procdir/$pdbname" )
@@ -571,6 +581,9 @@ $pdbout .= "END\n";
 if ( !file_put_contents( $pdboutname, $pdbout ) ) {
     error_exit( "error creating '$pdboutname'" );
 }    
+
+$ga->tcpmessage( [ "_textarea" => "pdbnames[]:\n" . json_encode( $pdbnames, JSON_PRETTY_PRINT ) . "\n" ] );
+$cgstate->state->waxsis_final_pdb_names = $pdbnames;
 
 $output->downloads = $cgstate->state->output_load->downloads;
 $output->csvdownloads =

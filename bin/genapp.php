@@ -104,6 +104,7 @@ class GenApp {
             return $result;
         }
         socket_close( $socket );
+        usleep( 0.5 * 1000 ); ## 500 ms
         return "ok";
     }
 
