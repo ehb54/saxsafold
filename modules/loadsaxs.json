@@ -193,16 +193,16 @@
                 "parent" : "inputpanel"
             }
         }
-#        ,{
-#            "role"       : "input"
-#            ,"id"        : "saxsiq_in_nm"
-#            ,"label"     : "I(q) data is in <strong>nm<sup>-1</sup></strong> units"
-#            ,"type"      : "checkbox"
-#            ,"help"      : "Check if your data is in <strong>nm<sup>-1</sup></strong> units"
-#            ,"layout" : {
-#                "parent" : "inputpanel"
-#            }
-#        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "saxsiq_in_nm"
+            ,"label"     : "Turn on if I(q) data is in <strong>nm<sup>-1</sup></strong> units"
+            ,"type"      : "checkbox"
+            ,"help"      : "Turn on if your data are in <strong>nm<sup>-1</sup></strong> units"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
         ,{
             "role"       : "input"
             ,"id"        : "saxsprfile"
@@ -214,16 +214,16 @@
                 "parent" : "inputpanel"
             }
         }
-#        ,{
-#            "role"       : "input"
-#            ,"id"        : "saxspr_in_nm"
-#            ,"label"     : "P(r) data is in <strong>nm</strong> units"
-#            ,"type"      : "checkbox"
-#            ,"help"      : "Check if your P(r) data is in <strong>nm</strong> units"
-#            ,"layout" : {
-#                "parent" : "inputpanel"
-#            }
-#        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "saxspr_in_nm"
+            ,"label"     : "Turn on if P(r) data is in <strong>nm</strong> units"
+            ,"type"      : "checkbox"
+            ,"help"      : "Turn on if your P(r) data are in <strong>nm</strong> units"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
         ,{
             "role"              : "output"
             ,"label"             : ""
