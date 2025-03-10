@@ -13,6 +13,14 @@ class GenApp {
         $this->cache_obj = (object) [];
     }
 
+    function tcptextarea( $message ) {
+        return $this->tcpmessage( [ '_textarea' => $message ] );
+    }
+
+    function tcpdebugjson( $message, $obj ) {
+        return $this->tcptextarea( "$message:\n" . json_encode( $obj, JSON_PRETTY_PRINT ) . "\n" );
+    }
+
     function tcpmessagebox( $message ) {
         $result = (object)[];
         $msg    = (object)[];
@@ -104,7 +112,7 @@ class GenApp {
             return $result;
         }
         socket_close( $socket );
-        usleep( 0.5 * 1000 ); ## 500 ms
+        usleep( 15 * 1000 ); ## 15 ms
         return "ok";
     }
 
