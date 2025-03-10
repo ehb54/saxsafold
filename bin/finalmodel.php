@@ -585,7 +585,7 @@ if ( !file_put_contents( $pdboutname, $pdbout ) ) {
     error_exit( "error creating '$pdboutname'" );
 }    
 
-$ga->tcpmessage( [ "_textarea" => "pdbnames[]:\n" . json_encode( $pdbnames, JSON_PRETTY_PRINT ) . "\n" ] );
+## $ga->tcpmessage( [ "_textarea" => "pdbnames[]:\n" . json_encode( $pdbnames, JSON_PRETTY_PRINT ) . "\n" ] );
 $cgstate->state->waxsis_final_pdb_names = $pdbnames;
 
 $output->downloads = $cgstate->state->output_load->downloads;
