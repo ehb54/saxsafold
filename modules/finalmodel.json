@@ -280,7 +280,8 @@
             "role"              : "output"
             ,"label"             : ""
             ,"type"              : "plotly"
-            ,"id"                : "histplotfinal"
+            ,"id"                : "pr_recon"
+            ,"labelmargintop"    : "0.5rem"
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 1, 1 ]
@@ -299,10 +300,21 @@
         ,{
             "role"              : "output"
             ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "histplotfinal"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
             ,"type"              : "html"
             ,"id"                : "csvdownloads"
             ,"layout"           : {
                 "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
             }
         }
         ,{

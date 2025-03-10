@@ -43,7 +43,7 @@ $cgstate = new cgrun_state();
 ## make sure project is loaded
 
 if ( !isset( $cgstate->state->loaded ) ) {
-   error_exit( "You must first <i>Define project</i> for this project $input->_project" );
+    error_exit( "You must first <i>Define project</i> for this project $input->_project" );
 }
 
 if ( !isset( $cgstate->state->saxsiqfile ) || !isset( $cgstate->state->saxsprfile ) ) {
@@ -121,6 +121,9 @@ $restore_old_data = function() {
         }
         if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
             $obj->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
+        }
+        if ( isset( $cgstate->state->output_final->pr_recon ) ) {
+            $obj->pr_recon = &$cgstate->state->output_final->pr_recon;
         }
         if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
             $obj->csvdownloads = &$cgstate->state->output_final->csvdownloads;
@@ -507,7 +510,7 @@ $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
 ### save results to state
 
-$cgstate->state->iq_waxsis_nnlsresults = $iqresults;
+$cgstate->state->iq_waxsis_nnlsresults = json_decode( json_encode( $iqresults ) );
 
 ## setup csvdownloads
 
@@ -530,7 +533,7 @@ $sas->save_data_csv_tr(
     ,'/I\(q\) /'
     ,"$bname "
     );
-   
+
 ## setup pdb
 
 $pdboutname = "waxsisfinalset.pdb";
@@ -588,6 +591,7 @@ $cgstate->state->waxsis_final_pdb_names = $pdbnames;
 $output->downloads = $cgstate->state->output_load->downloads;
 $output->csvdownloads =
     "<div>"
+    . "&nbsp;&nbsp;&nbsp;"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
@@ -660,6 +664,76 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
 
 final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames );
 $cgstate->state->final_adjacent_frames = $input->adjacent_frames;
+
+## pr reconstruct
+#    };
+
+$plotnameorg       = "P(r) orig.";
+$plotnamewaxsis    = "P(r) waxsis reconstruct";
+$pr_recon_id       = "pr_recon";
+
+$sas->create_plot_from_plot( SAS::PLOT_PR, $plotnameorg, $cgstate->state->output_load->prplot );
+$sas->create_plot_from_plot( SAS::PLOT_PR, $plotnamewaxsis, $cgstate->state->output_load->prplot );
+$sas->plot_options( $plotnamewaxsis,
+    [
+    "titlefontsize" => 14
+    ,"title" => "P(r) Expt. vs starting and<br>reconstructed from final models selected"
+    ] );
+
+# $ga->tcptextarea( $sas->data_summary( $sas->data_names() ) );
+# $ga->tcpdebugjson( '$cgstate->state->iq_waxsis_nnlsresults', $cgstate->state->iq_waxsis_nnlsresults );
+# $ga->tcpdebugjson( '$cgstate->state->waxsis_final_pdb_names', $cgstate->state->waxsis_final_pdb_names );
+
+$prfiles = array_values( (array)$cgstate->state->waxsis_final_pdb_names);
+$prnames = [];
+foreach ( $prfiles as $k => $v ) {
+    $prnames[ $k ] = "notnormed P(r) mod. " . model_no_from_pdb_name( $v );
+}
+
+# $ga->tcpdebugjson( '$prnames', $prnames );
+
+$sas->compute_pr_many( $prfiles, $prnames );
+$sas->extend_pr( array_merge( $prnames, [ "Exp. P(r)" ] ) );
+
+$scalednames = [];
+$normednames = [];
+$messages    = '';
+
+foreach ( $prnames as $v ) {
+    $frame = frame_no_from_data_name( $v );
+    $normedname = substr( $v, 10 );
+    $scaledname = "scaled $normedname";
+    $normednames[] = $normedname;
+
+    $sas->norm_pr( $v, $cgstate->state->output_load->mw, $normedname );
+
+    if ( isset( $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" } ) ) {
+        $sas->norm_pr( $v, $cgstate->state->output_load->mw * $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" }, $scaledname );
+        $scalednames[] = $scaledname;
+    }
+    $sas->remove_data( $v );
+}
+
+# $ga->tcpdebugjson( '$scalednames', $scalednames );
+# $ga->tcptextarea( $messages );
+
+$combinedname = "Recon.";
+$residname = "Recon. Resid.";
+$sas->sum_data( $scalednames, $combinedname );
+$sas->add_plot( $plotnamewaxsis, $combinedname );
+$sas->remove_data( $scalednames );
+$sas->remove_data( $normednames );
+
+$rmsd = 1e99;
+$sas->rmsd_residuals( "Exp. P(r)", $combinedname, $residname, $rmsd );
+$sas->add_plot_residuals( $plotnamewaxsis, $residname );
+$rmsd = sprintf( "%.2f", $rmsd );
+$sas->annotate_plot( $plotnamewaxsis, "Recon. RMSD $rmsd", true );
+$sas->plot_trace_options( $plotnamewaxsis, "Resid.", [ 'linecolor_number' => 1 ] );
+$sas->plot_trace_options( $plotnamewaxsis, $combinedname, [ 'linecolor_number' => 2 ] );
+$sas->plot_trace_options( $plotnamewaxsis, $residname, [ 'linecolor_number' => 2 ] );
+
+$output->$pr_recon_id = $sas->plot( $plotnamewaxsis );
 
 ## save state
 
