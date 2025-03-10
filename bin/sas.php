@@ -723,7 +723,7 @@ class SAS {
     }
 
     # adds an annotation to a plot
-    function annotate_plot( $plotname, $msg ) {
+    function annotate_plot( $plotname, $msg, $append = false ) {
         $this->debug_msg( "SAS::annotate_plot( '$plotname', '$msg' )" );
         $this->last_error = "";
 
@@ -732,7 +732,11 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        $this->plots->$plotname->layout->annotations[0]->text = $msg;
+        if ( $append && isset( $this->plots->$plotname->layout->annotations[0]->text ) ) {
+            $this->plots->$plotname->layout->annotations[0]->text .= $msg;
+        } else {
+            $this->plots->$plotname->layout->annotations[0]->text = $msg;
+        }            
 
         return true;
     }
@@ -1102,6 +1106,30 @@ class SAS {
         return false;
     }
 
+    # copy data 
+    function copy_data( $fromname, $toname, $deep = false ) {
+        $this->debug_msg( "SAS::copy_data( '$fromname', '$toname' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $fromname ) ) {
+            $this->last_error = "SAS::copy_data() name $fromname is not a data name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $this->data_name_exists( $toname ) ) {
+            $this->last_error = "SAS::copy_data() name $toname already exists\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        if ( $deep ) {
+            $this->data->$toname = unserialize( serialize( $this->data->$fromname ) );
+        } else {
+            $this->data->$toname = $this->data->$fromname;
+        }
+
+        return true;
+    }
+
     # rename data 
     function rename_data( $fromname, $toname ) {
         $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );
@@ -1123,17 +1151,23 @@ class SAS {
         return true;
     }
 
-    # remove data
-    function remove_data( $name ) {
-        $this->debug_msg( "SAS::remove_data( '$name' )" );
+    # remove data - string or array
+    function remove_data( $names ) {
+        $this->debug_msg( "SAS::remove_data( names[] )" );
         $this->last_error = "";
 
-        if ( !$this->data_name_exists( $name ) ) {
-            $this->last_error = "SAS::remove_data() name $name is not a data name\n";
-            return $this->error_exit( $this->last_error );
+        if ( !is_array( $names ) ) {
+            $names = [ $names ];
         }
-        
-        unset( $this->data->$name );
+
+        foreach ( $names as $name ) {
+            if ( !$this->data_name_exists( $name ) ) {
+                $this->last_error = "SAS::remove_data() name $name is not a data name\n";
+                return $this->error_exit( $this->last_error );
+            }
+            unset( $this->data->$name );
+        }
+
         return true;
     }
 
@@ -2225,9 +2259,51 @@ class SAS {
         return $ai > $bi;
     }
 
+    # sum_data - sums data if grids are compatible
+
+    function sum_data( $names, $combinedname ) {
+        $this->debug_msg( "SAS::sum_data( names[], '$combinedname' )" );
+        $this->last_error = "";
+
+        if ( strlen( $combinedname ) && $this->data_name_exists( $combinedname ) ) {
+            $this->last_error = "SAS::sum_data() data name '$combinedname' already exists";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        $names_count = count( $names );
+
+        if ( $names_count == 0 ) {
+            $this->last_error = "SAS::sum_data() empty names[]";
+            return $this->error_exit( $this->last_error );
+        }            
+
+        if ( $names_count == 1 ) {
+            ## single curve, ok to copy
+            return $this->copy_data( $names[ 0 ], $combinedname, true );
+        }
+
+        if ( !$this->common_grids( $names ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->copy_data( $names[ 0 ], $combinedname, true ) ) {
+            return $this->error_exit( $this->last_error );
+        }            
+
+        $datasize = count( $this->data->$combinedname->y );
+
+        for ( $i = 1; $i < $names_count; ++$i ) {
+            for ( $j = 0; $j < $datasize; ++$j ) {
+                $this->data->$combinedname->y[ $j ] += $this->data->{ $names[ $i ] }->y[ $j ];
+            }
+        }
+
+        return true;
+    }
+
     # NNLS - 
     function nnls( $targetname, $names, $combinedname, &$results, $use_errors = true, $cutthreshhold = 0.0045, $normalize = true ) {
-        $this->debug_msg( "SAS::NNLS( '$targetname', names[], &\$results[] )" );
+        $this->debug_msg( "SAS::nnls( '$targetname', names[], &\$results[] )" );
         $this->last_error = "";
         global $run_cmd_last_error_code;
 

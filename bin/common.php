@@ -254,6 +254,12 @@ function model_no_from_pdb_name( $pdb ) {
     return intval( $model );
 }
 
+function frame_no_from_data_name( $name ) {
+    $tmpname = explode( ' ', $name );
+    $frame = end( $tmpname );
+    return intval( $frame );
+}
+
 function padded_model_no_from_pdb_name( $pdb ) {
     global $max_frame_digits;
     $frame = model_no_from_pdb_name( $pdb );
