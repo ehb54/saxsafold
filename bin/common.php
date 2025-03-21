@@ -280,6 +280,19 @@ function clean_up_filename_and_copy_if_needed( $filename ) {
     return $filename_fixed_up;
 }
 
+function confidence_legend() {
+    return
+        "<small>"
+        . "Confidence level (<a target=_blank href=https://www.ebi.ac.uk/training/online/courses/alphafold/inputs-and-outputs/evaluating-alphafolds-predicted-structures-using-confidence-scores/plddt-understanding-local-confidence>pLDDT</a>) coloring:"
+        . " <span style='color:#024eca'>&#x2588;</span> Very high (pLDDT > 90)  "
+        . "&nbsp;&nbsp;&nbsp; <span style='color:#60c2e8'>&#x2588;</span> High (90 > pLDDT > 70)  "
+        . "&nbsp;&nbsp;&nbsp; <span style='color:#f7d414'>&#x2588;</span> Low (70 > pLDDT > 50)  "
+        . "&nbsp;&nbsp;&nbsp; <span style='color:#f27843'>&#x2588;</span> Very Low (pLDDT < 50)  "
+        . "<br> <br>"
+        . "</small>"
+        ;
+}
+
 ## tests
 
 /*

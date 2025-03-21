@@ -34,10 +34,16 @@ if ( !isset( $cgstate->state->saxsiqfile ) || !isset( $cgstate->state->saxsprfil
 
 if ( isset( $cgstate->state->output_load ) ) {
     $result = $cgstate->state->output_load;
+    if ( isset( $cgstate->state->is_alphafold ) && $cgstate->state->is_alphafold ) {
+        $result->confidencelegend = confidence_legend();
+    } else {
+        $result->confidencelegend = "";
+    }
 }
 
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
+
 
 echo json_encode( $result );
 exit;

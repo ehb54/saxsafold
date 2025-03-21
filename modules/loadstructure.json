@@ -520,6 +520,15 @@
             }
         }
         ,{
+            "label"              : "",
+            "role"               : "output",
+            "id"                 : "confidencelegend",
+            "type"               : "html"
+            ,"layout" : {
+                "parent" : "structure"
+            }
+        }
+        ,{
             "role"               : "output"
             ,"label"             : ""
             ,"type"              : "plotly"

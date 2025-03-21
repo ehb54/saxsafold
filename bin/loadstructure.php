@@ -532,6 +532,7 @@ if ( file_exists( sprintf( "ultrascan/results/%s-tfc-somo.pdb", $base_name ) ) )
         "file" => sprintf( "results/users/$logon/$base_dir/ultrascan/results/%s-tfc-somo.pdb", $base_name )
         ,"script" => "ribbon only; color temperature"
         ];
+    $output->confidencelegend = confidence_legend();
 } else {
     $output->struct = [
         "file" => sprintf( "results/users/$logon/$base_dir/ultrascan/results/%s-somo.pdb", $base_name )
