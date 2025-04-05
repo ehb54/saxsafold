@@ -37,6 +37,19 @@ $scriptdir = dirname(__FILE__);
 require "common.php";
 $cgstate = new cgrun_state();
 
+## setup elastic manager for 
+
+require_once "em.php";
+
+$em = new em();
+function em_shutdown() {
+    global $em;
+    if ( isset( $em ) ) {
+        $em->release_if_has_instance();
+    }
+}
+register_shutdown_function( 'em_shutdown' );
+
 ## does the project already exist ?
 
 
@@ -279,7 +292,17 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
 
-## run waxsis calcs
+## get instance to run waxsis
+
+if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
+    error_exit( $em->errors );
+}
+
+$em_ip = $em->ip();
+$em_id = $em->id();
+
+$ga->tcpmessage( [ $textarea_key => "got instance $em_id, $em_ip\n" ] );
+
 
 $waxsis_params = 
     (object)[
@@ -289,6 +312,7 @@ $waxsis_params =
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => $cgstate->state->solvent_e_density
         ,'subdir'             => 'waxsisfinal'
+        ,'host'               => $em_ip
     ];
 
 
@@ -440,6 +464,9 @@ foreach ( $names as $name ) {
 
     ++$pos;
 }
+
+## waxsis done, release elastic resources
+$em->release();
 
 ## nnls
 

@@ -614,20 +614,7 @@ if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
 $em_ip = $em->ip();
 $em_id = $em->id();
 
-$ga->tcpmessage( [ $textarea_key => "got instance $em_id, $em_ip\ninput from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
-
-## simple ssh test?
-
-# $cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $em_ip touch $input->_base_directory/xyz 2>&1";
-
-# $ga->tcpmessage( [ $textarea_key => "command results: " . `$cmd` . "\n" ] );
-
-# $cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $em_ip ls -l $input->_base_directory 2>&1";
-
-# $ga->tcpmessage( [ $textarea_key => "command results: " . `$cmd` . "\n" ] );
-
-# $ga->tcpmessage( [ $textarea_key =>"JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
-# error_exit( "testing" );
+$ga->tcpmessage( [ $textarea_key => "got instance $em_id, $em_ip\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
 
 ## WAXSiS run
 
