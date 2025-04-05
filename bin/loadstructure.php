@@ -52,9 +52,24 @@ $scriptdir = dirname(__FILE__);
 ## get state
 
 include_once "common.php";
-require "waxsis.php";
 
 $cgstate = new cgrun_state();
+
+## setup elastic manager for 
+
+require_once "em.php";
+
+$em = new em();
+function em_shutdown() {
+    global $em;
+    if ( isset( $em ) ) {
+        $em->release_if_has_instance();
+    }
+}
+register_shutdown_function( 'em_shutdown' );
+
+## set waxsis
+require_once "waxsis.php";
 
 ## make sure project is loaded
 
@@ -590,6 +605,30 @@ $output->prplot = $sas->plot( "P(r)" );
 $ga->tcpmessage( $output );
 progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
 
+## get instance to run waxsis
+
+if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
+    error_exit( $em->errors );
+}
+
+$em_ip = $em->ip();
+$em_id = $em->id();
+
+$ga->tcpmessage( [ $textarea_key => "got instance $em_id, $em_ip\ninput from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
+
+## simple ssh test?
+
+# $cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $em_ip touch $input->_base_directory/xyz 2>&1";
+
+# $ga->tcpmessage( [ $textarea_key => "command results: " . `$cmd` . "\n" ] );
+
+# $cmd = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $em_ip ls -l $input->_base_directory 2>&1";
+
+# $ga->tcpmessage( [ $textarea_key => "command results: " . `$cmd` . "\n" ] );
+
+# $ga->tcpmessage( [ $textarea_key =>"JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
+# error_exit( "testing" );
+
 ## WAXSiS run
 
 $ga->tcpmessage( [
@@ -621,6 +660,7 @@ $waxsis_params =
         ,'convergence'        => $waxsis_convergence_mode
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => (float) $input->solvent_e_density
+        ,'host'               => $em_ip
     ];
 
 $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
@@ -639,6 +679,9 @@ if ( 1 ) {
     $time_end   = dt_now();
     $cgstate->state->waxsis_last_run_time_minutes = dt_duration_minutes( $time_start, $time_end );
 }
+
+## waxsis done, release elastic resources
+$em->release();
 
 progress_text( 'Assembling final results ...' );
 

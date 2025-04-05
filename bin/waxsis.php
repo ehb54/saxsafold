@@ -13,11 +13,12 @@ $waxsis_defaults =
         'maxq'               => 0.5
         ,'qpoints'           => 501
         ,'solvent_e_density' => .334
-        ,'hostpath'          => '/genappdata/container_mounts/saxsafold'
+        ,'hostpath'          => '/genappdata/container_mounts/saxsafold-dev'
         ,'threads'           => $waxsis_threads
         ,'subdir'            => 'waxsis'
         ,'convergence'       => $waxsis_convergence_mode
         ,'random_seed'       => 'no'
+        ,'host'              => 'host'
     ];
 
 function waxsis_fitted_data_initval ( $data ) {
@@ -100,7 +101,7 @@ function run_waxsis( $pdb, $config, $cb_on_write, $exit_waxsis_error = true ) {
     
     $cwd = preg_replace( '/^\/host/', $config->hostpath , getcwd() );
 
-    $cmd = "ssh host docker run"
+    $cmd = "ssh $config->host docker run"
         ## n.b. the --user is looked up in the docker image's /etc/{passwd,group}!
         . " --user www-data:www-data"
         . " -i --rm"
