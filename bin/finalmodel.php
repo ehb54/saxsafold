@@ -301,7 +301,9 @@ if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
 $em_ip = $em->ip();
 $em_id = $em->id();
 
-$ga->tcpmessage( [ $textarea_key => "Acquired resources ($em_id, $em_ip)\n" ] );
+$textarea_key = "_textarea";
+
+$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 $waxsis_params = 
     (object)[
@@ -345,7 +347,6 @@ $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cg
 $tot_waxsis_time = 0;
 
 $waxsis_lc = 0;
-$textarea_key = "_textarea";
 $waxsis_cb = function( $line ) {
     global $ga;
     global $textarea_key;
