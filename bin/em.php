@@ -8,7 +8,7 @@ class em {
     public $errors;
 
     private $dockerprefix = "ssh host docker exec -w /home/jobrunner/openstack/elasticmanager elasticmanager php em_client.php";
-    private $flavor       = "m3.large";
+    private $flavor       = "m3.2xl";
 
     private $has_instance = false;
     private $instance_id;

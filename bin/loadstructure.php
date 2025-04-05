@@ -603,7 +603,7 @@ if ( strlen( $annotate_msg ) ) {
 $output->prplot = $sas->plot( "P(r)" );
 
 $ga->tcpmessage( $output );
-progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
+progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
 
 ## get instance to run waxsis
 
@@ -611,10 +611,12 @@ if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
     error_exit( $em->errors );
 }
 
+progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
+
 $em_ip = $em->ip();
 $em_id = $em->id();
 
-$ga->tcpmessage( [ $textarea_key => "got instance $em_id, $em_ip\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n" ] );
+$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 ## WAXSiS run
 
