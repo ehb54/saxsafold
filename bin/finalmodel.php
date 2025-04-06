@@ -281,6 +281,8 @@ if ( !$do_testing ) {
 
 ## link existing frames
 
+progress_text( "Extracting additonal frames if needed" );
+
 $ga->tcpmessage( [ 'processing_progress' => 0.01 ] );
 
 $names = [];
@@ -294,7 +296,7 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 ## get instance to run waxsis
 progress_text( 'Waiting for resources to run WAXSiS calculations.' );
 
-if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
+if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
     error_exit( $em->errors );
 }
 
@@ -304,6 +306,8 @@ $em_id = $em->id();
 $textarea_key = "_textarea";
 
 $ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
+
+## run waxsis calcs
 
 $waxsis_params = 
     (object)[

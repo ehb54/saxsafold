@@ -607,7 +607,7 @@ progress_text( 'Structural computations complete (see results below). Waiting fo
 
 ## get instance to run waxsis
 
-if ( !$em->acquire( gethostname() . ":$input->_user:$input->_uuid" ) ) {
+if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
     error_exit( $em->errors );
 }
 
