@@ -37,6 +37,19 @@ $scriptdir = dirname(__FILE__);
 require "common.php";
 $cgstate = new cgrun_state();
 
+## setup elastic manager for 
+
+require_once "em.php";
+
+$em = new em();
+function em_shutdown() {
+    global $em;
+    if ( isset( $em ) ) {
+        $em->release_if_has_instance();
+    }
+}
+register_shutdown_function( 'em_shutdown' );
+
 ## does the project already exist ?
 
 
@@ -269,6 +282,7 @@ if ( !$do_testing ) {
 ## link existing frames
 
 progress_text( "Extracting additonal frames if needed" );
+
 $ga->tcpmessage( [ 'processing_progress' => 0.01 ] );
 
 $names = [];
@@ -278,6 +292,20 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 }
 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
+
+## get instance to run waxsis
+progress_text( 'Waiting for resources to run WAXSiS calculations.' );
+
+if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
+    error_exit( $em->errors );
+}
+
+$em_ip = $em->ip();
+$em_id = $em->id();
+
+$textarea_key = "_textarea";
+
+$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 ## run waxsis calcs
 
@@ -289,6 +317,7 @@ $waxsis_params =
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => $cgstate->state->solvent_e_density
         ,'subdir'             => 'waxsisfinal'
+        ,'host'               => $em_ip
     ];
 
 
@@ -322,7 +351,6 @@ $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cg
 $tot_waxsis_time = 0;
 
 $waxsis_lc = 0;
-$textarea_key = "_textarea";
 $waxsis_cb = function( $line ) {
     global $ga;
     global $textarea_key;
@@ -440,6 +468,9 @@ foreach ( $names as $name ) {
 
     ++$pos;
 }
+
+## waxsis done, release elastic resources
+$em->release();
 
 ## nnls
 

@@ -52,9 +52,24 @@ $scriptdir = dirname(__FILE__);
 ## get state
 
 include_once "common.php";
-require "waxsis.php";
 
 $cgstate = new cgrun_state();
+
+## setup elastic manager for 
+
+require_once "em.php";
+
+$em = new em();
+function em_shutdown() {
+    global $em;
+    if ( isset( $em ) ) {
+        $em->release_if_has_instance();
+    }
+}
+register_shutdown_function( 'em_shutdown' );
+
+## set waxsis
+require_once "waxsis.php";
 
 ## make sure project is loaded
 
@@ -588,7 +603,20 @@ if ( strlen( $annotate_msg ) ) {
 $output->prplot = $sas->plot( "P(r)" );
 
 $ga->tcpmessage( $output );
+progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
+
+## get instance to run waxsis
+
+if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
+    error_exit( $em->errors );
+}
+
 progress_text( 'Structural computations complete (see results below). Running WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
+
+$em_ip = $em->ip();
+$em_id = $em->id();
+
+$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 ## WAXSiS run
 
@@ -621,6 +649,7 @@ $waxsis_params =
         ,'convergence'        => $waxsis_convergence_mode
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => (float) $input->solvent_e_density
+        ,'host'               => $em_ip
     ];
 
 $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
@@ -639,6 +668,9 @@ if ( 1 ) {
     $time_end   = dt_now();
     $cgstate->state->waxsis_last_run_time_minutes = dt_duration_minutes( $time_start, $time_end );
 }
+
+## waxsis done, release elastic resources
+$em->release();
 
 progress_text( 'Assembling final results ...' );
 
