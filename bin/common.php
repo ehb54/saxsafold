@@ -158,9 +158,10 @@ function error_exit( $msg, $nonotify = true, $cb = null, $icon = "toast.png" ) {
 #    echo '{"_message":{"icon":"toast.png","text":"' . $msg . '"}}';
     exit;
 }
-function error_exit_admin( $msg ) {
+
+function error_exit_admin( $msg, $cb = null ) {
     global $msg_admin;
-    error_exit( "$msg$msg_admin" );
+    error_exit( "$msg$msg_admin", true, $cb );
 }
 
 function tf_str( $flag ) {

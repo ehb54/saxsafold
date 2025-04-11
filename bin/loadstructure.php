@@ -130,6 +130,13 @@ $restore_old_data = function() {
 
 question_prior_results( __FILE__, $restore_old_data );
 
+$reset_progress_text_on_error = function() {
+    global $ga;
+    progress_text( 'Processing complete with errors' );
+    $obj = (object)[];
+    $obj->processing_progress = 0;
+    $ga->tcpmessage( $obj );
+};
 
 ## process inputs here to produce output
 
@@ -141,7 +148,7 @@ if ( !isset( $input->searchkey )
     ## pdb/cif loaded
     if ( !isset( $input->pdbfile[0] ) ) {
         $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
-        error_exit_admin( "Internal error: No input PDB nor mmCIF file provided" );
+        error_exit_admin( "Internal error: No input PDB nor mmCIF file provided", $reset_progress_text_on_error );
     }
     $input->pdbfile[0] =  clean_up_filename_and_copy_if_needed( $input->pdbfile[0] );
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
@@ -232,7 +239,7 @@ if ( !isset( $input->searchkey )
         $thisf = "AF-${searchkey}-$v";
         if ( !file_exists( $thisf  ) ) {
             $ga->tcpmessage( [ 'processing_progress' => $progress * 0.3 ] );
-            error_exit_admin( "Error downloading $thisf from Google cloud, perhaps try again later" );
+            error_exit_admin( "Error downloading $thisf from Google cloud, perhaps try again later", $reset_progress_text_on_error );
         }
     }
 
@@ -475,9 +482,12 @@ if ( isset( $errorlines ) && !empty( $errorlines ) ) {
                          $textarea_key => "\n\n==========================\nERRORS encountered\n==========================\n$errorlines\n"
                      ] );
 
-    error_exit_admin( $errorlines );
+    if ( preg_match( '/ERRORS PRESENT/', $errorlines ) ) {
+        $errorlines .= "<br>Please check the progress window for details<br>Perhaps you have unknown residues, atoms or missing residues or atoms";
+        error_exit( $errorlines, true, $reset_progress_text_on_error );
+    }
+    error_exit_admin( $errorlines, $reset_progress_text_on_error );
 }
-
 
 ## assemble final output
 
@@ -602,6 +612,14 @@ if ( strlen( $annotate_msg ) ) {
 
 $output->prplot = $sas->plot( "P(r)" );
 
+## more than one chain ?
+$cmd = "$scriptdir/calcs/pdbchaincount.pl $output->name";
+$chaincount = trim( run_cmd( $cmd ) );
+
+if ( $chaincount != "1" ) {
+    error_exit( "The supplied structure does not have exactly one chain ($chaincount)<br>For multichain structures, we suggest using <a target=_blank href=https://sassie-web.chem.utk.edu/sassie2>SASSIE-web</a><br>which can handle a greater variety of structures", true, $reset_progress_text_on_error );
+}
+
 $ga->tcpmessage( $output );
 progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
 
@@ -688,7 +706,7 @@ progress_text( 'Assembling final results ...' );
 $waxsisfile = "waxsis/intensity_waxsis.calc";
 
 if ( !file_exists( $waxsisfile ) ) {
-    error_exit( "WAXSiS output file '$waxsisfile' does not exist" );
+    error_exit( "WAXSiS output file '$waxsisfile' does not exist", true, $reset_progress_text_on_error );
 }
 
 $chi2  = -1;

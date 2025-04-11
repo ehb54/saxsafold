@@ -262,7 +262,11 @@ print $fh
     . "saveparams results.viscosity_sd\n"
     . "saveparams results.asa_rg_pos\n"
     . "saveparams max_ext_x\n"
+    . "batch set residue stop\n"
+    . "batch set atom stop\n"
     . "batch selectall\n"
+    . "batch set residue info\n"
+    . "batch set atom info\n"
     . "batch load\n"
     . "batch saveparams\n"
     . "somo overwrite\n"
@@ -322,6 +326,7 @@ open $ch, "$cmd 2>&1 |";
 
 $processlog = "";
 
+$errors_in_pdb_reported = 0;
 while ( my $l = <$ch> ) {
     # print "read line:\n$l\n";
     if ( $l =~ /^~pgrs/ ) {
@@ -332,10 +337,14 @@ while ( my $l = <$ch> ) {
         my ( $tag ) = $l =~ /^~texts (.*) :/;
         my $lastblank = 0;
         while ( my $l = <$ch> ) {
+            if ( $l =~ /ERRORS PRESENT/ && !$errors_in_pdb_reported ) {
+                $errors .= $l;
+                $errors_in_pdb_reported++;
+            }
             if ( $l =~ /^~texte/ ) {
                 last;
             }
-            next if $l =~ /(^All options set to default values| created\.$|^Bead models have overlap, dimensionless|^Created)/;
+            next if $l =~ /(^All options set to default values| created\.$|^Bead models have overlap, dimensionless|hybrid name missing|^PDB Options|^Created)/;
             my $thisblank = $l =~ /^\s*$/;
             next if $thisblank && $lastblank;
             $tagcounts{$tag}++;
@@ -345,6 +354,7 @@ while ( my $l = <$ch> ) {
         }
     }
 }
+
 close $ch;
 $last_exit_status = $?;
 
