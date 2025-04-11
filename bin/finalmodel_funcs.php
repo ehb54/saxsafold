@@ -60,7 +60,7 @@ function add_adjacent_frames( $adjacentframes, &$results, &$errormsg ) {
     $extendedset = [];
     
     foreach ( $results as $v ) {
-        for ( $i = max( $v - $adjacentframes, 0 );
+        for ( $i = max( $v - $adjacentframes, 1 );
               $i <= min( $v + $adjacentframes, $cgstate->state->mmcframecount - 1 );
               ++$i ) {
             $extendedset[] = $i;
