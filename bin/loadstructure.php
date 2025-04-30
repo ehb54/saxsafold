@@ -153,6 +153,18 @@ if ( !isset( $input->searchkey )
     $input->pdbfile[0] =  clean_up_filename_and_copy_if_needed( $input->pdbfile[0] );
     $fpdb = preg_replace( '/.*\//', '', $input->pdbfile[0] );
     $is_alphafold = preg_match( '/^AF-/', $fpdb );
+    if ( !$is_alphafold && preg_match( '/cif$/i', $fpdb ) ) {
+        $results = run_cmd( "grep pLDDT $fpdb", false );
+        if ( $run_cmd_last_error_code == 0 ) {
+            $is_alphafold = true;
+        }
+    }
+    if ( !$is_alphafold && preg_match( '/pdb$/i', $fpdb ) ) {
+        $results = run_cmd( "grep -i alphafold $fpdb", false );
+        if ( $run_cmd_last_error_code == 0 ) {
+            $is_alphafold = true;
+        }
+    }
 } elseif ( isset( $input->searchkey ) ) {
     ## alphafold download
     $ga->tcpmessage( [ 'processing_progress' => 0 ] );

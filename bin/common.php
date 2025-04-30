@@ -270,7 +270,7 @@ function padded_model_no_from_pdb_name( $pdb ) {
 function clean_up_filename_and_copy_if_needed( $filename ) {
     $filename_no_path    = preg_replace( '/^.*\//', '', $filename );
     $path                = dirname( $filename );
-    $filename_fixed_up   = preg_replace( '/[^a-zA-Z0-9_.]/', '_', $filename_no_path );
+    $filename_fixed_up   = preg_replace( '/[^a-zA-Z0-9_.-]/', '_', $filename_no_path );
     if ( $filename_fixed_up == $filename_no_path ) {
         return $filename;
     }

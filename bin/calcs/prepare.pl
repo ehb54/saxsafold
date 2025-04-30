@@ -147,7 +147,7 @@ write_file( $fo, join '', @lpdb );
 write_file( "ultrascan/results/$fo", join '', @lpdb );
 
 ## pdb -> pdb_tf 
-if ( $f =~ /^AF-/ ) {
+if ( $f =~ /^AF-/ || grep /alphafold/i, @lpdb ) {
     my @ol;
     push @ol,
         "REMARK   0 **** WARNING: TF CONFIDENCE FACTORS ARE MODIFIED! ****\n"
