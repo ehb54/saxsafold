@@ -1,0 +1,164 @@
+{
+    "moduleid"    : "joinresults"
+    ,"label"      : "Define project"
+    ,"help"       : "Define a new project or load an existing project"
+    ,"executable" : "joinresults.php"
+    ,"nojobcontrol" : "true"
+    ,"panels" : [
+        {
+            "root" : {
+                "label" : [
+                    1,
+                    1
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "gap" : "1px",
+                "align" : "left",
+                "size" : [
+                    1,
+                    "auto"
+                ]
+            }
+        },
+        {
+            "header" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "body" : {
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "size" : [
+                    "auto",
+                    [
+                        1,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "footer" : {
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "inputpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "resultpanel" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
+    ]
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Join results"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+            ,"layout" : {
+                "parent" : "header"
+            }
+        }
+        ,{
+            "role"     : "input"
+            ,"id"       : "projects"
+            ,"label"    : "Select projects"
+            ,"type"     : "listbox"
+            ,"multiple" : "true"
+            ,"required" : "true"
+            ,"pull"     : "project"
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+    ]
+}
