@@ -1151,6 +1151,24 @@ class SAS {
         return true;
     }
 
+    # remove data if exists - string or array
+    function remove_data_if_exists( $names ) {
+        $this->debug_msg( "SAS::remove_data_if_exists( names[] )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $names = [ $names ];
+        }
+
+        foreach ( $names as $name ) {
+            if ( $this->data_name_exists( $name ) ) {
+                $this->remove_data( $name );
+            }
+        }
+
+        return true;
+    }
+
     # remove data - string or array
     function remove_data( $names ) {
         $this->debug_msg( "SAS::remove_data( names[] )" );
@@ -1191,6 +1209,19 @@ class SAS {
 
         $this->last_error = "SAS::remove_plot_data() name $dataname not found in plot $plot\n";
         return $this->error_exit( $this->last_error );
+    }
+
+    # remove plot
+    function remove_plot( $name ) {
+        $this->debug_msg( "SAS::remove_plot( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::remove_plot() name $name is not a plot name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        unset( $this->plots->$name );
     }
 
     # adds to existing plot object 
@@ -2464,7 +2495,7 @@ class SAS {
         return true;
     }
 
-    # compare_data -
+    # compare_data - return true if matched, false if not
     function compare_data( $name1, $name2, $compare_errors = true ) {
         $this->debug_msg( "SAS::compare_data( '$name1', '$name2' )" );
         $this->last_error = "";
