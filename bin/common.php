@@ -9,8 +9,8 @@ class cgrun_state {
     public $state;
     public $errors;
 
-    function __construct() {
-        $this->statefile = "state.json";
+    function __construct( $statefile = "state.json" ) {
+        $this->statefile = $statefile;
         $this->errors    = "";
         if ( file_exists( $this->statefile ) ) {
             $this->state = json_decode( file_get_contents( $this->statefile ) );
