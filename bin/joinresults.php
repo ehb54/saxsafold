@@ -68,6 +68,16 @@ foreach ( $input->projects as $project ) {
         continue;
     }
 
+    if ( !isset( $cgstates->$project->state->output_load ) ) {
+        $messages[] = "Project '$project' is somehow missing the load structure data";
+        continue;
+    }        
+
+    if ( !isset( $cgstates->$project->state->output_load->name ) ) {
+        $messages[] = "Project '$project' somehow has incomplete load structure data";
+        continue;
+    }        
+
     if ( !isset( $cgstates->$project->state->output_loadsaxs->iqplot ) ) {
         $messages[] = "Project '$project' is somehow missing the loaded I(q) data";
         continue;
@@ -118,21 +128,62 @@ foreach ( $input->projects as $project ) {
             continue;
         }
     }
+
+    ## get name for expected somo saxs iq file
+    $bname          = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+    $sassomoiqname  = $bname . "_waxsis_somo_iq.csv";
+    $sassomoiqfname = "../$project/$sassomoiqname";
+
+    if ( !file_exists( $sassomoiqfname ) ) {
+        $messages[] = "Expected final model results file '$project/$sassomoiqname' does not exist";
+        continue;
+    }
+    if ( !filesize( $sassomoiqfname ) ) {
+        $messages[] = "Expected final model results file '$project/$sassomoiqname' is empty";
+        continue;
+    }
 }
 
 $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
-
 
 if ( count( $messages ) ) {
     error_exit( implode( "<br>", $messages ) );
 }
 
+## ok we should have multiple $projects with identical experimental data
+## now we want to get all WAXSiS data, run NNLS again and produce results similar to finalmodel
+
+## start over, clear sas
+
+$sas->remove_data( $sas->data_names() );
+
+## get waxsis data
+
+foreach ( $input->projects as $project ) {
+    ## get name (again) for expected somo saxs iq file
+    $bname          = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+    $sassomoiqname  = $bname . "_waxsis_somo_iq.csv";
+    $sassomoiqfname = "../$project/$sassomoiqname";
+
+    ## load file data into sas
+    $sas->load_somo_csv_file( SAS::PLOT_IQ, "$project: ", $sassomoiqfname );
+}
+
+$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
+
+$ga->tcpmessage( [ '_textarea' => json_encode( $input->projects, JSON_PRETTY_PRINT ) ] . "\n" );
+
+## accumulate data for each project
+
+$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
+
+
 ## process inputs here to produce output
 
 ## log results to textarea
 
-$output->{'_textarea'} = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
-$output->{'_textarea'} .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
+$output->_textarea = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
+$output->_textarea .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 echo json_encode( $output );
 
