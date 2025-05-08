@@ -96,20 +96,6 @@
             }
         },
         {
-            "msgspanel" : {
-                "parent" : "body",
-                "location" : [
-                    "next",
-                    "full"
-                ],
-                "align" : "left",
-                "size" : [
-                    "auto",
-                    [1,1]
-                ]
-            }
-        },
-        {
             "resultpanel" : {
                 "align" : "left",
                 "size" : [
@@ -131,6 +117,57 @@
                 "label" : [
                     1,
                     1
+                ]
+            }
+        }
+        ,{
+            "structure" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "parent" : "body",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        }
+        ,{
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        }
+        ,{
+            "buttonpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
                 ]
             }
         }
@@ -160,5 +197,107 @@
                 "parent" : "inputpanel"
             }
         }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplot"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "iqplotwaxsis"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "pr_recon"
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "iqresultswaxsis"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "plotly"
+            ,"id"                : "histplotfinal"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"             : ""
+            ,"type"              : "html"
+            ,"id"                : "csvdownloads"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "processing_progress"
+            ,"type"       : "progress"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "progress_text"
+            ,"type"       : "html"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
+            "width"              : "100%",
+            "height"             : "500",
+#            "label"              : "Structure",
+            "label"              : "",
+            "help"               : "Right click on structure for more options",
+            "role"               : "output",
+            "id"                 : "struct",
+            "type"               : "atomicstructure",
+#            "jsmoladd"           : "background white;frame 1;ribbon only;color green; frame all",
+#            "jsmoladd"           : "background white;ribbon only;",
+            "labelmargintop"     : "0.5rem"
+            ,"layout" : {
+                "parent" : "structure"
+            }
+        }
+
     ]
 }

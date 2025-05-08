@@ -1260,6 +1260,25 @@ class SAS {
         return true;
     }
 
+    # regex rename data 
+    function regex_rename_data( $names, $regex_from, $regex_to ) {
+        $this->debug_msg( "SAS::regex_rename_data( \$names[], '$regex_from', '$regex_to' )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $names = [ $names ];
+        }
+
+        foreach ( $names as $name ) {
+            $toname = preg_replace( $regex_from, $regex_to, $name );
+            if ( !$this->rename_data( $name, $toname ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     # rename data 
     function rename_data( $fromname, $toname ) {
         $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );

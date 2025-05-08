@@ -493,3 +493,7 @@ $csvfile = "AF-G0A007-F1-model_v4_waxsis_somo_iq.csv";
 $sas->load_somo_csv_file( SAS::PLOT_IQ, "G0A007D: ", $csvfile );
 
 echo $sas->data_summary( $sas->data_names() );
+
+$sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/^.* WAXSiS/', 'I(q) WAXSiS' );
+
+echo $sas->data_summary( $sas->data_names() );

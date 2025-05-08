@@ -187,12 +187,14 @@ if ( count( $messages ) ) {
 }
 
 ## rename Exp I(q)
-$sas->copy_data( "$firstproject: Exp. I(q)", "Exp. I(q)" );
-$sas->remove_data( "$firstproject: Exp. I(q)" );
+$sas->rename_data( "$firstproject: Exp. I(q)", "Exp. I(q)" );
+
+## rename WAXSiS
+$sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/:.* WAXSiS/', ': WAXSiS' );
 
 $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
 
-$non_target_names = $sas->data_names( '/[A-Za-z0-9_]+: .* WAXSiS mod\. \d/' );
+$non_target_names = $sas->data_names( '/[A-Za-z0-9_]+:.* WAXSiS mod\. \d/' );
 
 $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
 
@@ -204,7 +206,62 @@ $sas->nnls( "Exp. I(q)", $non_target_names, "I(q) NNLS fit", $iqresults, true );
 
 $ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
 
-## process inputs here to produce output
+## I(q) nnls fit plot
+
+## setup sas with Exp. I(q) data
+
+$plotname = "I(q) waxsis nnls";
+$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstates->$firstproject->state->output_load->iqplot
+                             ,[
+                                 'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected models"
+                                 ,'titlefontsize' => 14
+                             ]);
+
+$sas->remove_plot_data( $plotname, "Res./SD" );
+$sas->remove_plot_data( $plotname, "WAXSiS" );
+$sas->remove_data( "Res./SD" );
+$sas->rename_data( "WAXSiS", $waxsis_data_name );
+$sas->add_plot( $plotname, "I(q) NNLS fit" );
+foreach ( $iqresults as $k => $v ) {
+    $sas->add_plot( $plotname, $k );
+}
+
+### residuals
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
+$sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
+$sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
+$sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
+
+## move NNLS fit to last curve, but before residuals
+$sas->remove_plot_data( $plotname, "I(q) NNLS fit" );
+$sas->recolor_plot( $plotname, [ 1 ] );
+$sas->add_plot( $plotname, "I(q) NNLS fit" );
+$sas->plot_trace_options( $plotname, "I(q) NNLS fit", [ 'linecolor_number' => 1 ] );
+
+$sas->add_plot_residuals( $plotname, "I(q) fit Res./SD" );
+$sas->plot_trace_options( $plotname, "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
+
+$rmsd = round( $rmsd, 3 );
+$chi2 = round( $chi2, 3 );
+$annotate_msg = "";
+if ( $rmsd != -1 ) {
+    $annotate_msg .= "RMSD $rmsd   ";
+}
+if ( $chi2 != -1 ) {
+    $annotate_msg .= "nChi^2 $chi2   ";
+}
+if ( strlen( $annotate_msg ) ) {
+    $sas->annotate_plot( $plotname, $annotate_msg );
+}
+
+### summary results
+
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults );
+
+$output->iqplotwaxsis = $sas->plot( $plotname );
 
 ## log results to textarea
 
