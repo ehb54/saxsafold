@@ -144,8 +144,6 @@ foreach ( $input->projects as $project ) {
     }
 }
 
-$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
-
 if ( count( $messages ) ) {
     error_exit( implode( "<br>", $messages ) );
 }
@@ -157,7 +155,7 @@ if ( count( $messages ) ) {
 
 $sas->remove_data( $sas->data_names() );
 
-## get waxsis data
+## get CSV waxsis data
 
 foreach ( $input->projects as $project ) {
     ## get name (again) for expected somo saxs iq file
@@ -167,16 +165,44 @@ foreach ( $input->projects as $project ) {
 
     ## load file data into sas
     $sas->load_somo_csv_file( SAS::PLOT_IQ, "$project: ", $sassomoiqfname );
+
+    ## remove NNLS fit
+    $sas->remove_data( "$project: $bname NNLS fit" );
+
+    if ( $project != $firstproject ) {
+        if ( !$sas->compare_data( "$firstproject: Exp. I(q)", "$project: Exp. I(q)" ) ) {
+            $messages[] = "Project '$project' and '$firstproject' have differing I(q) data";
+            continue;
+        }
+        ## remove Exp. I(q) and WAXSiS mod. 0 from all but first project
+        $sas->remove_data( [
+                               "$project: Exp. I(q)"
+                               ,"$project: $bname WAXSiS mod. 0"
+                           ] );
+    }
 }
+
+if ( count( $messages ) ) {
+    error_exit( implode( "<br>", $messages ) );
+}
+
+## rename Exp I(q)
+$sas->copy_data( "$firstproject: Exp. I(q)", "Exp. I(q)" );
+$sas->remove_data( "$firstproject: Exp. I(q)" );
 
 $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
 
-$ga->tcpmessage( [ '_textarea' => json_encode( $input->projects, JSON_PRETTY_PRINT ) ] . "\n" );
+$non_target_names = $sas->data_names( '/[A-Za-z0-9_]+: .* WAXSiS mod\. \d/' );
 
-## accumulate data for each project
+$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
 
-$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
+## run NNLS
 
+$iqresults = [];
+
+$sas->nnls( "Exp. I(q)", $non_target_names, "I(q) NNLS fit", $iqresults, true );
+
+$ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
 
 ## process inputs here to produce output
 
