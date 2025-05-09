@@ -24,6 +24,7 @@ $output = (object)[];
 include "genapp.php";
 include "datetime.php";
 include_once "common.php";
+include_once "computeiqpr_defines.php";
 
 
 $ga        = new GenApp( $input, $output );
@@ -192,11 +193,11 @@ $sas->rename_data( "$firstproject: Exp. I(q)", "Exp. I(q)" );
 ## rename WAXSiS
 $sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/:.* WAXSiS/', ': WAXSiS' );
 
-$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
+# $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $sas->data_names() ) ] );
 
 $non_target_names = $sas->data_names( '/[A-Za-z0-9_]+:.* WAXSiS mod\. \d/' );
 
-$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
+# $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
 
 ## run NNLS
 
@@ -210,6 +211,7 @@ $ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_P
 
 ## setup sas with Exp. I(q) data
 
+$waxsis_data_name = "I(q) WAXSiS mod. 0";
 $plotname = "I(q) waxsis nnls";
 $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstates->$firstproject->state->output_load->iqplot
                              ,[
@@ -263,10 +265,125 @@ $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
 
+## setup pdb
+
+$pdboutname = "joined-" . implode( "-", $input->projects ) . "-waxsis-nnls.pdb";
+$pdbout     = "";
+$procdir    = "waxsissets";
+
+$ga->tcpmessage( [ _textarea => "pdboutname $pdboutname" . "\n" ] );
+
+$pdbnames = (object)[];
+
+foreach ( $iqresults as $name => $conc ) {
+    if ( !preg_match( '/^([^:]*):/', $name, $matches ) ) {
+        error_exit( "Could not determine project name from '$name'" );
+    }
+    $project = $matches[1];
+
+    if ( !isset( $cgstates->$project ) ) {
+        error_exit( "Project '$project' is not loaded" );
+    }
+
+    $bname          = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+
+    $tmpname = explode( ' ', $name );
+    $frame = end( $tmpname );
+
+    ## for testing
+    $pdbname = "${bname}-somo.pdb";
+    $pdbnames->waxsis = $pdbname;
+    ## end for testing  
+
+    $ga->tcpmessage( [ _textarea => "pdbname $pdbname name $name project $project frame $frame" . "\n" ] );
+
+    if ( $name == "$project: $waxsis_data_name" ) {
+        $pdbname = "../$project/${bname}-somo.pdb";
+        if ( !file_exists( "$pdbname" ) ) {
+            error_exit( "expected file '$pdbname' not found" );
+        }
+        $pdbnames->waxsis = $pdbname;
+
+        $pdbout .=
+            "REMARK project $project\n"
+            . "MODEL $waxsis_model_number\n"
+            . run_cmd( "grep -P '^(ATOM|HETATM)' $pdbname" )
+            . "ENDMDL\n"
+            ;
+        
+    } else {
+        $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
+        $pdbname = "${bname}-somo-m$frame_padded.pdb";
+        if ( !file_exists( "../$project/$procdir/$pdbname" ) ) {
+            error_exit( "expected file '$project/$procdir/$pdbname' not found" );
+        }
+        $pdbnames->$frame = "../$project/$procdir/$pdbname";
+
+        $pdbout .=
+            "REMARK project $project\n"
+            . "MODEL $frame\n"
+            . run_cmd( "grep -P '^(ATOM|HETATM)' ../$project/$procdir/$pdbname" )
+            . "ENDMDL\n"
+            ;
+    }
+};
+
+$pdbout .= "END\n";
+
+if ( !file_put_contents( $pdboutname, $pdbout ) ) {
+    error_exit( "error creating '$pdboutname'" );
+}    
+
+$output->struct = (object) [
+    "file" => "results/users/$logon/$base_dir/$pdboutname"
+    ,"script" => "background white;ribbon only;"
+    ];
+
+## for color match
+$iq_waxsis_nnlsresults_colors = (object)[];
+
+foreach ( $iqresults as $name => $conc ) {
+    if ( !preg_match( '/^([^:]*):/', $name, $matches ) ) {
+        error_exit( "Could not determine project name from '$name'" );
+    }
+    $project = $matches[1];
+
+
+    if ( !isset( $cgstates->$project ) ) {
+        error_exit( "Project '$project' is not loaded" );
+    }
+
+    $bname          = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+
+    if ( $name == "$project: $waxsis_data_name" ) {
+        $frame = $waxsis_model_number;
+    } else {
+        $tmpname = explode( ' ', $name );
+        $frame = end( $tmpname );
+    }
+    $iq_waxsis_nnlsresults_colors->$name = get_color( $pos );
+    $sas->plot_trace_options( $plotname, $name, [ 'linecolor' => get_color( $pos ) ] );
+
+    $output->struct->script .= "select */$frame;color " . get_color( $pos++ ) . ";";
+}
+$output->struct->script .= "frame all;";
+
+## downloads
+
+$output->csvdownloads =
+    "<div>"
+    . "&nbsp;&nbsp;&nbsp;"
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
+#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
+    . "</div>"
+    ;
+
+
 ## log results to textarea
 
-$output->_textarea = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
-$output->_textarea .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
+#$output->_textarea = "JSON output from executable:\n" . json_encode( $output, JSON_PRETTY_PRINT ) . "\n";
+#$output->_textarea .= "JSON input from executable:\n"  . json_encode( $input, JSON_PRETTY_PRINT )  . "\n";
 
 echo json_encode( $output );
 
