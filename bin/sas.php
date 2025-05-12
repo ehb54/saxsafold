@@ -2730,4 +2730,40 @@ class SAS {
             . $this->dump_plots( $pretty )
             ;
    }
+
+    ## get annotation text from plot and return array with nChi^2 & RMSD values if present
+    function plot_stats( $plot ) {
+        $result = (object)[];
+        if ( !isset( $plot->layout ) ) {
+            $result->error = "Plot has no layout";
+            return $result;
+        }
+        if ( !isset( $plot->layout->annotations ) ) {
+            $result->error = "Plot has no annotations " . json_encode( $plot->layout );
+            return $result;
+        }
+        if ( !count( $plot->layout->annotations ) ) {
+            $result->error = "Plot annotations are empty " . json_encode( $plot->layout->annotations );
+            return $result;
+        }
+        
+        if ( !isset( $plot->layout->annotations[0]->text ) ) {
+            $result->error = "Plot has no annotations text"  . json_encode( $plot->layout->annotations[0] );
+            return $result;
+        }
+        if ( !strlen( $plot->layout->annotations[0]->text ) ) {
+            $result->error = "Plot annotations text is empty";
+            return $result;
+        }
+        ## for debugging $result->text = $plot->layout->annotations[0]->text;
+        if ( preg_match( '/RMSD ([^ ]+)/', $plot->layout->annotations[0]->text, $matches ) ) {
+            $result->RMSD = floatval( $matches[ 1 ] );
+            $result->fit  = $result->RMSD;
+        }
+        if ( preg_match( '/nChi\^2 ([^ ]+)/', $plot->layout->annotations[0]->text, $matches ) ) {
+            $result->nChi2 = floatval( $matches[ 1 ] );
+            $result->fit  = $result->nChi2;
+        }
+        return $result;
+    }
 }
