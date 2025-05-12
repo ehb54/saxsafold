@@ -50,7 +50,19 @@ $cgstates = (object)[];
 
 $messages = [];
 
-$firstproject = $input->projects[0];
+$firstproject     = $input->projects[0];
+
+## keep track of best I(q) fit & best P(r) fit, these will be displayed for reference
+$best = (object)[
+    "iq" => (object) [
+        "project" => $firstproject
+        ,"fit"    => 1e99
+        ]
+    ,"pr" => (object) [
+        "project" => $firstproject
+        ,"fit"    => 1e99
+        ]
+    ];
 
 foreach ( $input->projects as $project ) {
     $cgstates->$project = new cgrun_state( "../$project/state.json" );
@@ -91,6 +103,11 @@ foreach ( $input->projects as $project ) {
 
     ## get I(q) data from project
 
+    $ga->tcpmessage( [ '_textarea' =>
+                       "iqplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->iqplot ) ) . "\n"
+                       . "prplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->prplot ) ) . "\n"
+                     ] );
+
     {
         $plotname = "iqplot";
         $sas->create_plot_from_plot( SAS::PLOT_IQ, "$project:$plotname", $cgstates->$project->state->output_load->iqplot );
@@ -118,8 +135,33 @@ foreach ( $input->projects as $project ) {
         $sas->remove_data_if_exists( [ 'Exp. P(r)', 'WAXSiS', 'Res./SD', 'Resid.' ] );
     }
 
+    if ( $project == $firstproject ) {
+        $iqfit = $sas->plot_stats( $cgstates->$project->state->output_load->iqplot  );
+        if ( isset( $iqfit->fit ) ) {
+            $best->iq->fit = $iqfit->fit;
+        }
+        $prfit = $sas->plot_stats( $cgstates->$project->state->output_load->prplot  );
+        if ( isset( $prfit->fit ) ) {
+            $best->pr->fit = $prfit->fit;
+        }
+    } else {
 
-    if ( $project != $firstproject ) {
+        $iqfit = $sas->plot_stats( $cgstates->$project->state->output_load->iqplot  );
+        if ( isset( $iqfit->fit ) ) {
+            if ( $best->iq->fit > $iqfit->fit ) {
+                $best->iq->fit      = $iqfit->fit;
+                $best->iq->project  = $project;
+            }
+        }
+
+        $prfit = $sas->plot_stats( $cgstates->$project->state->output_load->prplot  );
+        if ( isset( $prfit->fit ) ) {
+            if ( $best->pr->fit > $prfit->fit ) {
+                $best->pr->fit     = $prfit->fit;
+                $best->pr->project = $project;
+            }
+        }
+
         if ( !$sas->compare_data( "$firstproject: Exp. I(q)", "$project: Exp. I(q)" ) ) {
             $messages[] = "Project '$project' and '$firstproject' have differing I(q) data";
             continue;
@@ -149,6 +191,8 @@ if ( count( $messages ) ) {
     error_exit( implode( "<br>", $messages ) );
 }
 
+$ga->tcpmessage( [ '_textarea' => "best:" . json_encode( $best, JSON_PRETTY_PRINT ) . "\n" ] );
+
 ## ok we should have multiple $projects with identical experimental data
 ## now we want to get all WAXSiS data, run NNLS again and produce results similar to finalmodel
 
@@ -175,11 +219,18 @@ foreach ( $input->projects as $project ) {
             $messages[] = "Project '$project' and '$firstproject' have differing I(q) data";
             continue;
         }
-        ## remove Exp. I(q) and WAXSiS mod. 0 from all but first project
+        ## remove Exp. I(q) from all but first project
         $sas->remove_data( [
                                "$project: Exp. I(q)"
-                               ,"$project: $bname WAXSiS mod. 0"
                            ] );
+        ## remove WAXSiS mod 0 if it is not identical to the first proejct's
+        if ( $sas->compare_data( "$firstproject: $firstbname WAXSiS mod. 0", "$project: $bname WAXSiS mod. 0" ) ) {
+            $sas->remove_data( [
+                                   "$project: Exp. I(q)"
+                               ] );
+        }
+    } else {
+        $firstbname = $bname;
     }
 }
 
@@ -197,7 +248,7 @@ $sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/:.* WAXSiS/', ': WAX
 
 $non_target_names = $sas->data_names( '/[A-Za-z0-9_]+:.* WAXSiS mod\. \d/' );
 
-# $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
+$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
 
 ## run NNLS
 
@@ -205,13 +256,35 @@ $iqresults = [];
 
 $sas->nnls( "Exp. I(q)", $non_target_names, "I(q) NNLS fit", $iqresults, true );
 
+## fake results for testing, set to 0 or comment the line below for production
+$test_fake_nnlsresults = 99;
+
+if ( isset( $test_fake_nnlsresults ) && $test_fake_nnlsresults > 0 ) {
+    $ga->tcpmessagebox( [ "icon" => "warning.png", "text" => "Results FAKED for testing!!" ] );
+    
+    $iqresults = [];
+    $pos = 0;
+    foreach ( $non_target_names as $name ) {
+        $iqresults[ $name ] = 1 / count( $non_target_names );
+        if ( ++$pos >= $test_fake_nnlsresults ) {
+            break;
+        }
+    }
+}
+
 $ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
+
+## org Iq plot
+
+$output->iqplot = unserialize( serialize( $cgstates->{$best->iq->project}->state->output_load->iqplot ) );
+$output->iqplot->layout->title->text .= " project " . $best->iq->project;
 
 ## I(q) nnls fit plot
 
 ## setup sas with Exp. I(q) data
 
-$waxsis_data_name = "I(q) WAXSiS mod. 0";
+$waxsis_data_name    = "WAXSiS mod. 0";
+$waxsis_data_name_iq = "I(q) $waxsis_data_name";
 $plotname = "I(q) waxsis nnls";
 $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstates->$firstproject->state->output_load->iqplot
                              ,[
@@ -222,7 +295,7 @@ $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstates->$firstproject->
 $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
-$sas->rename_data( "WAXSiS", $waxsis_data_name );
+$sas->rename_data( "WAXSiS", $waxsis_data_name_iq );
 $sas->add_plot( $plotname, "I(q) NNLS fit" );
 foreach ( $iqresults as $k => $v ) {
     $sas->add_plot( $plotname, $k );
@@ -273,7 +346,13 @@ $procdir    = "waxsissets";
 
 $ga->tcpmessage( [ _textarea => "pdboutname $pdboutname" . "\n" ] );
 
-$pdbnames = (object)[];
+$pdbnames     = (object)[];
+
+## need to offset duplicate frame numbers or else the jsmol will fail for frame select
+
+$frameused             = [];
+$name_to_frame         = (object)[];
+$frame_offset_messages = [];
 
 foreach ( $iqresults as $name => $conc ) {
     if ( !preg_match( '/^([^:]*):/', $name, $matches ) ) {
@@ -290,12 +369,14 @@ foreach ( $iqresults as $name => $conc ) {
     $tmpname = explode( ' ', $name );
     $frame = end( $tmpname );
 
+    ## TODO make sure frame number not previously used, if so, find next incremental unused number and keep map from name to number
+
     ## for testing
     $pdbname = "${bname}-somo.pdb";
     $pdbnames->waxsis = $pdbname;
     ## end for testing  
 
-    $ga->tcpmessage( [ _textarea => "pdbname $pdbname name $name project $project frame $frame" . "\n" ] );
+    $ga->tcpmessage( [ _textarea => "pdbname $pdbname name '$name' project $project frame $frame" . "\n" ] );
 
     if ( $name == "$project: $waxsis_data_name" ) {
         $pdbname = "../$project/${bname}-somo.pdb";
@@ -304,9 +385,19 @@ foreach ( $iqresults as $name => $conc ) {
         }
         $pdbnames->waxsis = $pdbname;
 
+        $use_frame = $waxsis_model_number;
+        while( isset( $framesused[ $use_frame ] ) ) {
+            ++$use_frame;
+        }
+        $framesused[ $use_frame ] = true;
+        $name_to_frame->$name = $use_frame;
+        if ( $use_frame != $waxsis_model_number ) {
+            $frame_messages[] = "project $project model $frame was renumberd to model $use_frame";
+        }
+        
         $pdbout .=
-            "REMARK project $project\n"
-            . "MODEL $waxsis_model_number\n"
+            "REMARK project $project MODEL $waxsis_model_number\n"
+            . "MODEL $use_frame\n"
             . run_cmd( "grep -P '^(ATOM|HETATM)' $pdbname" )
             . "ENDMDL\n"
             ;
@@ -319,9 +410,19 @@ foreach ( $iqresults as $name => $conc ) {
         }
         $pdbnames->$frame = "../$project/$procdir/$pdbname";
 
+        $use_frame = $frame;
+        while( isset( $framesused[ $use_frame ] ) ) {
+            ++$use_frame;
+        }
+        $framesused[ $use_frame ] = true;
+        $name_to_frame->$name = $use_frame;
+        if ( $use_frame != $frame ) {
+            $frame_messages[] = "project $project model $frame was renumberd to model $use_frame";
+        }
+
         $pdbout .=
-            "REMARK project $project\n"
-            . "MODEL $frame\n"
+            "REMARK project $project MODEL $frame\n"
+            . "MODEL $use_frame\n"
             . run_cmd( "grep -P '^(ATOM|HETATM)' ../$project/$procdir/$pdbname" )
             . "ENDMDL\n"
             ;
@@ -339,7 +440,10 @@ $output->struct = (object) [
     ,"script" => "background white;ribbon only;"
     ];
 
+$ga->tcpmessage( [ '_textarea' => "name_to_frame:" . json_encode( $name_to_frame, JSON_PRETTY_PRINT ) . "\n" ] );
+
 ## for color match
+$pos = 0;
 $iq_waxsis_nnlsresults_colors = (object)[];
 
 foreach ( $iqresults as $name => $conc ) {
@@ -348,19 +452,18 @@ foreach ( $iqresults as $name => $conc ) {
     }
     $project = $matches[1];
 
-
     if ( !isset( $cgstates->$project ) ) {
         error_exit( "Project '$project' is not loaded" );
     }
 
-    $bname          = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+    $bname = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
 
-    if ( $name == "$project: $waxsis_data_name" ) {
-        $frame = $waxsis_model_number;
-    } else {
-        $tmpname = explode( ' ', $name );
-        $frame = end( $tmpname );
+    if ( !isset( $name_to_frame->$name ) ) {
+        error_exit( "Internal error: missing frame information for '$name'" );
     }
+
+    $frame = $name_to_frame->$name;
+
     $iq_waxsis_nnlsresults_colors->$name = get_color( $pos );
     $sas->plot_trace_options( $plotname, $name, [ 'linecolor' => get_color( $pos ) ] );
 
@@ -379,6 +482,17 @@ $output->csvdownloads =
     . "</div>"
     ;
 
+
+$output->_textarea = '';
+
+if ( count( $frame_messages ) ) {
+    $output->_textarea .=
+        "Some PDB model numbers have been changed due to duplication across projects:\n"
+        . implode( ".\n", $frame_messages ) . ".\n"
+        . "This change is made in the PDB file, NOT in the model numbers shown elsewhere.\n"
+        . "There is a REMARK included with these details within the PDB before each model.\n"
+        ;
+}
 
 ## log results to textarea
 
