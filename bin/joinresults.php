@@ -103,10 +103,10 @@ foreach ( $input->projects as $project ) {
 
     ## get I(q) data from project
 
-    $ga->tcpmessage( [ '_textarea' =>
-                       "iqplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->iqplot ) ) . "\n"
-                       . "prplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->prplot ) ) . "\n"
-                     ] );
+    #$ga->tcpmessage( [ '_textarea' =>
+    #                   "iqplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->iqplot ) ) . "\n"
+    #                   . "prplot $project stats " . json_encode( $sas->plot_stats( $cgstates->$project->state->output_load->prplot ) ) . "\n"
+    #                 ] );
 
     {
         $plotname = "iqplot";
@@ -191,7 +191,7 @@ if ( count( $messages ) ) {
     error_exit( implode( "<br>", $messages ) );
 }
 
-$ga->tcpmessage( [ '_textarea' => "best:" . json_encode( $best, JSON_PRETTY_PRINT ) . "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "best:" . json_encode( $best, JSON_PRETTY_PRINT ) . "\n" ] );
 
 ## ok we should have multiple $projects with identical experimental data
 ## now we want to get all WAXSiS data, run NNLS again and produce results similar to finalmodel
@@ -248,7 +248,7 @@ $sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/:.* WAXSiS/', ': WAX
 
 $non_target_names = $sas->data_names( '/[A-Za-z0-9_]+:.* WAXSiS mod\. \d/' );
 
-$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
+# $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $non_target_names ) ] );
 
 ## run NNLS
 
@@ -257,7 +257,7 @@ $iqresults = [];
 $sas->nnls( "Exp. I(q)", $non_target_names, "I(q) NNLS fit", $iqresults, true );
 
 ## fake results for testing, set to 0 or comment the line below for production
-$test_fake_nnlsresults = 99;
+# $test_fake_nnlsresults = 99;
 
 if ( isset( $test_fake_nnlsresults ) && $test_fake_nnlsresults > 0 ) {
     $ga->tcpmessagebox( [ "icon" => "warning.png", "text" => "Results FAKED for testing!!" ] );
@@ -272,7 +272,7 @@ if ( isset( $test_fake_nnlsresults ) && $test_fake_nnlsresults > 0 ) {
     }
 }
 
-$ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "iqresults:" . json_encode( $iqresults, JSON_PRETTY_PRINT ) . "\n" ] );
 
 ## org Iq plot
 
@@ -345,9 +345,10 @@ $pdboutname = "$joinname-waxsis-nnls.pdb";
 $pdbout     = "";
 $procdir    = "waxsissets";
 
-$ga->tcpmessage( [ '_textarea' => "pdboutname $pdboutname" . "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "pdboutname $pdboutname" . "\n" ] );
 
-$pdbnames     = (object)[];
+$pdbnames   = (object)[];
+$prfiles    = [];
 
 ## need to offset duplicate frame numbers or else the jsmol will fail for frame select
 
@@ -370,21 +371,13 @@ foreach ( $iqresults as $name => $conc ) {
     $tmpname = explode( ' ', $name );
     $frame = end( $tmpname );
 
-    ## TODO make sure frame number not previously used, if so, find next incremental unused number and keep map from name to number
-
-    ## for testing
-    $pdbname = "${bname}-somo.pdb";
-    $pdbnames->waxsis = $pdbname;
-    ## end for testing  
-
-    $ga->tcpmessage( [ '_textarea' => "pdbname $pdbname name '$name' project $project frame $frame" . "\n" ] );
-
     if ( $name == "$project: $waxsis_data_name" ) {
         $pdbname = "../$project/${bname}-somo.pdb";
         if ( !file_exists( "$pdbname" ) ) {
             error_exit( "expected file '$pdbname' not found" );
         }
         $pdbnames->waxsis = $pdbname;
+        $prfiles[]        = $pdbname;
 
         $use_frame = $waxsis_model_number;
         while( isset( $framesused[ $use_frame ] ) ) {
@@ -410,6 +403,7 @@ foreach ( $iqresults as $name => $conc ) {
             error_exit( "expected file '$project/$procdir/$pdbname' not found" );
         }
         $pdbnames->$frame = "../$project/$procdir/$pdbname";
+        $prfiles[]        = "../$project/$procdir/$pdbname";
 
         $use_frame = $frame;
         while( isset( $framesused[ $use_frame ] ) ) {
@@ -441,7 +435,7 @@ $output->struct = (object) [
     ,"script" => "background white;ribbon only;"
     ];
 
-$ga->tcpmessage( [ '_textarea' => "name_to_frame:" . json_encode( $name_to_frame, JSON_PRETTY_PRINT ) . "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "name_to_frame:" . json_encode( $name_to_frame, JSON_PRETTY_PRINT ) . "\n" ] );
 
 ## for color match
 $pos = 0;
@@ -478,7 +472,7 @@ $sascoliqname  = $joinname . "_waxsis_iq.csv";
 
 $csvoutnames = array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $non_target_names );
 
-$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $csvoutnames ) ] );
+# $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $csvoutnames ) ] );
 
 $sas->save_data_csv(
     $csvoutnames
@@ -506,14 +500,98 @@ $output->csvdownloads =
     ;
 
 
+## reconstruct pr
+
+$saspr = new SAS( false );
+
+## $prfiles[] collected previously when building joined PDB
+# $ga->tcpmessage( [ '_textarea' => "prfiles:" . json_encode( $prfiles, JSON_PRETTY_PRINT ). "\n" ] );
+
+$plotnamewaxsis    = "P(r) waxsis reconstruct";
+$pr_recon_id       = "pr_recon";
+
+$saspr->create_plot_from_plot( SAS::PLOT_PR, $plotnamewaxsis, $cgstates->{$best->pr->project}->state->output_load->prplot );
+
+$saspr->plot_options( $plotnamewaxsis,
+    [
+    "titlefontsize" => 14
+    ,"title" => "P(r) Expt. vs starting and<br>reconstructed from final models selected"
+    ] );
+
+$prnames = [];
+foreach ( $prfiles as $k => $v ) {
+    $project = 'unknown';
+    if ( !preg_match( '/^\.\.\/([^\/]+)\//', $v, $matches ) ) {
+        error_exit( "Internal error - unable to extract project from '$v'" );
+    }
+    $project = $matches[1];
+    $prnames[ $k ] = "notnormed $project: P(r) mod. " . model_no_from_pdb_name( $v );
+}
+
+# $ga->tcpmessage( [ '_textarea' => "prfiles:" . json_encode( $prfiles, JSON_PRETTY_PRINT ). "\n" ] );
+# $ga->tcpmessage( [ '_textarea' => "prnames:" . json_encode( $prnames, JSON_PRETTY_PRINT ). "\n" ] );
+
+$saspr->compute_pr_many( $prfiles, $prnames );
+$saspr->extend_pr( array_merge( $prnames, [ "Exp. P(r)" ] ) );
+
+$scalednames = [];
+$normednames = [];
+$messages    = '';
+
+# $ga->tcpmessage( [ '_textarea' => $saspr->data_summary( $saspr->data_names() ) ] );
+
+foreach ( $prnames as $v ) {
+    if ( !preg_match( '/^notnormed ([^:]+):/', $v, $matches ) ) {
+        error_exit( "Internal error - unable to extract project from '$v'" );
+    }
+    $project = $matches[1];
+    $frame = frame_no_from_data_name( $v );
+    $normedname = substr( $v, 10 );
+    $scaledname = "scaled $normedname";
+    $normednames[] = $normedname;
+
+    $saspr->norm_pr( $v, $cgstates->{$best->pr->project}->state->output_load->mw, $normedname );
+
+    if ( isset( $iqresults[ "$project: WAXSiS mod. $frame" ] ) ) {
+        $saspr->norm_pr( $v, $cgstates->{$best->pr->project}->state->output_load->mw * $iqresults[ "$project: WAXSiS mod. $frame" ], $scaledname );
+        $scalednames[] = $scaledname;
+    } else {
+        error_exit( "Internal error - iqresults does not contain '$project: WAXSiS mod. $frame'" );
+    }
+        
+    $saspr->remove_data( $v );
+}
+
+# $ga->tcpdebugjson( '$scalednames', $scalednames );
+# $ga->tcptextarea( $messages );
+
+$combinedname = "Recon.";
+$residname = "Recon. Resid.";
+$saspr->sum_data( $scalednames, $combinedname );
+$saspr->add_plot( $plotnamewaxsis, $combinedname );
+$saspr->remove_data( $scalednames );
+$saspr->remove_data( $normednames );
+
+$rmsd = 1e99;
+$saspr->rmsd_residuals( "Exp. P(r)", $combinedname, $residname, $rmsd );
+$saspr->add_plot_residuals( $plotnamewaxsis, $residname );
+$rmsd = sprintf( "%.2f", $rmsd );
+$saspr->annotate_plot( $plotnamewaxsis, "Recon. RMSD $rmsd", true );
+$saspr->plot_trace_options( $plotnamewaxsis, "Resid.", [ 'linecolor_number' => 1 ] );
+$saspr->plot_trace_options( $plotnamewaxsis, $combinedname, [ 'linecolor_number' => 2 ] );
+$saspr->plot_trace_options( $plotnamewaxsis, $residname, [ 'linecolor_number' => 2 ] );
+
+$output->$pr_recon_id = $saspr->plot( $plotnamewaxsis );
+
+
 $output->_textarea = '';
 
 if ( count( $frame_messages ) ) {
     $output->_textarea .=
         "Some PDB model numbers have been changed due to duplication across projects:\n"
         . implode( ".\n", $frame_messages ) . ".\n"
-        . "This change is made in the PDB file, NOT in the model numbers shown elsewhere.\n"
-        . "There is a REMARK included with these details within the PDB before each model.\n"
+        . "This change is made in the  PDB (NMR-style) download file, NOT in the model numbers shown elsewhere.\n"
+        . "There is a REMARK included with these details within the PDB file before each model.\n"
         ;
 }
 
