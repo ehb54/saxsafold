@@ -340,11 +340,12 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 
 ## setup pdb
 
-$pdboutname = "joined-" . implode( "-", $input->projects ) . "-waxsis-nnls.pdb";
+$joinname   = "joined-" . implode( "-", $input->projects );
+$pdboutname = "$joinname-waxsis-nnls.pdb";
 $pdbout     = "";
 $procdir    = "waxsissets";
 
-$ga->tcpmessage( [ _textarea => "pdboutname $pdboutname" . "\n" ] );
+$ga->tcpmessage( [ '_textarea' => "pdboutname $pdboutname" . "\n" ] );
 
 $pdbnames     = (object)[];
 
@@ -376,7 +377,7 @@ foreach ( $iqresults as $name => $conc ) {
     $pdbnames->waxsis = $pdbname;
     ## end for testing  
 
-    $ga->tcpmessage( [ _textarea => "pdbname $pdbname name '$name' project $project frame $frame" . "\n" ] );
+    $ga->tcpmessage( [ '_textarea' => "pdbname $pdbname name '$name' project $project frame $frame" . "\n" ] );
 
     if ( $name == "$project: $waxsis_data_name" ) {
         $pdbname = "../$project/${bname}-somo.pdb";
@@ -472,12 +473,34 @@ foreach ( $iqresults as $name => $conc ) {
 $output->struct->script .= "frame all;";
 
 ## downloads
+$sassomoiqname = $joinname . "_waxsis_somo_iq.csv";
+$sascoliqname  = $joinname . "_waxsis_iq.csv";
+
+$csvoutnames = array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $non_target_names );
+
+$ga->tcpmessage( [ '_textarea' => $sas->data_summary( $csvoutnames ) ] );
+
+$sas->save_data_csv(
+    $csvoutnames
+    ,$sassomoiqname
+    ,1
+    ,'/(WAXSiS |I\(q\) )/'
+    ,''
+    );
+
+$sas->save_data_csv_tr(
+    $csvoutnames
+    ,$sascoliqname
+    ,1
+    ,'/(WAXSiS |I\(q\) )/'
+    ,''
+    );
 
 $output->csvdownloads =
     "<div>"
     . "&nbsp;&nbsp;&nbsp;"
-#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
-#    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
     . "</div>"
     ;
