@@ -583,7 +583,10 @@ $saspr->plot_trace_options( $plotnamewaxsis, $combinedname, [ 'linecolor_number'
 $saspr->plot_trace_options( $plotnamewaxsis, $residname, [ 'linecolor_number' => 2 ] );
 
 $output->$pr_recon_id = $saspr->plot( $plotnamewaxsis );
+$output->$pr_recon_id->layout->title->text =
+    str_replace( "vs starting", "vs starting struct. for project " . $best->pr->project, $output->$pr_recon_id->layout->title->text );
 
+$ga->tcpmessage( [ '_textarea' => "annotations " . $output->$pr_recon_id->layout->title->text . "\n" ] );
 
 $output->_textarea = '';
 
