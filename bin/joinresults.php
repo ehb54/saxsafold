@@ -490,7 +490,8 @@ $sas->save_data_csv_tr(
     ,''
     );
 
-$output->csvdownloads =
+$output->iqresultswaxsis .= 
+# $output->csvdownloads =
     "<div>"
     . "&nbsp;&nbsp;&nbsp;"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
@@ -590,7 +591,7 @@ if ( count( $frame_messages ) ) {
     $output->_textarea .=
         "Some PDB model numbers have been changed due to duplication across projects:\n"
         . implode( ".\n", $frame_messages ) . ".\n"
-        . "This change is made in the  PDB (NMR-style) download file, NOT in the model numbers shown elsewhere.\n"
+        . "This change is made in the PDB (NMR-style) download file, NOT in the model numbers shown elsewhere.\n"
         . "There is a REMARK included with these details within the PDB file before each model.\n"
         ;
 }
