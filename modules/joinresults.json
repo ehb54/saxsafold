@@ -193,6 +193,7 @@
             ,"multiple" : "true"
             ,"required" : "true"
             ,"pull"     : "project"
+            ,"help"     : "Select two or more previously finalized projects with identical data"
             ,"layout" : {
                 "parent" : "inputpanel"
             }
