@@ -443,7 +443,7 @@ class SAS {
             $dtype  = array_shift( $linedata );
             $values = array_map( 'self::significant_digits', array_map( 'floatval', $linedata ) );
 
-            echo "line name $name dtype $dtype\n";
+            # echo "line name $name dtype $dtype\n";
 
             if ( $this->data_name_exists( $name ) ) {
                 $this->last_error = "Error when loading data from $file, Duplicate data name '$name'";
@@ -1329,7 +1329,7 @@ class SAS {
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
-                $this->last_error = "SAS::remove_data() name $name is not a data name\n";
+                $this->last_error = "SAS::remove_data() name '$name' is not a data name\n";
                 return $this->error_exit( $this->last_error );
             }
             unset( $this->data->$name );
