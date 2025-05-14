@@ -635,9 +635,8 @@ $output->struct = (object) [
     ,"script" => "background white;ribbon only;"
     ];
 
-$pos = 0;
-
 ## for color match
+$pos = 0;
 $cgstate->state->iq_waxsis_nnlsresults_colors = (object)[];
 
 foreach ( $iqresults as $name => $conc ) {

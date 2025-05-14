@@ -407,6 +407,7 @@ foreach ( $sas->data_names( '/(Exp| mod)/' ) as $v ) {
 echo $sas->data_summary( $sas->data_names( '/(Exp| mod)/' ) );
 */
 
+/*
 ## test new pr plot with results
 
 $outfile        = "plotout.json";
@@ -480,3 +481,19 @@ $sas->plot_trace_options( $plotnamewaxsis, $residname, [ 'linecolor_number' => 2
 echo $sas->data_summary( $sas->data_names() );
 file_put_contents( $outfile, "\n" .  json_encode( $sas->plot( $plotnamewaxsis ) ) . "\n\n" );
 
+*/
+
+## test function load_somo_csv_file()
+
+
+$sas = new SAS( true );
+
+$csvfile = "AF-G0A007-F1-model_v4_waxsis_somo_iq.csv";
+
+$sas->load_somo_csv_file( SAS::PLOT_IQ, "G0A007D: ", $csvfile );
+
+echo $sas->data_summary( $sas->data_names() );
+
+$sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/^.* WAXSiS/', 'I(q) WAXSiS' );
+
+echo $sas->data_summary( $sas->data_names() );

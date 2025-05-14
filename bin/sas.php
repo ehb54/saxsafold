@@ -376,7 +376,135 @@ class SAS {
         return true;
     }
 
-    # load file
+    # load somo csv file as data
+    function load_somo_csv_file( $type, $prefix, $file, $includeSDs = true, $tag = "" ) {
+        $this->debug_msg( "SAS::load_somo_csv_file( $type, '$prefix', '$file' )" );
+        $this->last_error = "";
+        if ( strlen( $tag ) ) { $tag = ' ' . $tag; };
+
+        if ( !$this->valid_type( $type ) ) {
+            $this->last_error = "SAS: load_somo_csv_file() Invalid type $type";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $type != self::PLOT_IQ ) {
+            $this->last_error = "SAS: load_somo_csv_file() only type PLOT_IQ currently supported";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !file_exists( $file ) ) {
+            $this->last_error = "Expected$tag file '$file' does not exist\n";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !($data = file_get_contents( $file ) ) ) {
+            $this->last_error = "Expected$tag file '$file' can not be read\n";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        $lines = explode( "\n", $data );
+
+        if ( !count( $lines ) ) {
+            $this->last_error = "File '$file' has no lines\n";
+            return $this->error_exit( $this->last_error );
+        }
+            
+        if ( !preg_match( '/^"Name","Type; q:",/', $lines[0] ) ) {
+            $this->last_error = "File '$file' does not have the correct format on line 1";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $linedata = explode( ",", $lines[0] );
+        ## remove 1st 2 and last 2 elements
+        array_shift( $linedata );
+        array_shift( $linedata );
+        array_pop( $linedata );
+        array_pop( $linedata );
+        
+        $x_values = array_map( 'self::significant_digits', array_map( 'floatval', $linedata ) );
+
+        $this->debug_json( "x_values", $x_values );
+
+        array_shift( $lines );
+
+        ## cache results before storing to enable checking for duplicates etc
+        $cache = (object)[];
+
+        foreach ( $lines as $line ) {
+            $line = str_replace( '"', '', $line );
+            $linedata = explode( ",", $line );
+
+            if ( count( $linedata ) < 3 ) {
+                ## skip short lines
+                continue;
+            }
+
+            $name   = "$prefix" . array_shift( $linedata );
+            $dtype  = array_shift( $linedata );
+            $values = array_map( 'self::significant_digits', array_map( 'floatval', $linedata ) );
+
+            if ( $this->data_name_exists( $name ) ) {
+                $this->last_error = "Error when loading data from $file, Duplicate data name '$name'";
+                return $this->error_exit( $this->last_error );
+            }
+
+            if ( !isset( $cache->$name ) ) {
+                $cache->$name = (object)[];
+            }
+            
+            switch ( $dtype ) {
+                case 'I(q)' :
+                {
+                    if ( isset( $cache->$name->y ) ) {
+                        $this->last_error = "Error when loading data from $file, Duplicate row data '$name'";
+                        return $this->error_exit( $this->last_error );
+                    }
+                    $cache->$name->y = $values;
+                }
+                break;
+
+                case 'I(q) sd' :
+                {
+                    if ( isset( $cache->$name->error_y ) ) {
+                        $this->last_error = "Error when loading data from $file, Duplicate row SD data '$name'";
+                        return $this->error_exit( $this->last_error );
+                    }
+                    $cache->$name->error_y = $values;
+                }
+                break;
+
+                default :
+                {
+                    $this->last_error = "Error when loading data from $file, Unknown data type '$dtype' encountered";
+                    return $this->error_exit( $this->last_error );
+                }
+                break;
+            }
+        }                
+
+        ## SDs and no data check
+
+        foreach ( $cache as $name => $v ) {
+            if ( !isset( $v->y ) ) {
+                $this->last_error = "Error when loading data from $file, Data for '$name' has only SDs";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        ## all ok, add data
+        foreach ( $cache as $name => $v ) {
+            $this->data->$name = (object) [ 'type' => $type ];
+            $this->data->$name->x = unserialize( serialize( $x_values ) );
+            $this->data->$name->y = $v->y;
+            if ( isset( $v->error_y ) ) {
+                $this->data->$name->error_y = $v->error_y;
+            }
+        }
+
+        return true;
+    }
+
+    # load file as data
     function load_file( $type, $name, $file, $includeSDs = true, $tag = "" ) {
         $this->debug_msg( "SAS::load_file( $type, '$name', '$file' )" );
         $this->last_error = "";
@@ -1130,6 +1258,25 @@ class SAS {
         return true;
     }
 
+    # regex rename data 
+    function regex_rename_data( $names, $regex_from, $regex_to ) {
+        $this->debug_msg( "SAS::regex_rename_data( \$names[], '$regex_from', '$regex_to' )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $names = [ $names ];
+        }
+
+        foreach ( $names as $name ) {
+            $toname = preg_replace( $regex_from, $regex_to, $name );
+            if ( !$this->rename_data( $name, $toname ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     # rename data 
     function rename_data( $fromname, $toname ) {
         $this->debug_msg( "SAS::rename_data( '$fromname', '$toname' )" );
@@ -1151,6 +1298,24 @@ class SAS {
         return true;
     }
 
+    # remove data if exists - string or array
+    function remove_data_if_exists( $names ) {
+        $this->debug_msg( "SAS::remove_data_if_exists( names[] )" );
+        $this->last_error = "";
+
+        if ( !is_array( $names ) ) {
+            $names = [ $names ];
+        }
+
+        foreach ( $names as $name ) {
+            if ( $this->data_name_exists( $name ) ) {
+                $this->remove_data( $name );
+            }
+        }
+
+        return true;
+    }
+
     # remove data - string or array
     function remove_data( $names ) {
         $this->debug_msg( "SAS::remove_data( names[] )" );
@@ -1162,7 +1327,7 @@ class SAS {
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
-                $this->last_error = "SAS::remove_data() name $name is not a data name\n";
+                $this->last_error = "SAS::remove_data() name '$name' is not a data name\n";
                 return $this->error_exit( $this->last_error );
             }
             unset( $this->data->$name );
@@ -1191,6 +1356,19 @@ class SAS {
 
         $this->last_error = "SAS::remove_plot_data() name $dataname not found in plot $plot\n";
         return $this->error_exit( $this->last_error );
+    }
+
+    # remove plot
+    function remove_plot( $name ) {
+        $this->debug_msg( "SAS::remove_plot( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $name ) ) {
+            $this->last_error = "SAS::remove_plot() name $name is not a plot name\n";
+            return $this->error_exit( $this->last_error );
+        }
+        
+        unset( $this->plots->$name );
     }
 
     # adds to existing plot object 
@@ -2429,7 +2607,7 @@ class SAS {
 
         if ( $all_data_has_errors ) {
             ## compute combined errors
-            echo "all data has SDs, will compute SDs for fit\n";
+            $this->debug_msg( "all data has SDs, will compute SDs for fit." );
             $error_y = array_fill( 0, $len, 0 );
 
             foreach ( $finalarray as $k => $v ) {
@@ -2464,7 +2642,7 @@ class SAS {
         return true;
     }
 
-    # compare_data -
+    # compare_data - return true if matched, false if not
     function compare_data( $name1, $name2, $compare_errors = true ) {
         $this->debug_msg( "SAS::compare_data( '$name1', '$name2' )" );
         $this->last_error = "";
@@ -2550,4 +2728,40 @@ class SAS {
             . $this->dump_plots( $pretty )
             ;
    }
+
+    ## get annotation text from plot and return array with nChi^2 & RMSD values if present
+    function plot_stats( $plot ) {
+        $result = (object)[];
+        if ( !isset( $plot->layout ) ) {
+            $result->error = "Plot has no layout";
+            return $result;
+        }
+        if ( !isset( $plot->layout->annotations ) ) {
+            $result->error = "Plot has no annotations " . json_encode( $plot->layout );
+            return $result;
+        }
+        if ( !count( $plot->layout->annotations ) ) {
+            $result->error = "Plot annotations are empty " . json_encode( $plot->layout->annotations );
+            return $result;
+        }
+        
+        if ( !isset( $plot->layout->annotations[0]->text ) ) {
+            $result->error = "Plot has no annotations text"  . json_encode( $plot->layout->annotations[0] );
+            return $result;
+        }
+        if ( !strlen( $plot->layout->annotations[0]->text ) ) {
+            $result->error = "Plot annotations text is empty";
+            return $result;
+        }
+        ## for debugging $result->text = $plot->layout->annotations[0]->text;
+        if ( preg_match( '/RMSD ([^ ]+)/', $plot->layout->annotations[0]->text, $matches ) ) {
+            $result->RMSD = floatval( $matches[ 1 ] );
+            $result->fit  = $result->RMSD;
+        }
+        if ( preg_match( '/nChi\^2 ([^ ]+)/', $plot->layout->annotations[0]->text, $matches ) ) {
+            $result->nChi2 = floatval( $matches[ 1 ] );
+            $result->fit  = $result->nChi2;
+        }
+        return $result;
+    }
 }

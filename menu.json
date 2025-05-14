@@ -41,6 +41,17 @@
             ]
         }
         ,{
+            "id"       : "alpha"
+            ,"label"    : "alpha"
+            ,"icon"     : "pngs/alpha.png"
+	    ,"modules"  : [
+                {
+                    "id"         : "joinresults"
+                    ,"label"     : "Join results"
+                }
+            ]
+        }
+        ,{
             "id"      : "Acknowledgements_menu"
             ,"label"   : "Acknowledgements"
             ,"icon"    : "pngs/noicon.png"
