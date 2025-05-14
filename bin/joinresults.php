@@ -226,7 +226,7 @@ foreach ( $input->projects as $project ) {
         ## remove WAXSiS mod 0 if it is not identical to the first proejct's
         if ( $sas->compare_data( "$firstproject: $firstbname WAXSiS mod. 0", "$project: $bname WAXSiS mod. 0" ) ) {
             $sas->remove_data( [
-                                   "$project: Exp. I(q)"
+                                   "$project: $bname WAXSiS mod. 0"
                                ] );
         }
     } else {
@@ -439,6 +439,7 @@ $output->struct = (object) [
 
 ## for color match
 $pos = 0;
+$iq_waxsis_nnlsresults         = json_decode( json_encode( $iqresults ) );
 $iq_waxsis_nnlsresults_colors = (object)[];
 
 foreach ( $iqresults as $name => $conc ) {
@@ -586,7 +587,35 @@ $output->$pr_recon_id = $saspr->plot( $plotnamewaxsis );
 $output->$pr_recon_id->layout->title->text =
     str_replace( "vs starting", "vs starting struct. for project " . $best->pr->project, $output->$pr_recon_id->layout->title->text );
 
-$ga->tcpmessage( [ '_textarea' => "annotations " . $output->$pr_recon_id->layout->title->text . "\n" ] );
+## final rg plot
+
+require_once "plotlyhist.php";
+
+$rgdata = (object) [];
+
+if ( isset( $cgstates->{$best->iq->project}->state->output_load->Rg ) ) {
+    $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>SOMO computed" } =
+        (object) [
+            "Rg" => $cgstates->{$best->iq->project}->state->output_load->Rg
+            ,"color" => "blue"
+        ];
+};
+
+### perhaps use $saspr to compute rgs from p(r), do we need tihs?
+
+if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
+    $sash = new SAS();
+    $sash->create_plot_from_plot( SAS::PLOT_PR, "P(r)", $cgstates->{$best->pr->project}->state->output_load->prplot );
+    $prrg = 0;
+    $sash->compute_rg_from_pr( "Exp. P(r)", $prrg );
+    $rgdata->{ "Exp. P(r)<br>Project " . $best->pr->project . "<br>SOMO computed on regular grid" } =
+        (object) [
+            "Rg" => $prrg
+            ,"color" => "brown"
+        ];
+}
+
+joined_hist( $output, $iq_waxsis_nnlsresults, $iq_waxsis_nnlsresults_colors, $rgdata );
 
 $output->_textarea = '';
 
