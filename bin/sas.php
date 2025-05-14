@@ -443,8 +443,6 @@ class SAS {
             $dtype  = array_shift( $linedata );
             $values = array_map( 'self::significant_digits', array_map( 'floatval', $linedata ) );
 
-            # echo "line name $name dtype $dtype\n";
-
             if ( $this->data_name_exists( $name ) ) {
                 $this->last_error = "Error when loading data from $file, Duplicate data name '$name'";
                 return $this->error_exit( $this->last_error );
@@ -2609,7 +2607,7 @@ class SAS {
 
         if ( $all_data_has_errors ) {
             ## compute combined errors
-            echo "all data has SDs, will compute SDs for fit\n";
+            $this->debug_msg( "all data has SDs, will compute SDs for fit." );
             $error_y = array_fill( 0, $len, 0 );
 
             foreach ( $finalarray as $k => $v ) {
