@@ -1995,7 +1995,7 @@ class SAS {
     }
 
     # compute_pr_many() - call somo to compute p(r) multiple structures
-    function compute_pr_many( $pdbnames, $prnames, $binsize = 1 ) {
+    function compute_pr_many( $pdbnames, $prnames, $binsize = 1, $debug_log = "" ) {
         $this->debug_msg( "SAS::compute_pr_many( pdbnames[], prnames[], $binsize )" );
         $this->last_error = "";
         global $run_cmd_last_error_code;
@@ -2029,7 +2029,19 @@ class SAS {
         
         $cmd = "$this->scriptdir/calcs/calcpr.pl " . implode( " ", $pdbnames ) . " 2>&1";
 
-        $res = run_cmd( $cmd, true, true );
+        if ( strlen( $debug_log ) ) {
+            $res = run_cmd( $cmd, false, true );
+            if ( $run_cmd_last_error_code ) {
+                if ( count( $res ) > 40 ) {
+                    ## very long error, save full in $debug_log and report 1st 20 .. last 20 lines
+                    file_put_contents( $debug_log, implode( "\n", $res ) );
+                    $res = array_merge( array_slice( $res, 0, 20 ), [ '...' ], array_slice( $res, -20, 20 ) );
+                }
+                error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$run_cmd_last_error_code'" );
+            }
+        } else {
+            $res = run_cmd( $cmd, true, true );
+        }
 
         $prfiles = explode( ' ', end( $res ) );
 
