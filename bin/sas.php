@@ -2032,12 +2032,12 @@ class SAS {
         if ( strlen( $debug_log ) ) {
             $res = run_cmd( $cmd, false, true );
             if ( $run_cmd_last_error_code ) {
-                if ( count( $res ) > 40 ) {
-                    ## very long error, save full in $debug_log and report 1st 20 .. last 20 lines
+                if ( count( $res ) > 22 ) {
+                    ## very long error, save full in $debug_log and report 1st 10 .. last 10 lines
                     file_put_contents( $debug_log, implode( "\n", $res ) );
-                    $res = array_merge( array_slice( $res, 0, 20 ), [ '...' ], array_slice( $res, -20, 20 ) );
+                    $res = array_merge( array_slice( $res, 0, 10 ), [ '...' ], array_slice( $res, -10, 10 ) );
                 }
-                error_exit( "shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$run_cmd_last_error_code'" );
+                $this->error_exit( "Full results in <i>$debug_log</i><br>shell command [$cmd] returned result:<br>" . implode( "<br> ", $res ) . "<br>and with exit status '$run_cmd_last_error_code'" );
             }
         } else {
             $res = run_cmd( $cmd, true, true );
