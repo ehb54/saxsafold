@@ -117,7 +117,7 @@ foreach ( $input->projects as $project ) {
         $sas->copy_data( 'Exp. I(q)', "$project: Exp. I(q)" );
 
         ## remove extra
-        $sas->remove_data_if_exists( [ 'Exp. I(q)', 'WAXSiS', 'Res./SD', 'Resid.' ] );
+        $sas->remove_data_if_exists( [ 'Exp. I(q)', 'WAXSiS', 'Res./SD', 'Resid.', 'Comp.' ] );
         
     }
 
@@ -132,7 +132,7 @@ foreach ( $input->projects as $project ) {
         $sas->copy_data( 'Exp. P(r)', "$project: Exp. P(r)" );
 
         ## remove extra
-        $sas->remove_data_if_exists( [ 'Exp. P(r)', 'WAXSiS', 'Res./SD', 'Resid.' ] );
+        $sas->remove_data_if_exists( [ 'Exp. P(r)', 'WAXSiS', 'Res./SD', 'Resid.', 'Comp.' ] );
     }
 
     if ( $project == $firstproject ) {
@@ -533,7 +533,7 @@ foreach ( $prfiles as $k => $v ) {
 # $ga->tcpmessage( [ '_textarea' => "prfiles:" . json_encode( $prfiles, JSON_PRETTY_PRINT ). "\n" ] );
 # $ga->tcpmessage( [ '_textarea' => "prnames:" . json_encode( $prnames, JSON_PRETTY_PRINT ). "\n" ] );
 
-$saspr->compute_pr_many( $prfiles, $prnames );
+$saspr->compute_pr_many( $prfiles, $prnames, 1, "prfail.log" );
 $saspr->extend_pr( array_merge( $prnames, [ "Exp. P(r)" ] ) );
 
 $scalednames = [];
