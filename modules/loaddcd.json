@@ -1,0 +1,317 @@
+{
+    "moduleid"         : "loaddcd"
+    ,"label"           : "Load DCD"
+    ,"help"            : "Load a DCD file computed elsewhere"
+    ,"executable"      : "loaddcd.php"
+    ,"requireproject"  : "true"
+    ,"loadfields"      : "loaddcd_load.php"
+    ,"panels" : [
+        {
+            "root" : {
+                "label" : [
+                    1,
+                    1
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "gap" : "1px",
+                "align" : "left",
+                "size" : [
+                    1,
+                    "auto"
+                ]
+            }
+        },
+        {
+            "header" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        },
+        {
+            "body" : {
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "size" : [
+                    "auto",
+                    [
+                        1,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "footer" : {
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "inputpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        },
+        {
+            "resultpanel" : {
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [ 1, 1 ]
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "data" : [
+                    1,
+                    2
+                ],
+                "parent" : "body",
+                "repeats" : {
+                    "indent" : "10px"
+                },
+                "label" : [
+                    1,
+                    1
+                ]
+            }
+        }
+        ,{
+            "structure" : {
+                "data" : [
+                    2,
+                    1
+                ],
+                "label" : [
+                    1,
+                    1
+                ],
+                "align" : "center",
+                "parent" : "body",
+                "gap" : "1px",
+                "size" : [
+                    "auto",
+                    "auto"
+                ],
+                "location" : [
+                    "next",
+                    "full"
+                ]
+            }
+        }
+        ,{
+            "msgspanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "left",
+                "size" : [
+                    "auto",
+                    [1,1]
+                ]
+            }
+        }
+        ,{
+            "buttonpanel" : {
+                "parent" : "body",
+                "location" : [
+                    "next",
+                    "full"
+                ],
+                "align" : "center",
+                "size" : [
+                    "auto",
+                    "auto"
+                ]
+            }
+        }
+    ]
+    ,"fields"   : [
+        {
+            "role"       : "input"
+            ,"id"        : "module_header"
+            ,"label"     : "Load DCD"
+            ,"type"      : "label"
+            ,"default"   : "header4"
+            ,"prehline"  : "true"
+            ,"posthline" : "true"
+            ,"layout" : {
+                "parent" : "header"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "pname"
+            ,"label"            : "Project name"
+            ,"type"             : "text"
+            ,"required"         : "true"
+            ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
+            ,"pattern"          : "[a-zA-Z0-9_]+"
+            ,"specifiedproject" : ""
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "desc"
+            ,"label"            : "Description"
+            ,"type"             : "textarea"
+            ,"required"         : "true"
+            ,"help"             : "Description information about this project"
+            ,"layout"     : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"            : "Name"
+            ,"type"             : "text"
+            ,"help"             : "The structure file name or the full name from the AlphaFold database"
+            ,"id"               : "name"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "help"               : "As reported in the PDB TITLE information"
+            ,"id"                : "title"
+            ,"type"              : "textarea"
+            ,"role"              : "output"
+            ,"label"             : "Title"
+            ,"rows"              : 3
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"            : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "help"               : "As reported in the PDB SOURCE information"
+            ,"id"                : "source"
+            ,"type"              : "textarea"
+            ,"role"              : "output"
+            ,"label"             : "Source"
+            ,"rows"              : 5
+            ,"labelmargintop"    : "0.5rem"
+            ,"layout"            : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label"             : "Downloads"
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "downloads"
+            ,"type"             : "html"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label"             : ""
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "spacer1"
+            ,"type"             : "label"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"              : "input"
+            ,"id"               : "dcdfile"
+            ,"help"             : "Select a DCD file"
+            ,"type"             : "lrfile"
+            ,"label"            : "Select a DCD file"
+            ,"labelmargintop"   : "0.5rem"
+            ,"required"         : "true"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label"             : ""
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "spacer2"
+            ,"type"             : "label"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "processing_progress"
+            ,"type"       : "progress"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+        ,{
+            "role"        : "output"
+            ,"id"         : "progress_text"
+            ,"type"       : "html"
+            ,"label"      : " "
+            ,"layout"     : {
+                "label"    : "none",
+                "data"     : [ 1, [ 1, 3 ] ],
+                "parent"  : "msgspanel"
+            }
+        }
+    ]
+}
