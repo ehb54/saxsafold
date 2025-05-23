@@ -134,12 +134,12 @@ $restore_old_data = function() {
         }
         if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
             $obj->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
+            if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
+                $obj->iqresultswaxsis .= $cgstate->state->output_final->csvdownloads;
+            }
         }
         if ( isset( $cgstate->state->output_final->pr_recon ) ) {
             $obj->pr_recon = &$cgstate->state->output_final->pr_recon;
-        }
-        if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
-            $obj->csvdownloads = &$cgstate->state->output_final->csvdownloads;
         }
         if ( isset( $cgstate->state->output_final->struct ) ) {
             $obj->struct = &$cgstate->state->output_final->struct;
@@ -169,7 +169,6 @@ $ga->tcpmessage( [
                      ,"progress_text"      => ''
                      ,"histplotfinal"      => ''
                      ,"iqplotwaxsis"       => ''
-                     ,"csvdownloads"       => ''
                      ,"struct"             => ''
                  ] );
 
@@ -620,7 +619,7 @@ if ( !file_put_contents( $pdboutname, $pdbout ) ) {
 $cgstate->state->waxsis_final_pdb_names = $pdbnames;
 
 $output->downloads = $cgstate->state->output_load->downloads;
-$output->csvdownloads =
+$output->iqresultswaxsis .=
     "<div>"
     . "&nbsp;&nbsp;&nbsp;"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
