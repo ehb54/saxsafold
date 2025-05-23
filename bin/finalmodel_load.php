@@ -69,12 +69,12 @@ if ( isset( $cgstate->state->output_final ) ) {
     }
     if ( isset( $cgstate->state->output_final->iqresultswaxsis ) ) {
         $result->iqresultswaxsis = &$cgstate->state->output_final->iqresultswaxsis;
+        if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
+            $result->iqresultswaxsis .= $cgstate->state->output_final->csvdownloads;
+        }
     }
     if ( isset( $cgstate->state->output_final->pr_recon ) ) {
         $result->pr_recon = &$cgstate->state->output_final->pr_recon;
-    }
-    if ( isset( $cgstate->state->output_final->csvdownloads ) ) {
-        $result->csvdownloads = &$cgstate->state->output_final->csvdownloads;
     }
     if ( isset( $cgstate->state->output_final->struct ) ) {
         $result->struct = &$cgstate->state->output_final->struct;
