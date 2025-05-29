@@ -270,6 +270,18 @@
         }
         ,{
             "role"              : "input"
+            ,"id"               : "topfile"
+            ,"help"             : "Select the PDB file used to create the dcd (the topology file), it may be the same as your original PDB file"
+            ,"type"             : "lrfile"
+            ,"label"            : "Select a topology file"
+            ,"labelmargintop"   : "0.5rem"
+            ,"required"         : "true"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"              : "input"
             ,"id"               : "dcdfile"
             ,"help"             : "Select a DCD file"
             ,"type"             : "lrfile"

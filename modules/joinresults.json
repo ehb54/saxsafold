@@ -1,7 +1,7 @@
 {
     "moduleid"    : "joinresults"
-    ,"label"      : "Define project"
-    ,"help"       : "Define a new project or load an existing project"
+    ,"label"      : "Join results"
+    ,"help"       : "Join results from multiple projects"
     ,"executable" : "joinresults.php"
     ,"nojobcontrol" : "true"
     ,"panels" : [
