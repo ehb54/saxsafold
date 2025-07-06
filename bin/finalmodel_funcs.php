@@ -122,6 +122,12 @@ function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) 
 
     $name = preg_replace( '/\.pdb$/', '', $cgstate->state->output_load->name );
 
+    $pdbname          = $cgstate->state->output_load->name;
+    if ( !file_exists( "monomer_monte_carlo/$pdbname" ) ) {
+        $errormsg = "MMC results for $pdbname not found, did you <i>Run MMC</i> on this structure?";
+        return false;
+    }
+
     foreach ( $frames as $frame ) {
         $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
         $model_file = "$fromdir/$name-m$frame_padded.pdb";
@@ -131,7 +137,7 @@ function link_existing_frames( $frames, $fromdir, $todir, &$names, &$errormsg ) 
         } else {
             extract_dcd_frame(
                 $frame
-                ,$cgstate->state->output_load->name
+                ,"monomer_monte_carlo/$pdbname"
                 ,"monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd"
                 ,$todir
                 ,true

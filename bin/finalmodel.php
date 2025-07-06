@@ -104,9 +104,9 @@ if ( !isset( $cgstate->state->output_iqpr ) ) {
 
 ## process inputs here to produce output
 
-if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
-    error_exit( "The maximum value allowed for the <i>Additional adjacent frame count</i> is " . ( intval( $cgstate->state->mmcstride / 2 ) ) );
-}
+# if ( $input->adjacent_frames > $cgstate->state->mmcstride / 2 ) {
+#    error_exit( "The maximum value allowed for the <i>Additional adjacent frame count</i> is " . ( intval( $cgstate->state->mmcstride / 2 ) ) );
+# }
 
 $procdir = "waxsissets";
 $waxsis_data_name = "I(q) WAXSiS mod. 0";
@@ -280,7 +280,7 @@ if ( !$do_testing ) {
 
 ## link existing frames
 
-progress_text( "Extracting additonal frames if needed" );
+progress_text( "Extracting additional frames if needed" );
 
 $ga->tcpmessage( [ 'processing_progress' => 0.01 ] );
 
