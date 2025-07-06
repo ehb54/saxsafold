@@ -628,9 +628,9 @@ $output->prplot = $sas->plot( "P(r)" );
 $cmd = "$scriptdir/calcs/pdbchaincount.pl $output->name";
 $chaincount = trim( run_cmd( $cmd ) );
 
-if ( $chaincount != "1" ) {
-    error_exit( "The supplied structure does not have exactly one chain ($chaincount)<br>For multichain structures, we suggest using <a target=_blank href=https://sassie-web.chem.utk.edu/sassie2>SASSIE-web</a><br>which can handle a greater variety of structures", true, $reset_progress_text_on_error );
-}
+# if ( $chaincount != "1" ) {
+#     error_exit( "The supplied structure does not have exactly one chain ($chaincount)<br>For multichain structures, we suggest using <a target=_blank href=https://sassie-web.chem.utk.edu/sassie2>SASSIE-web</a><br>which can handle a greater variety of structures", true, $reset_progress_text_on_error );
+# }
 
 $ga->tcpmessage( $output );
 progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
