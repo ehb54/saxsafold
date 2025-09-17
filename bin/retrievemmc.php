@@ -215,7 +215,7 @@ if ( $lresults && isset( $cgstate->state->mmcdownloaded ) ) {
         }
 
         for ( $frame = $input->mmcoffset + 1; $frame <= $totframes; $frame += $input->mmcstride ) {
-            extract_dcd_frame( $frame, $pdbname, "monomer_monte_carlo/$dcdname", "preselected" );
+            extract_dcd_frame( $frame, "monomer_monte_carlo/$pdbname", "monomer_monte_carlo/$dcdname", "preselected" );
             if ( !($extracted++ % $update_mmc_extract_frequency ) ) {
                 $ga->tcpmessage( [
                                      'processing_progress' => $extracted / $reqframes
