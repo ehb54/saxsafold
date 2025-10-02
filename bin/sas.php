@@ -2319,9 +2319,9 @@ class SAS {
             $output .= $this->data->{$names[0]}->x[$i] . ',';
             
             foreach ( $names as $name ) {
-                $output .= $this->data->{$names[0]}->y[$i] . ',';
+                $output .= $this->data->$name->y[$i] . ',';
                 if ( isset( $this->data->$name->error_y ) ) {
-                    $output .= $this->data->{$names[0]}->error_y[$i] . ',';
+                    $output .= $this->data->$name->error_y[$i] . ',';
                 }
             }
             $output .= "\n";
@@ -2347,7 +2347,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        $fmt = " %-30s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n";
+        $fmt = " %-50s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n";
         $out =
             sprintf( $fmt
                      ,"Data name"
@@ -2362,7 +2362,7 @@ class SAS {
                      ,"max q or dmax"
             );
         
-        $out .= str_repeat( "-", 163 ) . "\n";
+        $out .= str_repeat( "-", 183 ) . "\n";
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
@@ -2398,7 +2398,7 @@ class SAS {
                 );
         }
 
-        $out .= str_repeat( "-", 163 ) . "\n";
+        $out .= str_repeat( "-", 183 ) . "\n";
 
         return $out;
     }
