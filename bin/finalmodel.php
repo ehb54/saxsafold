@@ -536,6 +536,9 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 
 ### summary results
 
+$fitname = $input->_project . ".fit";
+$sas->save_fit( "Exp. I(q)", "I(q) NNLS fit", $fitname );
+
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
 ### save results to state
@@ -624,7 +627,9 @@ $output->iqresultswaxsis .=
     . "&nbsp;&nbsp;&nbsp;"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $fitname )
+    . "<br>&nbsp;"
     . "</div>"
     ;
 
