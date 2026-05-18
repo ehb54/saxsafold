@@ -202,7 +202,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
     return count( $toclear ) + count( $toremove );
 }
 
-function question_prior_results( $name, $removecb = null ) {
+function question_prior_results( $name, $removecb = null, $labeladdition = '' ) {
     global $ga;
     global $cgstate;
     global $input;
@@ -248,7 +248,7 @@ function question_prior_results( $name, $removecb = null ) {
                      [
                       "id"          => "l1"
                       ,"type"       => "label"
-                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permanent!<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All results for subsequent stages indicated above for this project will be lost!"
+                      ,"label"      => "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you Erase results, this will be permanent!<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All results for subsequent stages indicated above for this project will be lost!\n$labeladdition"
                       ,"align"      => "center"
                      ]
                  ]

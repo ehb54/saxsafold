@@ -41,6 +41,10 @@ $cgstate = new cgrun_state();
 
 require_once "em.php";
 
+## multiple ems
+## acquire & release in groups
+## split names amoungst group
+
 $em = new em();
 function em_shutdown() {
     global $em;
@@ -125,7 +129,14 @@ $restore_old_data = function() {
     $cgstate = new cgrun_state();
 
     if ( isset( $cgstate->state->output_load->iqplot ) ) {
-        $obj->iqplot = &$cgstate->state->output_load->iqplot;
+        $obj->iqplot = unserialize(serialize($cgstate->state->output_load->iqplot));
+
+        foreach( $obj->iqplot->data as $curve ) {
+            if ( $curve->name == "WAXSiS" ) {
+                $curve->name = "I(q) WAXSiS mod. 0";
+                break;
+            }
+        }
     }
 
     if ( isset( $cgstate->state->output_final ) ) {
@@ -161,7 +172,9 @@ $restore_old_data = function() {
     $ga->tcpmessage( $obj );
 };
 
-question_prior_results( __FILE__, $restore_old_data );
+question_prior_results( __FILE__, $restore_old_data, "<br><br><strong>N.B.</strong> Previously computed WAXSiS results for structures are cached. You can also cancel at the subsequent <i>Proceed with Computations?</i>&nbsp; message window &mdash; which includes a time estimate &mdash; without loss of prior results.<br>If you are trying to re-run failed WAXSiS computations, you will not loose any previously successfully computed curves." );
+## &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
 
 ## clear output
 $ga->tcpmessage( [
@@ -293,6 +306,8 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
 
 ## get instance to run waxsis
+### will need to get multiples
+
 progress_text( 'Waiting for resources to run WAXSiS calculations.' );
 
 if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
@@ -331,7 +346,7 @@ if ( !$count ) {
 $plotname = "I(q) waxsis nnls";
 $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
                              ,[
-                                 'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected models"
+                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
                                  ,'titlefontsize' => 14
                              ]);
 
@@ -339,6 +354,51 @@ $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
 $sas->rename_data( "WAXSiS", $waxsis_data_name );
+
+## check if model 0 (load structure) WAXSiS needs recomputing for the selected convergence mode
+
+$waxsis_model0_cached_file = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
+
+$load_convergence = isset( $cgstate->state->waxsis_load_convergence )
+    ? $cgstate->state->waxsis_load_convergence
+    : $waxsis_convergence_mode;  ## fallback for projects run before this feature
+
+if ( $load_convergence !== $input->waxsis_convergence_mode ) {
+    if ( file_exists( $waxsis_model0_cached_file ) ) {
+        $ga->tcpmessage( [ $textarea_key =>
+            "WAXSiS model 0 previously computed for convergence '$input->waxsis_convergence_mode', using cached result\n"
+        ] );
+    } else {
+        $ga->tcpmessage( [ $textarea_key =>
+            "WAXSiS convergence changed from '$load_convergence' (Load Structure) to '$input->waxsis_convergence_mode' (Final Model).\n"
+            . "Recomputing WAXSiS for model 0 (Load Structure structure)...\n"
+        ] );
+
+        $model0_pdb = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name ) . "-somo.pdb";
+        $model0_params = clone $waxsis_params;
+        $model0_params->subdir = 'waxsis';
+
+        $time_start = dt_now();
+        run_waxsis( $model0_pdb, $model0_params, $waxsis_cb );
+        $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
+        $avg_waxsis_time  = $tot_waxsis_time;
+
+        if ( !file_exists( "waxsis/intensity_waxsis.calc" ) ) {
+            error_exit( "WAXSiS did not produce the expected I(q) file for model 0" );
+        }
+        run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_model0_cached_file" );
+    }
+
+    ## reload model 0 WAXSiS data into the sas object from the (re)computed file
+    $sas->remove_data( "WAXSiS" );
+    $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsis_model0_cached_file );
+    $sas->add_plot( $plotname, "WAXSiS" );
+} else {
+    if ( !file_exists( $waxsis_model0_cached_file ) ) {
+        ## first run after this feature was added: cache the existing result
+        run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_model0_cached_file 2>/dev/null" );
+    }
+}
 
 $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
     ? $cgstate->state->waxsis_last_run_time_minutes
@@ -386,6 +446,8 @@ switch( $input->waxsis_convergence_mode ) {
 
 $tot_models_to_process_count = $models_to_process_count;
     
+## allow multiple remotes
+
 foreach ( $names as $name ) {
     
     if ( $models_to_process_count ) {
@@ -486,6 +548,8 @@ $iqresults = [];
 
 $sas->nnls( "Exp. I(q)", $alliqframes, "I(q) NNLS fit", $iqresults, true );
 
+# $ga->tcpmessage( [ "_textarea" => "iqresults => " . json_encode( $iqresults, JSON_PRETTY_PRINT ) ] );
+
 $sas->add_plot( $plotname, "I(q) NNLS fit" );
 
 foreach ( $iqresults as $k => $v ) {
@@ -519,9 +583,31 @@ if ( $rmsd != -1 ) {
 if ( $chi2 != -1 ) {
     $annotate_msg .= "nChi^2 $chi2   ";
 }
+
+## p-values
+$pvalueresults = (object)[];
+$sas->compute_p_value( "Exp. I(q)", "I(q) NNLS fit", $pvalueresults );
+if ( isset( $pvalueresults->p_value ) ) {
+# large square   $annotate_msg .= sprintf( "P-value %f <span style='color:red'>&#11035;&#65038;</span> ", $pvalueresults->p_value );
+    $annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $pvalueresults->p_value, $pvalueresults->p_value >= 0.05 ? 'green' : ($pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
+# n & c, no square   $annotate_msg .= sprintf( "P-value %f C %d N %d  ", $pvalueresults->p_value, $pvalueresults->longest_run, $pvalueresults->total_length );
+}
+
 if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( $plotname, $annotate_msg );
 }
+
+
+/*
+$ga->tcptextarea( $sas->data_summary( $sas->data_names() ) );
+$ga->tcptextarea( $sas->dump_plots() );
+$pvalueresults = (object)[];
+$sas->compute_p_value( "Exp. I(q)", "I(q) WAXSiS mod. 0", $pvalueresults );
+if ( isset( $pvalueresults->p_value ) ) {
+    $annotate_msg = sprintf( "P-value %f C %d N %d  ", $pvalueresults->p_value, $pvalueresults->longest_run, $pvalueresults->total_length );
+    $sas->annotate_plot( "iqplot", $annotate_msg, true );
+}
+*/
 
 /* save for after color assignment
 $ga->tcpmessage(
@@ -535,6 +621,9 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 
 
 ### summary results
+
+$fitname = $input->_project . ".fit";
+$sas->save_fit( "Exp. I(q)", "I(q) NNLS fit", $fitname );
 
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
@@ -624,7 +713,9 @@ $output->iqresultswaxsis .=
     . "&nbsp;&nbsp;&nbsp;"
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
     . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
+    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $fitname )
+    . "<br>&nbsp;"
     . "</div>"
     ;
 
@@ -792,9 +883,15 @@ if ( isset( $ga->cache_obj->_textarea ) ) {
 
 if ( isset( $cgstate->state->output_load ) 
      && isset( $cgstate->state->output_load->iqplot ) ) {
-    $output->iqplot = &$cgstate->state->output_load->iqplot;
-}
+    $output->iqplot = unserialize(serialize($cgstate->state->output_load->iqplot));
 
+    foreach( $output->iqplot->data as $curve ) {
+        if ( $curve->name == "WAXSiS" ) {
+            $curve->name = "I(q) WAXSiS mod. 0";
+            break;
+        }
+    }
+}
 
 if ( !$cgstate->save() ) {
     echo '{"_message":{"icon":"toast.png","text":"Save state failed: ' . $cgstate->errors . '"}}';

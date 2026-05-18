@@ -2,6 +2,7 @@
 {};
 
 require_once "computeiqpr_defines.php";
+include_once "titles.php";
 
 function setup_computeiqpr_plots( $outobj ) {
     global $sas;
@@ -10,7 +11,7 @@ function setup_computeiqpr_plots( $outobj ) {
 
     $titlefontsize = 15;
 
-    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_load->iqplot, [ "title" => "I(q)" ] );
+    $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_load->iqplot, [ "title" => PLOT_TITLE_IQ_WAXSIS ] );
     $outobj->iqplot = $sas->plot( "I(q)" );
 
     foreach ( $mdatas as $mdata ) {

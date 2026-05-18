@@ -248,7 +248,7 @@
             "help"              : "Quick convergence is useful to get results more quickly<br>Normal convergence is recommended, but will take some time to complete",
             "id"                : "waxsis_convergence_mode",
             "type"              : "listbox",
-            "values"            : "Normal~normal~Quick~quick",
+            "values"            : "Normal~normal~Quick~quick~Thorough~thorough",
             "default"           : "normal"
             ,"layout" : {
                 "parent" : "resultpanel"

@@ -60,7 +60,14 @@ if ( !isset( $cgstate->state->output_iqpr ) ) {
 #}
 
 if ( isset( $cgstate->state->output_load->iqplot ) ) {
-    $result->iqplot = &$cgstate->state->output_load->iqplot;
+    $result->iqplot = unserialize(serialize($cgstate->state->output_load->iqplot));
+    
+    foreach( $result->iqplot->data as $curve ) {
+        if ( $curve->name == "WAXSiS" ) {
+            $curve->name = "I(q) WAXSiS mod. 0";
+            break;
+        }
+    }
 }
 
 if ( isset( $cgstate->state->output_final ) ) {

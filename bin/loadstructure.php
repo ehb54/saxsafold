@@ -657,6 +657,13 @@ $ga->tcpmessage( [
                      ,'processing_progress' => 0.3
                  ] );
 
+switch( $waxsis_convergence_mode ) {
+    case "normal"   : $waxsis_suffix = "_n"; break;
+    case "thorough" : $waxsis_suffix = "_t"; break;
+    case "quick"    : $waxsis_suffix = "_q"; break;
+    default         : error_exit( "internal error - unknown or unsupported WAXSiS convergence mode '$waxsis_convergence_mode'" );
+}
+
 $waxsis_lc = 0;
 
 $waxsis_cb = function( $line ) {
@@ -686,9 +693,11 @@ $waxsis_cb( json_encode( $waxsis_params, JSON_PRETTY_PRINT ) . "\n" );
 
 ## run_waxsis currently should error out directly, nothing to catch here, could change this if we wanted
 
+## cached suffixed file for this convergence mode
+$waxsis_cached_file = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
+
 ## for testing expediency, optionally run WAXSiS
 if ( 1 ) {
-   
     $time_start = dt_now();
     run_waxsis(
         $output->name
@@ -697,6 +706,7 @@ if ( 1 ) {
         );
     $time_end   = dt_now();
     $cgstate->state->waxsis_last_run_time_minutes = dt_duration_minutes( $time_start, $time_end );
+    run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_cached_file" );
 }
 
 ## waxsis done, release elastic resources
@@ -715,7 +725,8 @@ progress_text( 'Assembling final results ...' );
 ## setup Iq/Pr plots
 
 # $waxsisfile = "waxsis/fittedCalcInterpolated_waxsis.fit";
-$waxsisfile = "waxsis/intensity_waxsis.calc";
+# $waxsisfile = "waxsis/intensity_waxsis.calc";
+$waxsisfile = $waxsis_cached_file;
 
 if ( !file_exists( $waxsisfile ) ) {
     error_exit( "WAXSiS output file '$waxsisfile' does not exist", true, $reset_progress_text_on_error );
@@ -727,6 +738,7 @@ $scale = 0;
 
 if (
     $sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
+    && $sas->plot_options( "I(q)", [ 'title' => PLOT_TITLE_IQ_WAXSIS ] )
     && $sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsisfile  )
     && $sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
     && $sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $chi2, $scale )
@@ -753,6 +765,15 @@ if ( $chi2 != -1 ) {
     $annotate_msg .= "nChi^2 $chi2   ";
 }
 
+## p-values
+## $ga->tcptextarea( $sas->data_summary( $sas->data_names() ) );
+
+$pvalueresults = (object)[];
+$sas->compute_p_value( "Exp. I(q)", "WAXSiS", $pvalueresults );
+if ( isset( $pvalueresults->p_value ) ) {
+    $annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $pvalueresults->p_value, $pvalueresults->p_value >= 0.05 ? 'green' : ($pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
+}
+
 if ( strlen( $annotate_msg ) ) {
     $sas->annotate_plot( "I(q)", $annotate_msg );
 }
@@ -760,7 +781,6 @@ if ( strlen( $annotate_msg ) ) {
 # $output->prplot = $cgstate->state->output_loadsaxs->prplot;
 
 $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check the progress window</b></div>' : "No warnings"; 
-
 
 ## log results to textarea
 
@@ -771,10 +791,11 @@ $output->warnings = $warningsent ? '<div style="color:red"><b>Warnings, check th
 
 ## save state
 
-$cgstate->state->loaded            = true;
-$cgstate->state->output_load       = $output;
-$cgstate->state->is_alphafold      = $is_alphafold;
-$cgstate->state->solvent_e_density = floatval( $input->solvent_e_density );
+$cgstate->state->loaded                  = true;
+$cgstate->state->output_load             = $output;
+$cgstate->state->is_alphafold            = $is_alphafold;
+$cgstate->state->solvent_e_density       = floatval( $input->solvent_e_density );
+$cgstate->state->waxsis_load_convergence = $waxsis_convergence_mode;
 
 if ( isset( $ga->cache_obj->_textarea ) ) {
     $cgstate->state->output_load->_textarea = $ga->cache_obj->_textarea;

@@ -494,6 +494,20 @@ $sas->load_somo_csv_file( SAS::PLOT_IQ, "G0A007D: ", $csvfile );
 
 echo $sas->data_summary( $sas->data_names() );
 
-$sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/^.* WAXSiS/', 'I(q) WAXSiS' );
+#$sas->regex_rename_data( $sas->data_names( '/ WAXSiS/' ), '/^.* WAXSiS/', 'I(q) WAXSiS' );
 
-echo $sas->data_summary( $sas->data_names() );
+#echo $sas->data_summary( $sas->data_names() );
+
+$sas->debug_json( '$sas->data_names()', (array)$sas->data_names() );
+
+$sas->save_data_csv_tr( $sas->data_names(), "test.csv" );
+
+
+$results = (object)[];
+foreach ( (array)$sas->data_names() as $dn ) {
+    if ( $dn != "G0A007D: Exp. I(q)" ) {
+       $sas->compute_p_value( $dn, "G0A007D: Exp. I(q)", $results );
+       $sas->debug_json( "results $dn", $results );
+}
+}
+

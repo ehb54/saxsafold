@@ -166,8 +166,10 @@ foreach ( $input->projects as $project ) {
             $messages[] = "Project '$project' and '$firstproject' have differing I(q) data";
             continue;
         }
+
+        $sas->extend_pr( [ "$firstproject: Exp. P(r)", "$project: Exp. P(r)" ] );
         if ( !$sas->compare_data( "$firstproject: Exp. P(r)", "$project: Exp. P(r)" ) ) {
-            $messages[] = "Project '$project' and '$firstproject' have differing P(r) data";
+#            $messages[] = "Project '$project' and '$firstproject' have differing P(r) data";
             continue;
         }
     }
@@ -288,7 +290,7 @@ $waxsis_data_name_iq = "I(q) $waxsis_data_name";
 $plotname = "I(q) waxsis nnls";
 $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstates->$firstproject->state->output_load->iqplot
                              ,[
-                                 'title' => "I(q)<br>Expt. + NNLS selected/reconstructed<br>from all computed on preselected models"
+                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
                                  ,'titlefontsize' => 14
                              ]);
 

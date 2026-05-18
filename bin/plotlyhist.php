@@ -243,7 +243,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
         $histname = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
         if ( file_exists( $histname ) ) {
             $reshist = (object)[];
-            $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset, $adjacent );
+            $res = plotly_hist( $histname, $reshist, $cgstate->state->mmcstride, $cgstate->state->mmcoffset, 0 /* $adjacent */ );
             $plot = $reshist->histplot2;
 
             $plot->layout =
@@ -307,9 +307,11 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $plot = (object) array_merge( (array) $plot,
                                           [
                                            "config" => [
-                                               "showLink" => true
-                                                   ,"plotlyServerURL" => "https://chart-studio.plotly.com"
-                                                   ,"responsive" => true
+                                           "showLink"         => true
+                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
+                                           ,"showSendToCloud" => true
+                                           ,"responsive"      => true
+                                           ,"linkText"        => "Edit chart"
                                            ]
                                           ] );
                                            
@@ -684,9 +686,11 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
     $plot = (object) array_merge( (array) $plot,
                                   [
                                    "config" => [
-                                       "showLink" => true
-                                       ,"plotlyServerURL" => "https://chart-studio.plotly.com"
-                                       ,"responsive" => true
+                                           "showLink"         => true
+                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
+                                           ,"showSendToCloud" => true
+                                           ,"responsive"      => true
+                                           ,"linkText"        => "Edit chart"
                                    ]
                                   ] );
 

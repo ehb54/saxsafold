@@ -139,9 +139,11 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink" : true
-                    ,"plotlyServerURL": "https://chart-studio.plotly.com"
-                    ,"responsive" : true
+                    "showLink"         : true
+                    ,"plotlyServerURL" : "https://cloud.plotly.com"
+                    ,"showSendToCloud" : true
+                    ,"responsive"      : true
+                    ,"linkText"        : "Edit chart"
                  }
             }'
         )
@@ -226,9 +228,11 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink" : true
-                    ,"plotlyServerURL": "https://chart-studio.plotly.com"
-                    ,"responsive" : true
+                    "showLink"         : true
+                    ,"plotlyServerURL" : "https://cloud.plotly.com"
+                    ,"showSendToCloud" : true
+                    ,"responsive"      : true
+                    ,"linkText"        : "Edit chart"
                  }
             }'
         )
@@ -370,6 +374,64 @@ class SAS {
 
         if ( !file_put_contents( $file, $contents ) ) {
             $this->last_error = "SAS::save_file() error writing file '$file'";
+            return $this->error_exit( $this->last_error );
+        }
+
+        return true;
+    }
+
+    # columns: q I(q) SD Fit
+
+    function save_fit( $name, $fitname, $file, $separator = "\t" ) {
+        $this->debug_msg( "SAS::save_fit( '$name', '$fitname', '$file' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::save_fit() curve named '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $fitname ) ) {
+            $this->last_error = "SAS::save_fit() fit curve named '$fitname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::save_fit() curve '$name' is not PLOT_IQ type";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$fitname->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::save_fit() fit curve '$fitname' is not PLOT_IQ type";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->x != $this->data->$fitname->x ) {
+            $this->last_error = "SAS::save_fit() '$name' and '$fitname' have incompatible q grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->data->$name->error_y ) ) {
+            $this->last_error = "SAS::save_fit() curve '$name' does not have SD (error_y) data";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $contents =
+            "# q [A^-1]" . $separator
+            . "Expt. I(q)" . $separator
+            . "Expt. SD" . $separator
+            . "Fit I(q)\n";
+
+        for ( $i = 0; $i < count( $this->data->$name->x ); ++$i ) {
+            $contents .=
+                sprintf( "%.6e", $this->data->$name->x[$i] ) . $separator
+                . sprintf( "%.6e", $this->data->$name->y[$i] ) . $separator
+                . sprintf( "%.6e", $this->data->$name->error_y[$i] ) . $separator
+                . sprintf( "%.6e", $this->data->$fitname->y[$i] ) . "\n";
+        }
+
+        if ( !file_put_contents( $file, $contents ) ) {
+            $this->last_error = "SAS::save_fit() error writing file '$file'";
             return $this->error_exit( $this->last_error );
         }
 
@@ -1432,6 +1494,35 @@ class SAS {
         return true;
     }
     
+    # rename_curve - rename a curve (trace) within a plot object by its current name
+    # $plotname           - the key in $this->plots
+    # $current_curve_name - the trace's existing ->name value
+    # $new_curve_name     - the replacement name
+    function rename_curve( $plotname, $current_curve_name, $new_curve_name ) {
+        $this->debug_msg( "SAS::rename_curve( '$plotname', '$current_curve_name', '$new_curve_name' )" );
+        $this->last_error = "";
+
+        if ( !$this->plots_name_exists( $plotname ) ) {
+            $this->last_error = "SAS::rename_curve() plot '$plotname' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !isset( $this->plots->$plotname->data ) ) {
+            $this->last_error = "SAS::rename_curve() plot '$plotname' has no data";
+            return $this->error_exit( $this->last_error );
+        }
+
+        foreach ( $this->plots->$plotname->data as $trace ) {
+            if ( $trace->name === $current_curve_name ) {
+                $trace->name = $new_curve_name;
+                return true;
+            }
+        }
+
+        $this->last_error = "SAS::rename_curve() curve '$current_curve_name' not found in plot '$plotname'";
+        return $this->error_exit( $this->last_error );
+    }
+
     # returns the plotly
     function plot( $name ) {
         $this->debug_msg( "SAS::load_plot( '$name' )" );
@@ -2319,9 +2410,9 @@ class SAS {
             $output .= $this->data->{$names[0]}->x[$i] . ',';
             
             foreach ( $names as $name ) {
-                $output .= $this->data->{$names[0]}->y[$i] . ',';
+                $output .= $this->data->$name->y[$i] . ',';
                 if ( isset( $this->data->$name->error_y ) ) {
-                    $output .= $this->data->{$names[0]}->error_y[$i] . ',';
+                    $output .= $this->data->$name->error_y[$i] . ',';
                 }
             }
             $output .= "\n";
@@ -2347,7 +2438,7 @@ class SAS {
             return $this->error_exit( $this->last_error );
         }
 
-        $fmt = " %-30s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n";
+        $fmt = " %-50s | %-10s | %-10s | %-10s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n";
         $out =
             sprintf( $fmt
                      ,"Data name"
@@ -2362,7 +2453,7 @@ class SAS {
                      ,"max q or dmax"
             );
         
-        $out .= str_repeat( "-", 163 ) . "\n";
+        $out .= str_repeat( "-", 183 ) . "\n";
 
         foreach ( $names as $name ) {
             if ( !$this->data_name_exists( $name ) ) {
@@ -2398,7 +2489,7 @@ class SAS {
                 );
         }
 
-        $out .= str_repeat( "-", 163 ) . "\n";
+        $out .= str_repeat( "-", 183 ) . "\n";
 
         return $out;
     }
@@ -2650,6 +2741,147 @@ class SAS {
         $results = $finalarray;
 
         # $this->debug_json( "finalarray", $finalarray );
+
+        return true;
+    }
+
+    # compute_p_value - compute p-value from longest-run test comparing y values of two curves
+    # Uses the exact probability that a longest run of length >= longest_run occurs by chance
+    # in n Bernoulli trials (p=0.5), via the recurrence:
+    #   P(longest run >= k | n) = 1 - P(longest run < k | n)
+    # where P(longest run < k | n) is computed with the standard recurrence on exact counts.
+    # $results is populated with: p_value, longest_run, total_length, run_direction
+    function compute_p_value( $name1, $name2, &$results ) {
+        $this->debug_msg( "SAS::compute_p_value( '$name1', '$name2' )" );
+        $this->last_error = "";
+
+        ## --- compatibility checks (mirrors rmsd/nchi2 pattern) ---
+
+        if ( !$this->data_name_exists( $name1 ) ) {
+            $this->last_error = "SAS::compute_p_value() curve name '$name1' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( !$this->data_name_exists( $name2 ) ) {
+            $this->last_error = "SAS::compute_p_value() curve name '$name2' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name1->type != $this->data->$name2->type ) {
+            $this->last_error = "SAS::compute_p_value() curves named '$name1' and '$name2' are different types";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( count( array_diff( $this->data->$name1->x, $this->data->$name2->x ) ) ) {
+            $this->last_error = "SAS::compute_p_value() curves named '$name1' and '$name2' have incompatible grids";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $len1 = count( $this->data->$name1->y );
+        $len2 = count( $this->data->$name2->y );
+
+        if ( $len1 != $len2 ) {
+            $this->last_error = "SAS::compute_p_value() curves named '$name1' and '$name2' have incompatible grids only in the Y";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $n = $len1;
+
+        if ( $n < 1 ) {
+            $this->last_error = "SAS::compute_p_value() curves named '$name1' and '$name2' have no data points";
+            return $this->error_exit( $this->last_error );
+        }
+
+        ## --- compute longest run of name1->y > name2->y and name1->y < name2->y ---
+
+        $longest_run      = 0;
+        $run_direction    = 0; ## +1 = name1 > name2, -1 = name1 < name2
+        $current_run      = 0;
+        $current_dir      = 0;
+
+        for ( $i = 0; $i < $n; ++$i ) {
+            $diff = $this->data->$name1->y[$i] - $this->data->$name2->y[$i];
+
+            if ( $diff == 0 ) {
+                ## tie: reset current run
+                $current_run = 0;
+                $current_dir = 0;
+                continue;
+            }
+
+            $dir = ( $diff > 0 ) ? 1 : -1;
+
+            if ( $dir === $current_dir ) {
+                ++$current_run;
+            } else {
+                $current_run = 1;
+                $current_dir = $dir;
+            }
+
+            if ( $current_run > $longest_run ) {
+                $longest_run   = $current_run;
+                $run_direction = $current_dir;
+            }
+        }
+
+        ## --- compute p-value via exact recurrence for longest-run-in-Bernoulli-trials ---
+        ## p_value = P(L >= k | n): probability that the longest run of equal consecutive
+        ## outcomes is at least k under a fair coin (p=0.5) null model, where each point
+        ## is independently either y1>y2 or y1<y2 with equal probability.
+        ##
+        ## State-based recurrence: g[j] = count of binary strings of current length
+        ## whose longest ending run has exactly j equal symbols (j = 1..k-1):
+        ##   g(1)[1] = 2
+        ##   g(i)[j] = g(i-1)[j-1]                for j = 2..k-1  (extend run by same symbol)
+        ##   g(i)[1] = sum_{j=1}^{k-1} g(i-1)[j]  (break any run, start with other symbol)
+        ## f(n, k) = sum_{j=1}^{k-1} g(n)[j]      (strings of length n with no run >= k)
+        ## P(L < k | n) = f(n, k) / 2^n
+        ## p_value = 1 - P(L < k | n)
+
+        $k = $longest_run;
+
+        if ( $longest_run == 0 || $k == 1 ) {
+            $p_value = 1.0;
+        } else {
+            $g    = array_fill( 1, $k - 1, 0.0 );
+            $g[1] = 2.0;
+
+            for ( $i = 2; $i <= $n; ++$i ) {
+                $new_g = array_fill( 1, $k - 1, 0.0 );
+
+                ## extend ending runs of length j-1 to j (append same symbol)
+                for ( $j = 2; $j <= $k - 1; ++$j ) {
+                    $new_g[$j] = $g[$j - 1];
+                }
+
+                ## break any ending run: append the other symbol, starting a run of 1
+                $total = 0.0;
+                for ( $j = 1; $j <= $k - 1; ++$j ) {
+                    $total += $g[$j];
+                }
+                $new_g[1] = $total;
+
+                $g = $new_g;
+            }
+
+            $f = 0.0;
+            for ( $j = 1; $j <= $k - 1; ++$j ) {
+                $f += $g[$j];
+            }
+
+            ## log-space to avoid overflow for large n
+            $log_prob_less = log( max( $f, 1e-300 ) ) - $n * log( 2.0 );
+            $prob_less     = exp( $log_prob_less );
+            $p_value       = max( 0.0, 1.0 - $prob_less );
+        }
+
+        ## --- populate result object ---
+
+        $results                = (object)[];
+        $results->p_value       = $p_value;
+        $results->longest_run   = $longest_run;
+        $results->total_length  = $n;
+        $results->run_direction = $run_direction; ## +1: name1>name2, -1: name1<name2, 0: all ties
 
         return true;
     }

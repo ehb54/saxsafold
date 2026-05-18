@@ -2,6 +2,7 @@
 {};
 
 include_once "limits.php";
+include_once "titles.php";
 
 class cgrun_state {
     private $statefile;

@@ -817,6 +817,16 @@ foreach ( $input->iqmethod as $iqmethod ) {
     if ( $chi2 != -1 ) {
         $annotate_msg .= "nChi^2 $chi2   ";
     }
+
+    ## p-values
+    ## $ga->tcptextarea( $sas->data_summary( $sas->data_names() ) );
+
+    $pvalueresults = (object)[];
+    $sas->compute_p_value( "Exp. I(q)", "$mdata->prefix NNLS fit", $pvalueresults );
+    if ( isset( $pvalueresults->p_value ) ) {
+        $annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $pvalueresults->p_value, $pvalueresults->p_value >= 0.05 ? 'green' : ($pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
+    }
+
     if ( strlen( $annotate_msg ) ) {
         $sas->annotate_plot( $mdata->plotselname, $annotate_msg );
     }

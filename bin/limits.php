@@ -29,9 +29,10 @@ $test_limit_max_computeiqpr_frames      = 0;
 ## global waxsis configs
 
 ## waxsis mode quick, normal, thorough
+# $waxsis_convergence_mode               = 'thorough';
 $waxsis_convergence_mode               = 'normal';
-# $waxsis_convergence_mode                = 'quick';
+# $waxsis_convergence_mode               = 'quick';
 
 $waxsis_threads                         = 64;
-$waxsis_retries                         = 1;
+$waxsis_retries                         = 2;
 $waxsis_model_number                    = 0;
