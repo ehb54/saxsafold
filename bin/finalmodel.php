@@ -375,6 +375,22 @@ $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
 
+## define waxsis_cb here so it is available for model 0 recompute below as well as the per-model loop
+$waxsis_lc = 0;
+$waxsis_cb = function( $line ) {
+    global $ga;
+    global $textarea_key;
+    global $waxsis_lc;
+
+    $waxsis_lc++;
+
+    if ( preg_match( '/(Running yasara|Yasara MD|mdrun|Retrying)/i', $line ) ) {
+        $ga->tcpmessage( [
+                             $textarea_key => $line
+                         ] );
+    }
+};
+
 ## check if model 0 (load structure) WAXSiS needs recomputing for the selected convergence mode
 
 $waxsis_model0_cached_file = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
@@ -480,20 +496,7 @@ if ( isset( $model0_recompute_time ) && $model0_recompute_time > 0 ) {
 
 # $ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time: $avg_waxsis_time" ] ] );
 
-$waxsis_lc = 0;
-$waxsis_cb = function( $line ) {
-    global $ga;
-    global $textarea_key;
-    global $waxsis_lc;
-
-    $waxsis_lc++;
-
-    if ( preg_match( '/(Running yasara|Yasara MD|mdrun|Retrying)/i', $line ) ) {
-        $ga->tcpmessage( [
-                             $textarea_key => $line
-                         ] );
-    }
-};
+$waxsis_lc = 0;  ## reset line counter for per-model loop
 
 $waxsisiqfile    = $waxsis_params->subdir . "/intensity_waxsis.calc";
 $iqfiles         = [];
