@@ -375,6 +375,10 @@ $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
 
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
 ## define waxsis_cb here so it is available for model 0 recompute below as well as the per-model loop
 $waxsis_lc = 0;
 $waxsis_cb = function( $line ) {
@@ -426,9 +430,14 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
         run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_model0_cached_file" );
     }
 
-    ## reload model 0 WAXSiS data into the sas object from the (re)computed file
+    ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
+    ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
     $sas->remove_data( "WAXSiS" );
-    $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsis_model0_cached_file );
+    $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
+    $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
+    $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
+    $sas->remove_data( "WAXSiS org" );
+    $sas->remove_data( "WAXSiS interp" );
     $sas->add_plot( $plotname, "WAXSiS" );
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
