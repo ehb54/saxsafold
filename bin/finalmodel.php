@@ -234,9 +234,22 @@ $ga->tcpmessage( [ "_textarea" => "\n" ] );
 
 $models_to_process_count = count( $frames_left );
 
+## check whether model 0 will need a fresh WAXSiS run (convergence changed, no cached file yet)
+$load_convergence_predlg = isset( $cgstate->state->waxsis_load_convergence )
+    ? $cgstate->state->waxsis_load_convergence
+    : $waxsis_convergence_mode;
+
+$waxsis_model0_cached_file_predlg = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
+$model0_recompute_needed = ( $load_convergence_predlg !== $input->waxsis_convergence_mode )
+                           && !file_exists( $waxsis_model0_cached_file_predlg );
+
+$models_to_estimate = $models_to_process_count + ( $model0_recompute_needed ? 1 : 0 );
+
+$convergence_changed = ( $load_convergence_predlg !== $input->waxsis_convergence_mode );
+
 if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
      $cgstate->state->waxsis_last_run_time_minutes > 0 ) {
-    $estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_process_count * 1.2 + .5 ) );
+    $estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_estimate * 1.2 + .5 ) );
 } else {
     $estimated_time_to_completion = "*unknown duration*";
 }
@@ -250,6 +263,14 @@ $ga->tcpmessage( [ "_textarea" =>
 
 ## ask really proceed
 
+$estimate_note = $convergence_changed
+    ? "<br><br><i>Note: convergence mode changed from '$load_convergence_predlg' (Load Structure) to '$input->waxsis_convergence_mode'. "
+      . ( $model0_recompute_needed
+          ? "Model 0 (Load Structure structure) will also be recomputed (+1 included in count above). "
+          : "Model 0 uses a previously cached result for this convergence. " )
+      . "Time estimate is based on Load Structure timing and may differ significantly.</i>"
+    : "<br><br>Projected time will be updated upon completion of each new WAXSiS run at your selected convergence mode.";
+
 $response =
     json_decode(
         $ga->tcpquestion(
@@ -257,7 +278,7 @@ $response =
              "id"           => "q1"
              ,"title"       => "<h5>Proceed with computations? </h5>"
              ,"icon"        => "warning.png"
-             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_process_count</strong> models is <strong>$estimated_time_to_completion</strong><br><br>This initial estimate is based upon a WAXSiS convergence mode of '$waxsis_convergence_mode' used when <i>Load Structure</i> performed WAXSiS.<br>Projected time will be updated upon completion of each new WAXSiS run at your selected convergence mode."
+             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note"
              ,"timeouttext" => "The time to respond has expired, please submit again."
              ,"buttons"     => [ "Yes, proceed", "Cancel for now" ]
              ,"fields" => [
@@ -379,7 +400,8 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
 
         $time_start = dt_now();
         run_waxsis( $model0_pdb, $model0_params, $waxsis_cb );
-        $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
+        $model0_recompute_time = dt_duration_minutes( $time_start, dt_now() );
+        $tot_waxsis_time += $model0_recompute_time;
         $avg_waxsis_time  = $tot_waxsis_time;
 
         if ( !file_exists( "waxsis/intensity_waxsis.calc" ) ) {
@@ -392,45 +414,6 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
     $sas->remove_data( "WAXSiS" );
     $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsis_model0_cached_file );
     $sas->add_plot( $plotname, "WAXSiS" );
-
-    ## recompute rmsd, chi^2, p_value and rebuild output_load->iqplot for the new convergence
-    $m0_sas = new SAS( false );
-    $m0_chi2  = -1;
-    $m0_rmsd  = -1;
-    $m0_scale = 0;
-    if (
-        $m0_sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
-        && $m0_sas->plot_options( "I(q)", [ 'title' => PLOT_TITLE_IQ_WAXSIS ] )
-        && $m0_sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsis_model0_cached_file )
-        && $m0_sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
-        && $m0_sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $m0_chi2, $m0_scale )
-        && $m0_sas->rmsd( "Exp. I(q)", "WAXSiS", $m0_rmsd )
-        && $m0_sas->add_plot( "I(q)", "WAXSiS" )
-        && $m0_sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
-        && $m0_sas->add_plot_residuals( "I(q)", "Res./SD" )
-        && $m0_sas->plot_trace_options( "I(q)", "Res./SD", [ 'linecolor_number' => 1 ] )
-        ) {
-        $m0_rmsd = round( $m0_rmsd, 3 );
-        $m0_chi2 = round( $m0_chi2, 3 );
-        $m0_annotate_msg = "";
-        if ( $m0_rmsd != -1 ) {
-            $m0_annotate_msg .= "RMSD $m0_rmsd   ";
-        }
-        if ( $m0_chi2 != -1 ) {
-            $m0_annotate_msg .= "nChi^2 $m0_chi2   ";
-        }
-        $m0_pvalueresults = (object)[];
-        $m0_sas->compute_p_value( "Exp. I(q)", "WAXSiS", $m0_pvalueresults );
-        if ( isset( $m0_pvalueresults->p_value ) ) {
-            $m0_annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $m0_pvalueresults->p_value, $m0_pvalueresults->p_value >= 0.05 ? 'green' : ($m0_pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
-        }
-        if ( strlen( $m0_annotate_msg ) ) {
-            $m0_sas->annotate_plot( "I(q)", $m0_annotate_msg );
-        }
-        $cgstate->state->output_load->iqplot = $m0_sas->plot( "I(q)" );
-    } else {
-        $ga->tcpmessage( [ $textarea_key => "Warning: could not recompute model 0 stats: " . $m0_sas->last_error . "\n" ] );
-    }
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
         ## first run after this feature was added: cache the existing result
@@ -438,16 +421,64 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
     }
 }
 
+## always recompute rmsd, chi^2, p_value and rebuild output_load->iqplot
+## (stats must be consistent with the current convergence and displayed results)
+$m0_sas = new SAS( false );
+$m0_chi2  = -1;
+$m0_rmsd  = -1;
+$m0_scale = 0;
+if (
+    $m0_sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
+    && $m0_sas->plot_options( "I(q)", [ 'title' => PLOT_TITLE_IQ_WAXSIS ] )
+    && $m0_sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsis_model0_cached_file )
+    && $m0_sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
+    && $m0_sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $m0_chi2, $m0_scale )
+    && $m0_sas->rmsd( "Exp. I(q)", "WAXSiS", $m0_rmsd )
+    && $m0_sas->add_plot( "I(q)", "WAXSiS" )
+    && $m0_sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
+    && $m0_sas->add_plot_residuals( "I(q)", "Res./SD" )
+    && $m0_sas->plot_trace_options( "I(q)", "Res./SD", [ 'linecolor_number' => 1 ] )
+    ) {
+    $m0_rmsd = round( $m0_rmsd, 3 );
+    $m0_chi2 = round( $m0_chi2, 3 );
+    $m0_annotate_msg = "";
+    if ( $m0_rmsd != -1 ) {
+        $m0_annotate_msg .= "RMSD $m0_rmsd   ";
+    }
+    if ( $m0_chi2 != -1 ) {
+        $m0_annotate_msg .= "nChi^2 $m0_chi2   ";
+    }
+    $m0_pvalueresults = (object)[];
+    $m0_sas->compute_p_value( "Exp. I(q)", "WAXSiS", $m0_pvalueresults );
+    if ( isset( $m0_pvalueresults->p_value ) ) {
+        $m0_annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $m0_pvalueresults->p_value, $m0_pvalueresults->p_value >= 0.05 ? 'green' : ($m0_pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
+    }
+    if ( strlen( $m0_annotate_msg ) ) {
+        $m0_sas->annotate_plot( "I(q)", $m0_annotate_msg );
+    }
+    $cgstate->state->output_load->iqplot = $m0_sas->plot( "I(q)" );
+} else {
+    $ga->tcpmessage( [ $textarea_key => "Warning: could not recompute model 0 stats: " . $m0_sas->last_error . "\n" ] );
+}
+
 $sas->rename_data( "WAXSiS", $waxsis_data_name );
 
-$avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
-    ? $cgstate->state->waxsis_last_run_time_minutes
-    : 0
-    ;
+## seed per-model loop timing: if model 0 was just recomputed, use that time as the initial avg;
+## otherwise fall back to the saved Load Structure time
+if ( isset( $model0_recompute_time ) && $model0_recompute_time > 0 ) {
+    $avg_waxsis_time = $model0_recompute_time;
+    $tot_waxsis_time = $model0_recompute_time;
+    $models_processed_init = 1;
+} else {
+    $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
+        ? $cgstate->state->waxsis_last_run_time_minutes
+        : 0
+        ;
+    $tot_waxsis_time = 0;
+    $models_processed_init = 0;
+}
 
 # $ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time: $avg_waxsis_time" ] ] );
-
-$tot_waxsis_time = 0;
 
 $waxsis_lc = 0;
 $waxsis_cb = function( $line ) {
@@ -475,7 +506,7 @@ $scale = 0;
 $to_compute = $models_to_process_count;
 $pos = 0;
 #$ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time (2): $avg_waxsis_time" ] ] );
-$models_processed = 0;
+$models_processed = $models_processed_init;
 
 switch( $input->waxsis_convergence_mode ) {
     case "normal"   : $waxsis_suffix = "_n"; break;
