@@ -234,9 +234,22 @@ $ga->tcpmessage( [ "_textarea" => "\n" ] );
 
 $models_to_process_count = count( $frames_left );
 
+## check whether model 0 will need a fresh WAXSiS run (convergence changed, no cached file yet)
+$load_convergence_predlg = isset( $cgstate->state->waxsis_load_convergence )
+    ? $cgstate->state->waxsis_load_convergence
+    : $waxsis_convergence_mode;
+
+$waxsis_model0_cached_file_predlg = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
+$model0_recompute_needed = ( $load_convergence_predlg !== $input->waxsis_convergence_mode )
+                           && !file_exists( $waxsis_model0_cached_file_predlg );
+
+$models_to_estimate = $models_to_process_count + ( $model0_recompute_needed ? 1 : 0 );
+
+$convergence_changed = ( $load_convergence_predlg !== $input->waxsis_convergence_mode );
+
 if ( isset( $cgstate->state->waxsis_last_run_time_minutes ) &&
      $cgstate->state->waxsis_last_run_time_minutes > 0 ) {
-    $estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_process_count * 1.2 + .5 ) );
+    $estimated_time_to_completion = dhms_from_minutes( intval( $cgstate->state->waxsis_last_run_time_minutes * $models_to_estimate * 1.2 + .5 ) );
 } else {
     $estimated_time_to_completion = "*unknown duration*";
 }
@@ -250,6 +263,14 @@ $ga->tcpmessage( [ "_textarea" =>
 
 ## ask really proceed
 
+$estimate_note = $convergence_changed
+    ? "<br><br><i>Note: convergence mode changed from '$load_convergence_predlg' (Load Structure) to '$input->waxsis_convergence_mode'. "
+      . ( $model0_recompute_needed
+          ? "Model 0 (Load Structure structure) will also be recomputed (+1 included in count above). "
+          : "Model 0 uses a previously cached result for this convergence. " )
+      . "Time estimate is based on Load Structure timing and may differ significantly.</i>"
+    : "<br><br>Projected time will be updated upon completion of each new WAXSiS run at your selected convergence mode.";
+
 $response =
     json_decode(
         $ga->tcpquestion(
@@ -257,7 +278,7 @@ $response =
              "id"           => "q1"
              ,"title"       => "<h5>Proceed with computations? </h5>"
              ,"icon"        => "warning.png"
-             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_process_count</strong> models is <strong>$estimated_time_to_completion</strong><br><br>This initial estimate is based upon a WAXSiS convergence mode of '$waxsis_convergence_mode' used when <i>Load Structure</i> performed WAXSiS.<br>Projected time will be updated upon completion of each new WAXSiS run at your selected convergence mode."
+             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note"
              ,"timeouttext" => "The time to respond has expired, please submit again."
              ,"buttons"     => [ "Yes, proceed", "Cancel for now" ]
              ,"fields" => [
@@ -379,7 +400,8 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
 
         $time_start = dt_now();
         run_waxsis( $model0_pdb, $model0_params, $waxsis_cb );
-        $tot_waxsis_time += dt_duration_minutes( $time_start, dt_now() );
+        $model0_recompute_time = dt_duration_minutes( $time_start, dt_now() );
+        $tot_waxsis_time += $model0_recompute_time;
         $avg_waxsis_time  = $tot_waxsis_time;
 
         if ( !file_exists( "waxsis/intensity_waxsis.calc" ) ) {
@@ -440,14 +462,22 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
 
 $sas->rename_data( "WAXSiS", $waxsis_data_name );
 
-$avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
-    ? $cgstate->state->waxsis_last_run_time_minutes
-    : 0
-    ;
+## seed per-model loop timing: if model 0 was just recomputed, use that time as the initial avg;
+## otherwise fall back to the saved Load Structure time
+if ( isset( $model0_recompute_time ) && $model0_recompute_time > 0 ) {
+    $avg_waxsis_time = $model0_recompute_time;
+    $tot_waxsis_time = $model0_recompute_time;
+    $models_processed_init = 1;
+} else {
+    $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
+        ? $cgstate->state->waxsis_last_run_time_minutes
+        : 0
+        ;
+    $tot_waxsis_time = 0;
+    $models_processed_init = 0;
+}
 
 # $ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time: $avg_waxsis_time" ] ] );
-
-$tot_waxsis_time = 0;
 
 $waxsis_lc = 0;
 $waxsis_cb = function( $line ) {
@@ -475,7 +505,7 @@ $scale = 0;
 $to_compute = $models_to_process_count;
 $pos = 0;
 #$ga->tcpmessage( [ "_message" => [ "text" => "avg_waxsis_time (2): $avg_waxsis_time" ] ] );
-$models_processed = 0;
+$models_processed = $models_processed_init;
 
 switch( $input->waxsis_convergence_mode ) {
     case "normal"   : $waxsis_suffix = "_n"; break;
