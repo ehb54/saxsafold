@@ -353,7 +353,6 @@ $sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_lo
 $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
-$sas->rename_data( "WAXSiS", $waxsis_data_name );
 
 ## check if model 0 (load structure) WAXSiS needs recomputing for the selected convergence mode
 
@@ -393,12 +392,53 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
     $sas->remove_data( "WAXSiS" );
     $sas->load_file( SAS::PLOT_IQ, "WAXSiS", $waxsis_model0_cached_file );
     $sas->add_plot( $plotname, "WAXSiS" );
+
+    ## recompute rmsd, chi^2, p_value and rebuild output_load->iqplot for the new convergence
+    $m0_sas = new SAS( false );
+    $m0_chi2  = -1;
+    $m0_rmsd  = -1;
+    $m0_scale = 0;
+    if (
+        $m0_sas->create_plot_from_plot( SAS::PLOT_IQ, "I(q)", $cgstate->state->output_loadsaxs->iqplot )
+        && $m0_sas->plot_options( "I(q)", [ 'title' => PLOT_TITLE_IQ_WAXSIS ] )
+        && $m0_sas->load_file( SAS::PLOT_IQ, "WAXSiS_org", $waxsis_model0_cached_file )
+        && $m0_sas->interpolate( "WAXSiS_org", "Exp. I(q)", "WAXSiS_interp" )
+        && $m0_sas->scale_nchi2( "Exp. I(q)", "WAXSiS_interp", "WAXSiS", $m0_chi2, $m0_scale )
+        && $m0_sas->rmsd( "Exp. I(q)", "WAXSiS", $m0_rmsd )
+        && $m0_sas->add_plot( "I(q)", "WAXSiS" )
+        && $m0_sas->calc_residuals( "Exp. I(q)", "WAXSiS", "Res./SD" )
+        && $m0_sas->add_plot_residuals( "I(q)", "Res./SD" )
+        && $m0_sas->plot_trace_options( "I(q)", "Res./SD", [ 'linecolor_number' => 1 ] )
+        ) {
+        $m0_rmsd = round( $m0_rmsd, 3 );
+        $m0_chi2 = round( $m0_chi2, 3 );
+        $m0_annotate_msg = "";
+        if ( $m0_rmsd != -1 ) {
+            $m0_annotate_msg .= "RMSD $m0_rmsd   ";
+        }
+        if ( $m0_chi2 != -1 ) {
+            $m0_annotate_msg .= "nChi^2 $m0_chi2   ";
+        }
+        $m0_pvalueresults = (object)[];
+        $m0_sas->compute_p_value( "Exp. I(q)", "WAXSiS", $m0_pvalueresults );
+        if ( isset( $m0_pvalueresults->p_value ) ) {
+            $m0_annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $m0_pvalueresults->p_value, $m0_pvalueresults->p_value >= 0.05 ? 'green' : ($m0_pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
+        }
+        if ( strlen( $m0_annotate_msg ) ) {
+            $m0_sas->annotate_plot( "I(q)", $m0_annotate_msg );
+        }
+        $cgstate->state->output_load->iqplot = $m0_sas->plot( "I(q)" );
+    } else {
+        $ga->tcpmessage( [ $textarea_key => "Warning: could not recompute model 0 stats: " . $m0_sas->last_error . "\n" ] );
+    }
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
         ## first run after this feature was added: cache the existing result
         run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_model0_cached_file 2>/dev/null" );
     }
 }
+
+$sas->rename_data( "WAXSiS", $waxsis_data_name );
 
 $avg_waxsis_time = isset( $cgstate->state->waxsis_last_run_time_minutes ) && $cgstate->state->waxsis_last_run_time_minutes > 0
     ? $cgstate->state->waxsis_last_run_time_minutes
