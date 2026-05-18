@@ -518,7 +518,8 @@ switch( $input->waxsis_convergence_mode ) {
     default         : error_exit( "internal error - unknown or unsupported WAXSiS convergence mode" );
 }
 
-$tot_models_to_process_count = $models_to_process_count;
+## denominator includes model 0 if it was recomputed, so progress fraction stays in [0,1)
+$tot_models_to_process_count = $models_to_process_count + $models_processed_init;
     
 ## allow multiple remotes
 
