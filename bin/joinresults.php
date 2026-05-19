@@ -256,7 +256,7 @@ $non_target_names = $sas->data_names( '/[A-Za-z0-9_]+:.* WAXSiS mod\. \d/' );
 
 $iqresults = [];
 
-$sas->nnls( "Exp. I(q)", $non_target_names, "I(q) NNLS fit", $iqresults, true );
+$sas->nnls( "Exp. I(q)", $non_target_names, "I(q)<sub>W</sub> NNLS fit", $iqresults, true );
 
 ## fake results for testing, set to 0 or comment the line below for production
 # $test_fake_nnlsresults = 99;
@@ -298,7 +298,7 @@ $sas->remove_plot_data( $plotname, "Res./SD" );
 $sas->remove_plot_data( $plotname, "WAXSiS" );
 $sas->remove_data( "Res./SD" );
 $sas->rename_data( "WAXSiS", $waxsis_data_name_iq );
-$sas->add_plot( $plotname, "I(q) NNLS fit" );
+$sas->add_plot( $plotname, "I(q)<sub>W</sub> NNLS fit" );
 foreach ( $iqresults as $k => $v ) {
     $sas->add_plot( $plotname, $k );
 }
@@ -308,18 +308,18 @@ $chi2  = -1;
 $rmsd  = -1;
 $scale = 0;
 
-$sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
-$sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
-$sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
+$sas->scale_nchi2( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
+$sas->rmsd( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $rmsd );
+$sas->calc_residuals( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", "I(q)<sub>W</sub> fit Res./SD" );
 
 ## move NNLS fit to last curve, but before residuals
-$sas->remove_plot_data( $plotname, "I(q) NNLS fit" );
+$sas->remove_plot_data( $plotname, "I(q)<sub>W</sub> NNLS fit" );
 $sas->recolor_plot( $plotname, [ 1 ] );
-$sas->add_plot( $plotname, "I(q) NNLS fit" );
-$sas->plot_trace_options( $plotname, "I(q) NNLS fit", [ 'linecolor_number' => 1 ] );
+$sas->add_plot( $plotname, "I(q)<sub>W</sub> NNLS fit" );
+$sas->plot_trace_options( $plotname, "I(q)<sub>W</sub> NNLS fit", [ 'linecolor_number' => 1 ] );
 
-$sas->add_plot_residuals( $plotname, "I(q) fit Res./SD" );
-$sas->plot_trace_options( $plotname, "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
+$sas->add_plot_residuals( $plotname, "I(q)<sub>W</sub> fit Res./SD" );
+$sas->plot_trace_options( $plotname, "I(q)<sub>W</sub> fit Res./SD", [ 'linecolor_number' => 1 ] );
 
 $rmsd = round( $rmsd, 3 );
 $chi2 = round( $chi2, 3 );
@@ -473,7 +473,12 @@ $output->struct->script .= "frame all;";
 $sassomoiqname = $joinname . "_waxsis_somo_iq.csv";
 $sascoliqname  = $joinname . "_waxsis_iq.csv";
 
-$csvoutnames = array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $non_target_names );
+## rename I(q)<sub>W</sub> NNLS fit to plain-text form for CSV column headers
+## (plot trace name already baked; data store rename does not affect it)
+$csv_nnls_fit = str_replace( 'I(q)<sub>W</sub> ', 'I(q) ', "I(q)<sub>W</sub> NNLS fit" );
+$sas->rename_data( "I(q)<sub>W</sub> NNLS fit", $csv_nnls_fit );
+
+$csvoutnames = array_merge( [ "Exp. I(q)", $csv_nnls_fit ], $non_target_names );
 
 # $ga->tcpmessage( [ '_textarea' => $sas->data_summary( $csvoutnames ) ] );
 
