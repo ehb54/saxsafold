@@ -432,13 +432,17 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
 
     ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
     ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
+    ## NOTE: do NOT add_plot here — model 0 belongs in the plot only if NNLS gives it non-zero
+    ## weight, which is handled by the NNLS results loop below (same as every other frame).
+    ## Adding it here with the pre-rename name "WAXSiS" and then calling rename_data() would
+    ## leave a stale "WAXSiS" trace in the plot because rename_data() only renames the data
+    ## store key, not the name field of any already-added plot trace.
     $sas->remove_data( "WAXSiS" );
     $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
     $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
     $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
     $sas->remove_data( "WAXSiS org" );
     $sas->remove_data( "WAXSiS interp" );
-    $sas->add_plot( $plotname, "WAXSiS" );
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
         ## first run after this feature was added: cache the existing result
