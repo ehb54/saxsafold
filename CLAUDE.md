@@ -8,9 +8,11 @@ Active dev branch: `dev`
 
 ---
 
-## Working directory
+## Working directory & branching rules
 
 Always clone/work in `~/claude/saxsafold` (NOT `~/saxsafold`, which is the user's own install). The repo is already cloned there.
+
+**All new branches must be created from `dev`, and all PRs must target `dev`.** Never branch from or merge into `main` directly — `main` is the stable/release branch and is only updated by merging from `dev`.
 
 ---
 
