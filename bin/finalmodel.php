@@ -630,11 +630,11 @@ progress_text( "Running NNLS on I(q)" );
 
 $iqresults = [];
 
-$sas->nnls( "Exp. I(q)", $alliqframes, "I(q) NNLS fit", $iqresults, true );
+$sas->nnls( "Exp. I(q)", $alliqframes, "I(q)<sub>W</sub> NNLS fit", $iqresults, true );
 
 # $ga->tcpmessage( [ "_textarea" => "iqresults => " . json_encode( $iqresults, JSON_PRETTY_PRINT ) ] );
 
-$sas->add_plot( $plotname, "I(q) NNLS fit" );
+$sas->add_plot( $plotname, "I(q)<sub>W</sub> NNLS fit" );
 
 foreach ( $iqresults as $k => $v ) {
     $sas->add_plot( $plotname, $k );
@@ -645,18 +645,18 @@ $chi2  = -1;
 $rmsd  = -1;
 $scale = 0;
 
-$sas->scale_nchi2( "Exp. I(q)", "I(q) NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
-$sas->rmsd( "Exp. I(q)", "I(q) NNLS fit", $rmsd );
-$sas->calc_residuals( "Exp. I(q)", "I(q) NNLS fit", "I(q) fit Res./SD" );
+$sas->scale_nchi2( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", "I(q) NNLS fit-rescaled", $chi2, $scale );
+$sas->rmsd( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $rmsd );
+$sas->calc_residuals( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", "I(q)<sub>W</sub> fit Res./SD" );
 
 ## move NNLS fit to last curve, but before residuals
-$sas->remove_plot_data( $plotname, "I(q) NNLS fit" );
+$sas->remove_plot_data( $plotname, "I(q)<sub>W</sub> NNLS fit" );
 $sas->recolor_plot( $plotname, [ 1 ] );
-$sas->add_plot( $plotname, "I(q) NNLS fit" );
-$sas->plot_trace_options( $plotname, "I(q) NNLS fit", [ 'linecolor_number' => 1 ] );
+$sas->add_plot( $plotname, "I(q)<sub>W</sub> NNLS fit" );
+$sas->plot_trace_options( $plotname, "I(q)<sub>W</sub> NNLS fit", [ 'linecolor_number' => 1 ] );
 
-$sas->add_plot_residuals( $plotname, "I(q) fit Res./SD" );
-$sas->plot_trace_options( $plotname, "I(q) fit Res./SD", [ 'linecolor_number' => 1 ] );
+$sas->add_plot_residuals( $plotname, "I(q)<sub>W</sub> fit Res./SD" );
+$sas->plot_trace_options( $plotname, "I(q)<sub>W</sub> fit Res./SD", [ 'linecolor_number' => 1 ] );
 
 $rmsd = round( $rmsd, 3 );
 $chi2 = round( $chi2, 3 );
@@ -670,7 +670,7 @@ if ( $chi2 != -1 ) {
 
 ## p-values
 $pvalueresults = (object)[];
-$sas->compute_p_value( "Exp. I(q)", "I(q) NNLS fit", $pvalueresults );
+$sas->compute_p_value( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $pvalueresults );
 if ( isset( $pvalueresults->p_value ) ) {
 # large square   $annotate_msg .= sprintf( "P-value %f <span style='color:red'>&#11035;&#65038;</span> ", $pvalueresults->p_value );
     $annotate_msg .= sprintf( "P-value %.3f <span style='color:%s'>&#9724;</span> ", $pvalueresults->p_value, $pvalueresults->p_value >= 0.05 ? 'green' : ($pvalueresults->p_value >= 0.01 ? 'yellow' : 'red') );
@@ -707,7 +707,7 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 ### summary results
 
 $fitname = $input->_project . ".fit";
-$sas->save_fit( "Exp. I(q)", "I(q) NNLS fit", $fitname );
+$sas->save_fit( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $fitname );
 
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults );
 
@@ -721,8 +721,11 @@ $bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->na
 $sassomoiqname = $bname . "_waxsis_somo_iq.csv";
 $sascoliqname = $bname . "_waxsis_iq.csv";
 
-## rename I(q)<sub>W</sub> frames to plain-text form for CSV column headers
+## rename I(q)<sub>W</sub> names to plain-text form for CSV column headers
 ## (plot trace names already baked; data store rename does not affect them)
+$csv_nnls_fit = str_replace( 'I(q)<sub>W</sub> ', 'I(q) ', "I(q)<sub>W</sub> NNLS fit" );
+$sas->rename_data( "I(q)<sub>W</sub> NNLS fit", $csv_nnls_fit );
+
 $csv_alliqframes = [];
 foreach ( $alliqframes as $iqframe ) {
     $csvframe = str_replace( 'I(q)<sub>W</sub> ', 'I(q) WAXSiS ', $iqframe );
@@ -733,7 +736,7 @@ foreach ( $alliqframes as $iqframe ) {
 }
 
 $sas->save_data_csv(
-    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $csv_alliqframes )
+    array_merge( [ "Exp. I(q)", $csv_nnls_fit ], $csv_alliqframes )
     ,$sassomoiqname
     ,1
     ,'/I\(q\) /'
@@ -741,7 +744,7 @@ $sas->save_data_csv(
     );
 
 $sas->save_data_csv_tr(
-    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $csv_alliqframes )
+    array_merge( [ "Exp. I(q)", $csv_nnls_fit ], $csv_alliqframes )
     ,$sascoliqname
     ,1
     ,'/I\(q\) /'
