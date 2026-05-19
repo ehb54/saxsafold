@@ -336,7 +336,33 @@ if ( strlen( $annotate_msg ) ) {
 
 ### summary results
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults );
+require_once "plotlyhist.php";
+
+$proj_frame_rgs = [];
+foreach ( $input->projects as $project ) {
+    $cgs = $cgstates->$project;
+    if ( isset( $cgs->state->mmcdownloaded ) ) {
+        $histname = "../$project/monomer_monte_carlo/" . $cgs->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+        $proj_frame_rgs[ $project ] = frame_rgs_from_hist( $histname );
+    }
+}
+
+$rg_map    = [];
+$model0_rg = $cgstates->{$best->iq->project}->state->output_load->Rg ?? null;
+
+foreach ( $iqresults as $name => $v ) {
+    $frame = intval( end( explode( ' ', $name ) ) );
+    if ( $frame === 0 && $model0_rg !== null ) {
+        $rg_map[ $name ] = $model0_rg;
+    } elseif ( $frame > 0 && preg_match( '/^([^:]+):/', $name, $m ) ) {
+        $project = $m[1];
+        if ( isset( $proj_frame_rgs[ $project ][ $frame - 1 ] ) ) {
+            $rg_map[ $name ] = $proj_frame_rgs[ $project ][ $frame - 1 ];
+        }
+    }
+}
+
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
 
@@ -595,8 +621,6 @@ $output->$pr_recon_id->layout->title->text =
     str_replace( "vs starting", "vs starting struct. for project " . $best->pr->project, $output->$pr_recon_id->layout->title->text );
 
 ## final rg plot
-
-require_once "plotlyhist.php";
 
 $rgdata = (object) [];
 

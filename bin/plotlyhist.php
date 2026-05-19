@@ -378,7 +378,6 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $pos    = 0;
             $avgrg2 = 0;
 
-            file_put_contents( "/tmp/checkrg", "plotlyhist final func() running\n",  FILE_APPEND );
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
                 $model = end( $namev );
@@ -444,6 +443,23 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
 
         }
     }
+}
+
+function frame_rgs_from_hist( $histname ) {
+    // Returns float[] indexed 0-based (frame 1 at index 0), or [] if file missing.
+    if ( !file_exists( $histname ) ) {
+        return [];
+    }
+    $rgs   = [];
+    $lines = explode( "\n", file_get_contents( $histname ) );
+    array_shift( $lines ); // skip header
+    foreach ( $lines as $line ) {
+        $vals = preg_split( '/\s+/', trim( $line ) );
+        if ( count( $vals ) >= 2 ) {
+            $rgs[] = floatval( $vals[1] );
+        }
+    }
+    return $rgs;
 }
 
 function merge_histograms( $x1, $y1, $x2, $y2, $n_bins ) {
