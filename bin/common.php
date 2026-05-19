@@ -185,17 +185,28 @@ function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_str
     $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
-function nnls_results_to_html( $obj ) {
+function nnls_results_to_html( $obj, $rg_map = null ) {
+    $show_rg = !empty( $rg_map );
+    $rg_th   = $show_rg ? "<th style='padding:0 15px 0 15px'>Rg [&#8491;]</th>" : "";
     $res =
         "<div style='font-family:monospace;width=100%'><small>"
         . "<table>"
-        . "<tr><th style='padding:0 15px 0 15px;text-align:center'>&nbsp;Model&nbsp;</th><th style='padding:0 15px 0 15px'>&nbsp;Fit contrib. %&nbsp;</th></tr>"
+        . "<tr><th style='padding:0 15px 0 15px;text-align:center'>&nbsp;Model&nbsp;</th>"
+        . $rg_th
+        . "<th style='padding:0 15px 0 15px'>&nbsp;Fit contrib. %&nbsp;</th></tr>"
         ;
 
     foreach ( $obj as $k => $v ) {
-
+        $rg_td = "";
+        if ( $show_rg ) {
+            $rg_td = isset( $rg_map[ $k ] )
+                ? "<td style='padding:0 15px 0 15px;text-align:center'>" . sprintf( "%.1f", $rg_map[ $k ] ) . "</td>"
+                : "<td style='padding:0 15px 0 15px;text-align:center'>&#8212;</td>";
+        }
         $res .=
-            "<tr><td style='padding:0 15px 0 15px'>&nbsp;$k&nbsp;</td><td style='padding:0 15px 0 15px;text-align:center'>"
+            "<tr><td style='padding:0 15px 0 15px'>&nbsp;$k&nbsp;</td>"
+            . $rg_td
+            . "<td style='padding:0 15px 0 15px;text-align:center'>"
             . sprintf( "%.1f", 100 * $v )
             . "</td></tr>"
             ;

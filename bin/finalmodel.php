@@ -713,7 +713,26 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 $fitname = $input->_project . ".fit";
 $sas->save_fit( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $fitname );
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults );
+require_once "plotlyhist.php";
+
+$rg_map = [];
+
+if ( isset( $cgstate->state->output_load->Rg ) && isset( $iqresults[ $waxsis_data_name ] ) ) {
+    $rg_map[ $waxsis_data_name ] = $cgstate->state->output_load->Rg;
+}
+
+if ( isset( $cgstate->state->mmcdownloaded ) ) {
+    $histname  = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+    $frame_rgs = frame_rgs_from_hist( $histname );
+    foreach ( $iqresults as $name => $v ) {
+        $frame = intval( end( explode( ' ', $name ) ) );
+        if ( $frame > 0 && isset( $frame_rgs[ $frame - 1 ] ) ) {
+            $rg_map[ $name ] = $frame_rgs[ $frame - 1 ];
+        }
+    }
+}
+
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
 
 ### save results to state
 
@@ -858,8 +877,6 @@ $ga->tcpmessage(
 $output->iqplotwaxsis = $sas->plot( $plotname );
 
 ## final rg plot
-
-require_once "plotlyhist.php";
 
 $rgdata = (object) [];
 
