@@ -113,7 +113,7 @@ if ( !isset( $cgstate->state->output_iqpr ) ) {
 # }
 
 $procdir = "waxsissets";
-$waxsis_data_name = "I(q) WAXSiS mod. 0";
+$waxsis_data_name = "I(q)<sub>W</sub> mod. 0";
 
 ## does the project already exist ?
 
@@ -133,7 +133,7 @@ $restore_old_data = function() {
 
         foreach( $obj->iqplot->data as $curve ) {
             if ( $curve->name == "WAXSiS" ) {
-                $curve->name = "I(q) WAXSiS mod. 0";
+                $curve->name = "I(q)<sub>W</sub> mod. 0";
                 break;
             }
         }
@@ -601,7 +601,7 @@ foreach ( $names as $name ) {
     }
     
     if ( $ok ) {
-        $thisiqframe   = "I(q) WAXSiS mod. $frame";
+        $thisiqframe   = "I(q)<sub>W</sub> mod. $frame";
         $alliqframes[] = $thisiqframe;
         #    $ga->tcpmessage( [
         #                         "_textarea" =>
@@ -690,7 +690,7 @@ if ( strlen( $annotate_msg ) ) {
 $ga->tcptextarea( $sas->data_summary( $sas->data_names() ) );
 $ga->tcptextarea( $sas->dump_plots() );
 $pvalueresults = (object)[];
-$sas->compute_p_value( "Exp. I(q)", "I(q) WAXSiS mod. 0", $pvalueresults );
+$sas->compute_p_value( "Exp. I(q)", "I(q)<sub>W</sub> mod. 0", $pvalueresults );
 if ( isset( $pvalueresults->p_value ) ) {
     $annotate_msg = sprintf( "P-value %f C %d N %d  ", $pvalueresults->p_value, $pvalueresults->longest_run, $pvalueresults->total_length );
     $sas->annotate_plot( "iqplot", $annotate_msg, true );
@@ -725,8 +725,19 @@ $bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->na
 $sassomoiqname = $bname . "_waxsis_somo_iq.csv";
 $sascoliqname = $bname . "_waxsis_iq.csv";
 
+## rename I(q)<sub>W</sub> frames to plain-text form for CSV column headers
+## (plot trace names already baked; data store rename does not affect them)
+$csv_alliqframes = [];
+foreach ( $alliqframes as $iqframe ) {
+    $csvframe = str_replace( 'I(q)<sub>W</sub> ', 'I(q) WAXSiS ', $iqframe );
+    if ( $csvframe !== $iqframe ) {
+        $sas->rename_data( $iqframe, $csvframe );
+    }
+    $csv_alliqframes[] = $csvframe;
+}
+
 $sas->save_data_csv(
-    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqframes )
+    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $csv_alliqframes )
     ,$sassomoiqname
     ,1
     ,'/I\(q\) /'
@@ -734,7 +745,7 @@ $sas->save_data_csv(
     );
 
 $sas->save_data_csv_tr(
-    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $alliqframes )
+    array_merge( [ "Exp. I(q)", "I(q) NNLS fit" ], $csv_alliqframes )
     ,$sascoliqname
     ,1
     ,'/I\(q\) /'
@@ -903,6 +914,23 @@ foreach ( $prfiles as $k => $v ) {
 $sas->compute_pr_many( $prfiles, $prnames );
 $sas->extend_pr( array_merge( $prnames, [ "Exp. P(r)" ] ) );
 
+## migrate old-style iq_waxsis_nnlsresults keys if present
+if ( isset( $cgstate->state->iq_waxsis_nnlsresults ) ) {
+    $migrated_nnls   = (object)[];
+    $migrated_colors = (object)[];
+    $old_prefix      = 'I(q) WAXSiS mod. ';
+    $new_prefix      = 'I(q)<sub>W</sub> mod. ';
+    foreach ( $cgstate->state->iq_waxsis_nnlsresults as $k => $v ) {
+        $newk = str_replace( $old_prefix, $new_prefix, $k );
+        $migrated_nnls->$newk = $v;
+        if ( isset( $cgstate->state->iq_waxsis_nnlsresults_colors->$k ) ) {
+            $migrated_colors->$newk = $cgstate->state->iq_waxsis_nnlsresults_colors->$k;
+        }
+    }
+    $cgstate->state->iq_waxsis_nnlsresults        = $migrated_nnls;
+    $cgstate->state->iq_waxsis_nnlsresults_colors = $migrated_colors;
+}
+
 $scalednames = [];
 $normednames = [];
 $messages    = '';
@@ -915,8 +943,8 @@ foreach ( $prnames as $v ) {
 
     $sas->norm_pr( $v, $cgstate->state->output_load->mw, $normedname );
 
-    if ( isset( $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" } ) ) {
-        $sas->norm_pr( $v, $cgstate->state->output_load->mw * $cgstate->state->iq_waxsis_nnlsresults->{ "I(q) WAXSiS mod. $frame" }, $scaledname );
+    if ( isset( $cgstate->state->iq_waxsis_nnlsresults->{ "I(q)<sub>W</sub> mod. $frame" } ) ) {
+        $sas->norm_pr( $v, $cgstate->state->output_load->mw * $cgstate->state->iq_waxsis_nnlsresults->{ "I(q)<sub>W</sub> mod. $frame" }, $scaledname );
         $scalednames[] = $scaledname;
     }
     $sas->remove_data( $v );
@@ -975,7 +1003,7 @@ if ( isset( $cgstate->state->output_load )
 
     foreach( $output->iqplot->data as $curve ) {
         if ( $curve->name == "WAXSiS" ) {
-            $curve->name = "I(q) WAXSiS mod. 0";
+            $curve->name = "I(q)<sub>W</sub> mod. 0";
             break;
         }
     }
