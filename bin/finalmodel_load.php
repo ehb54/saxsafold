@@ -64,7 +64,7 @@ if ( isset( $cgstate->state->output_load->iqplot ) ) {
     
     foreach( $result->iqplot->data as $curve ) {
         if ( $curve->name == "WAXSiS" ) {
-            $curve->name = "I(q) WAXSiS mod. 0";
+            $curve->name = "I(q)<sub>W</sub> mod. 0";
             break;
         }
     }
