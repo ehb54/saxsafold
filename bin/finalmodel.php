@@ -727,6 +727,7 @@ $sas->save_fit( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $fitname );
 
 require_once "plotlyhist.php";
 
+$bname         = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
 $notes_rgs     = [];
 $m0_notes_file = "waxsis/notes${waxsis_suffix}.log";
 if ( file_exists( $m0_notes_file ) ) {
@@ -783,7 +784,6 @@ $cgstate->state->waxsis_final_convergence = $input->waxsis_convergence_mode;
 
 ## setup csvdownloads
 
-$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
 $sassomoiqname = $bname . "_waxsis_somo_iq.csv";
 $sascoliqname = $bname . "_waxsis_iq.csv";
 
