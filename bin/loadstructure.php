@@ -709,8 +709,8 @@ if ( 1 ) {
     $cgstate->state->waxsis_last_run_time_minutes = dt_duration_minutes( $time_start, $time_end );
     run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_cached_file" );
     $waxsis_notes_cached = "waxsis/notes${waxsis_suffix}.log";
-    if ( file_exists( "waxsis/notes.log" ) ) {
-        run_cmd( "cp waxsis/notes.log $waxsis_notes_cached", false );
+    if ( file_exists( "waxsis/waxsisrun/notes.log" ) ) {
+        run_cmd( "cp waxsis/waxsisrun/notes.log $waxsis_notes_cached", false );
     }
     $notes_rg = waxsis_rg_from_notes( $waxsis_notes_cached );
     $output->Rg_ws = digitfix( sprintf( "%.3g", $notes_rg->rg ), 3 );
