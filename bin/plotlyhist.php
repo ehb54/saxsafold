@@ -3,6 +3,7 @@
 {};
 
 $plotly_hist_bin_count = 100;
+$show_dry_nnls_avg_marker = true; // set false to hide orange dry weighted-average marker when solvated Rg is used
 
 function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 0 ) {
     global $papercolors;
@@ -235,7 +236,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
     return "";
 }
 
-function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjacent = 0 ) {
+function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjacent = 0, $notes_rgs = null ) {
     global $cgstate;
 
     if ( isset( $cgstate->state->mmcdownloaded ) ) {
@@ -375,54 +376,52 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             
             # need to sort nnlsresults
 
-            $pos    = 0;
-            $avgrg2 = 0;
+            $use_solvated = !empty( $notes_rgs ) && empty( array_diff_key( (array)$nnlsresults, $notes_rgs ) );
+
+            $pos         = 0;
+            $avgrg2      = 0;
+            $avgrg2_dry  = 0;
 
             foreach ( $nnlsresults as $k => $v ) {
                 $namev = explode( ' ', $k );
                 $model = end( $namev );
-                if ( $model == "WAXSiS" || $model == 0 ) {
-                    $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $cgstate->state->output_load->Rg ) );
-                    $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-                    $plot->data[2]->customdata[]    = "Model $model";
-                    $plot->data[2]->marker->color[] =
-                        (
-                         isset( $nnlsresults_colors )
-                         && isset( $nnlsresults_colors->$k )
-                        )
-                        ? $nnlsresults_colors->$k
-                        : "black";
-                    $avgrg2 += $v * $cgstate->state->output_load->Rg * $cgstate->state->output_load->Rg;
-                } else {
-                    $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $reshist->histplot->data[0]->y[ $model - 1 ] ) );
-                    $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-                    $plot->data[2]->customdata[]    = "Model $model";
-                    $plot->data[2]->marker->color[] =
-                        (
-                         isset( $nnlsresults_colors )
-                         && isset( $nnlsresults_colors->$k )
-                        )
-                        ? $nnlsresults_colors->$k
-                        : "black";
-                    $avgrg2 += $v * $reshist->histplot->data[0]->y[ $model - 1 ] * $reshist->histplot->data[0]->y[ $model - 1 ];
-                }
+                $dry_rg = ( $model == "WAXSiS" || $model == 0 )
+                    ? $cgstate->state->output_load->Rg
+                    : $reshist->histplot->data[0]->y[ $model - 1 ];
+                $bar_rg = ( $use_solvated && isset( $notes_rgs[ $k ] ) ) ? $notes_rgs[ $k ]->rg : $dry_rg;
+
+                $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
+                $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
+                $plot->data[2]->customdata[]    = "Model $model";
+                $plot->data[2]->marker->color[] =
+                    (
+                     isset( $nnlsresults_colors )
+                     && isset( $nnlsresults_colors->$k )
+                    )
+                    ? $nnlsresults_colors->$k
+                    : "black";
+                $avgrg2     += $v * $bar_rg * $bar_rg;
+                $avgrg2_dry += $v * $dry_rg * $dry_rg;
             }
 
-            $avgrg = sqrt( $avgrg2 );
+            $avgrg     = sqrt( $avgrg2 );
+            $avgrg_dry = sqrt( $avgrg2_dry );
 
             $plot->data[2]->width = ( max( $plot->data[0]->x ) - min( $plot->data[0]->x ) ) / (count( $plot->data[2]->x ) * 10 );
-
-            $avgrg_key  = "Weighted average of NNLS fit";
-            $avgrg_value = (object) [
-                "Rg" => $avgrg
-                ,"color" => "green"
-                ];
 
             if ( !isset( $rgdata ) || !is_object( $rgdata ) ) {
                 $rgdata = (object)[];
             }
 
-            $rgdata->{$avgrg_key} = $avgrg_value;
+            if ( $use_solvated ) {
+                global $show_dry_nnls_avg_marker;
+                if ( $show_dry_nnls_avg_marker ) {
+                    $rgdata->{ "Weighted avg. NNLS fit (dry)" }  = (object)[ "Rg" => $avgrg_dry, "color" => "orange" ];
+                }
+                $rgdata->{ "Weighted avg. NNLS fit (solv.)" } = (object)[ "Rg" => $avgrg,     "color" => "green"  ];
+            } else {
+                $rgdata->{ "Weighted average of NNLS fit" }   = (object)[ "Rg" => $avgrg,     "color" => "green"  ];
+            }
             $rg_use_ordinate = [];
             
             foreach ( $rgdata as $k => $v ) {
@@ -492,7 +491,7 @@ function merge_histograms( $x1, $y1, $x2, $y2, $n_bins ) {
     return [ $bins, $counts ];
 }
 
-function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
+function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $notes_rgs = null ) {
     global $cgstates;
     global $best;
     global $plotly_hist_bin_count;
@@ -773,58 +772,59 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata ) {
     $pos    = 0;
     $avgrg2 = 0;
 
+    $use_solvated = !empty( $notes_rgs ) && empty( array_diff_key( (array)$nnlsresults, $notes_rgs ) );
+
+    $pos         = 0;
+    $avgrg2      = 0;
+    $avgrg2_dry  = 0;
+
     # file_put_contents( "/tmp/checkrg", "plotlyhist final func() running\n",  FILE_APPEND );
     foreach ( $nnlsresults as $k => $v ) {
         if ( !preg_match( '/^([^:]*):/', $k, $matches ) ) {
             return "Error: Could not determine project name from '$name'";
         }
         $project = $matches[1];
-        
+
         $namev = explode( ' ', $k );
         $model = end( $namev );
 
-        if ( $model == "WAXSiS" || $model == 0 ) {
-            $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $cgstates->{$best->iq->project}->state->output_load->Rg ) );
-            $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-            $plot->data[2]->customdata[]    = "$project Model $model";
-            $plot->data[2]->marker->color[] =
-                (
-                 isset( $nnlsresults_colors )
-                 && isset( $nnlsresults_colors->$k )
-                )
-                ? $nnlsresults_colors->$k
-                : "black";
-            $avgrg2 += $v * $cgstates->{$best->iq->project}->state->output_load->Rg * $cgstates->{$best->iq->project}->state->output_load->Rg;
-        } else {
-            $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $reshists->$project->histplot->data[0]->y[ $model - 1 ] ) );
-            $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-            $plot->data[2]->customdata[]    = "$project Model $model";
-            $plot->data[2]->marker->color[] =
-                (
-                 isset( $nnlsresults_colors )
-                 && isset( $nnlsresults_colors->$k )
-                )
-                ? $nnlsresults_colors->$k
-                : "black";
-            $avgrg2 += $v * $reshists->$project->histplot->data[0]->y[ $model - 1 ] * $reshists->$project->histplot->data[0]->y[ $model - 1 ];
-        }
+        $dry_rg = ( $model == "WAXSiS" || $model == 0 )
+            ? $cgstates->{$best->iq->project}->state->output_load->Rg
+            : $reshists->$project->histplot->data[0]->y[ $model - 1 ];
+        $bar_rg = ( $use_solvated && isset( $notes_rgs[ $k ] ) ) ? $notes_rgs[ $k ]->rg : $dry_rg;
+
+        $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
+        $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
+        $plot->data[2]->customdata[]    = "$project Model $model";
+        $plot->data[2]->marker->color[] =
+            (
+             isset( $nnlsresults_colors )
+             && isset( $nnlsresults_colors->$k )
+            )
+            ? $nnlsresults_colors->$k
+            : "black";
+        $avgrg2     += $v * $bar_rg * $bar_rg;
+        $avgrg2_dry += $v * $dry_rg * $dry_rg;
     }
 
-    $avgrg = sqrt( $avgrg2 );
+    $avgrg     = sqrt( $avgrg2 );
+    $avgrg_dry = sqrt( $avgrg2_dry );
 
     $plot->data[2]->width = ( max( $plot->data[0]->x ) - min( $plot->data[0]->x ) ) / (count( $plot->data[2]->x ) * 10 );
-
-    $avgrg_key  = "Weighted average of NNLS fit";
-    $avgrg_value = (object) [
-        "Rg" => $avgrg
-        ,"color" => "green"
-        ];
 
     if ( !isset( $rgdata ) || !is_object( $rgdata ) ) {
         $rgdata = (object)[];
     }
 
-    $rgdata->{$avgrg_key} = $avgrg_value;
+    if ( $use_solvated ) {
+        global $show_dry_nnls_avg_marker;
+        if ( $show_dry_nnls_avg_marker ) {
+            $rgdata->{ "Weighted avg. NNLS fit (dry)" }  = (object)[ "Rg" => $avgrg_dry, "color" => "orange" ];
+        }
+        $rgdata->{ "Weighted avg. NNLS fit (solv.)" } = (object)[ "Rg" => $avgrg,     "color" => "green"  ];
+    } else {
+        $rgdata->{ "Weighted average of NNLS fit" }   = (object)[ "Rg" => $avgrg,     "color" => "green"  ];
+    }
     $rg_use_ordinate = [];
     
     foreach ( $rgdata as $k => $v ) {

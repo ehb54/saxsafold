@@ -744,10 +744,12 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-$rg_map    = [];
-$rg_header = 'Rg [&#8491;]';
+$rg_map       = [];
+$rg_header    = 'Rg [&#8491;]';
+$use_solvated = false;
 
 if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) ) {
+    $use_solvated = true;
     foreach ( $notes_rgs as $name => $rg_obj ) {
         $rg_map[ $name ] = $rg_obj->rg;
     }
@@ -923,7 +925,13 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 
 $rgdata = (object) [];
 
-if ( isset( $cgstate->state->output_load->Rg ) ) {
+if ( $use_solvated && isset( $cgstate->state->output_load->Rg_ws ) ) {
+    $rgdata->{ "Original model<br>WAXSiS (solv.)" } =
+        (object) [
+            "Rg" => floatval( $cgstate->state->output_load->Rg_ws )
+            ,"color" => "blue"
+        ];
+} elseif ( isset( $cgstate->state->output_load->Rg ) ) {
     $rgdata->{ "Original model<br>SOMO computed" } =
         (object) [
             "Rg" => $cgstate->state->output_load->Rg
@@ -944,7 +952,7 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
         ];
 }
 
-final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames );
+final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames, $notes_rgs );
 $cgstate->state->final_adjacent_frames = $input->adjacent_frames;
 
 ## pr reconstruct

@@ -372,10 +372,12 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-$rg_map    = [];
-$rg_header = 'Rg [&#8491;]';
+$rg_map       = [];
+$rg_header    = 'Rg [&#8491;]';
+$use_solvated = false;
 
 if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) ) {
+    $use_solvated = true;
     foreach ( $notes_rgs as $name => $rg_obj ) {
         $rg_map[ $name ] = $rg_obj->rg;
     }
@@ -663,7 +665,13 @@ $output->$pr_recon_id->layout->title->text =
 
 $rgdata = (object) [];
 
-if ( isset( $cgstates->{$best->iq->project}->state->output_load->Rg ) ) {
+if ( $use_solvated && isset( $cgstates->{$best->iq->project}->state->output_load->Rg_ws ) ) {
+    $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>WAXSiS (solv.)" } =
+        (object) [
+            "Rg" => floatval( $cgstates->{$best->iq->project}->state->output_load->Rg_ws )
+            ,"color" => "blue"
+        ];
+} elseif ( isset( $cgstates->{$best->iq->project}->state->output_load->Rg ) ) {
     $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>SOMO computed" } =
         (object) [
             "Rg" => $cgstates->{$best->iq->project}->state->output_load->Rg
@@ -685,7 +693,7 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
         ];
 }
 
-joined_hist( $output, $iq_waxsis_nnlsresults, $iq_waxsis_nnlsresults_colors, $rgdata );
+joined_hist( $output, $iq_waxsis_nnlsresults, $iq_waxsis_nnlsresults_colors, $rgdata, $notes_rgs );
 
 $output->_textarea = '';
 
