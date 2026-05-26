@@ -343,6 +343,17 @@
             }
         },
         {
+            "type"           : "text"
+            ,"help"          : "WAXSiS Guinier R<sub>g</sub> computed on the fully solvated structure (hydration shell modeled explicitly by WAXSiS). Compare with the dry R<sub>g</sub> above &mdash; the difference reflects the contribution of the bound solvent layer."
+            ,"id"            : "Rg_ws"
+            ,"role"          : "output"
+            ,"label"         : "WAXSiS R<sub>g</sub> (solvated) [&#8491;]"
+            ,"labelmargintop": "0.5rem"
+            ,"layout"        : {
+                "parent" : "resultpanel"
+            }
+        },
+        {
             "type" : "text",
             "help" : "The percent of peptide bonds identified by DSSP, implemented in UCSF Chimera, as &alpha;-Helix",
             "id" : "helix",
