@@ -471,7 +471,7 @@
             ,"layout" : {
                 "parent" : "resultpanel"
             }
-        },
+        }
         ,{
             "type"           : "text"
             ,"help"          : "WAXSiS Guinier R<sub>g</sub> computed on the fully solvated structure (hydration shell modeled explicitly by WAXSiS). Compare with the dry R<sub>g</sub> above &mdash; the difference reflects the contribution of the bound solvent layer."
