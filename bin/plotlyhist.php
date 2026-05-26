@@ -394,7 +394,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
 
                 $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
                 $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-                $plot->data[2]->customdata[]    = "Model $model";
+                $plot->data[2]->customdata[]    = "Model $model (dry)";
                 $plot->data[2]->marker->color[] =
                     (
                      isset( $nnlsresults_colors )
@@ -796,7 +796,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
 
         $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
         $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-        $plot->data[2]->customdata[]    = "$project Model $model";
+        $plot->data[2]->customdata[]    = "$project Model $model (dry)";
         $plot->data[2]->marker->color[] =
             (
              isset( $nnlsresults_colors )
@@ -866,7 +866,7 @@ $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
 echo "rg is $prrg\n";
 
 $rgdata = (object) [
-    "Original model<br>SOMO computed" => (object) [
+    "Original model<br>SOMO (dry)" => (object) [
         "Rg" => $cgstate->state->output_load->Rg
         ,"color" => "blue"
     ]

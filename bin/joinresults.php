@@ -666,7 +666,7 @@ $output->$pr_recon_id->layout->title->text =
 $rgdata = (object) [];
 
 if ( isset( $cgstates->{$best->iq->project}->state->output_load->Rg ) ) {
-    $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>SOMO computed" } =
+    $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>SOMO (dry)" } =
         (object) [
             "Rg" => $cgstates->{$best->iq->project}->state->output_load->Rg
             ,"color" => "blue"
