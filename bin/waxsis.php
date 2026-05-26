@@ -148,6 +148,21 @@ function run_waxsis( $pdb, $config, $cb_on_write, $exit_waxsis_error = true ) {
     return true;
 }
 
+function waxsis_rg_from_notes( $notes_file ) {
+    if ( !file_exists( $notes_file ) ) {
+        error_exit( "WAXSiS notes file '$notes_file' does not exist" );
+    }
+    $content = file_get_contents( $notes_file );
+    if ( !preg_match( '/Rg \[A\]\s*=\s*([\d.]+)/', $content, $m ) ) {
+        error_exit( "Could not parse Rg from WAXSiS notes file '$notes_file'" );
+    }
+    $rg = floatval( $m[1] );
+    if ( !preg_match( '/Rg\(solute\) \[A\]\s*=\s*([\d.]+)/', $content, $m ) ) {
+        error_exit( "Could not parse Rg(solute) from WAXSiS notes file '$notes_file'" );
+    }
+    return (object)[ 'rg' => $rg, 'rg_solute' => floatval( $m[1] ) ];
+}
+
 ## testing
 
 # waxis_load_data( "waxsis/fittedCalcInterpolated_waxsis.fit", $waxsis_fitted_data );
