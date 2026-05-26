@@ -568,7 +568,12 @@ foreach ( $names as $name ) {
     $ok = false;
 
     if ( !$do_testing ) {
-        $iqfile = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
+        $iqfile     = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
+        $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
+        if ( file_exists( $iqfile ) && !file_exists( $notes_dest ) ) {
+            $ga->tcpmessage( [ '_textarea' => "Frame $frame WAXSiS cache missing notes file, re-running\n" ] );
+            unlink( $iqfile );
+        }
         if ( !file_exists( $iqfile ) ) {
             $time_start = dt_now();
             $ok =
@@ -586,8 +591,7 @@ foreach ( $names as $name ) {
                 }
 
                 run_cmd( "mv $waxsisiqfile $iqfile" );
-                $notes_src  = $waxsis_params->subdir . "/waxsisrun/notes.log";
-                $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
+                $notes_src = $waxsis_params->subdir . "/waxsisrun/notes.log";
                 if ( file_exists( $notes_src ) ) {
                     run_cmd( "cp $notes_src $notes_dest", false );
                 }
@@ -723,6 +727,7 @@ $sas->save_fit( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $fitname );
 
 require_once "plotlyhist.php";
 
+$bname         = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
 $notes_rgs     = [];
 $m0_notes_file = "waxsis/notes${waxsis_suffix}.log";
 if ( file_exists( $m0_notes_file ) ) {
@@ -779,7 +784,6 @@ $cgstate->state->waxsis_final_convergence = $input->waxsis_convergence_mode;
 
 ## setup csvdownloads
 
-$bname     = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name );
 $sassomoiqname = $bname . "_waxsis_somo_iq.csv";
 $sascoliqname = $bname . "_waxsis_iq.csv";
 
