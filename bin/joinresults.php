@@ -375,7 +375,7 @@ foreach ( $iqresults as $name => $v ) {
 $rg_map    = [];
 $rg_header = 'Rg [&#8491;]';
 
-if ( count( $notes_rgs ) === count( $iqresults ) ) {
+if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) ) {
     foreach ( $notes_rgs as $name => $rg_obj ) {
         $rg_map[ $name ] = $rg_obj->rg;
     }
