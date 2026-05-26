@@ -570,10 +570,6 @@ foreach ( $names as $name ) {
     if ( !$do_testing ) {
         $iqfile     = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
         $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
-        if ( file_exists( $iqfile ) && !file_exists( $notes_dest ) ) {
-            $ga->tcpmessage( [ '_textarea' => "Frame $frame WAXSiS cache missing notes file, re-running\n" ] );
-            unlink( $iqfile );
-        }
         if ( !file_exists( $iqfile ) ) {
             $time_start = dt_now();
             $ok =
