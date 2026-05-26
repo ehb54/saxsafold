@@ -25,6 +25,7 @@ include "genapp.php";
 include "datetime.php";
 include_once "common.php";
 include_once "computeiqpr_defines.php";
+require_once "waxsis.php";
 
 
 $ga        = new GenApp( $input, $output );
@@ -347,22 +348,54 @@ foreach ( $input->projects as $project ) {
     }
 }
 
-$rg_map    = [];
-$model0_rg = $cgstates->{$best->iq->project}->state->output_load->Rg ?? null;
-
+$notes_rgs = [];
 foreach ( $iqresults as $name => $v ) {
     $frame = intval( end( explode( ' ', $name ) ) );
-    if ( $frame === 0 && $model0_rg !== null ) {
-        $rg_map[ $name ] = $model0_rg;
-    } elseif ( $frame > 0 && preg_match( '/^([^:]+):/', $name, $m ) ) {
+    if ( !preg_match( '/^([^:]+):/', $name, $m ) ) {
+        continue;
+    }
+    $project = $m[1];
+    $bname   = preg_replace( '/-somo\.pdb$/', '', $cgstates->$project->state->output_load->name );
+    switch ( $cgstates->$project->state->waxsis_final_convergence ?? 'normal' ) {
+        case 'thorough': $suffix = '_t'; break;
+        case 'quick':    $suffix = '_q'; break;
+        default:         $suffix = '_n'; break;
+    }
+    if ( $frame === 0 ) {
+        $notes_file = "../$project/waxsis/notes${suffix}.log";
+    } else {
+        $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame ) ) . $frame;
+        $notes_file   = "../$project/waxsissets/${bname}-somo-m${frame_padded}-waxsis${suffix}-notes.log";
+    }
+    if ( file_exists( $notes_file ) ) {
+        $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
+    }
+}
+
+$rg_map    = [];
+$rg_header = 'Rg [&#8491;]';
+
+if ( count( $notes_rgs ) === count( $iqresults ) ) {
+    foreach ( $notes_rgs as $name => $rg_obj ) {
+        $rg_map[ $name ] = $rg_obj->rg;
+    }
+    $rg_header = 'Rg solv. [&#8491;]';
+} else {
+    foreach ( $iqresults as $name => $v ) {
+        $frame = intval( end( explode( ' ', $name ) ) );
+        if ( !preg_match( '/^([^:]+):/', $name, $m ) ) {
+            continue;
+        }
         $project = $m[1];
-        if ( isset( $proj_frame_rgs[ $project ][ $frame - 1 ] ) ) {
+        if ( $frame === 0 && isset( $cgstates->$project->state->output_load->Rg ) ) {
+            $rg_map[ $name ] = $cgstates->$project->state->output_load->Rg;
+        } elseif ( $frame > 0 && isset( $proj_frame_rgs[ $project ][ $frame - 1 ] ) ) {
             $rg_map[ $name ] = $proj_frame_rgs[ $project ][ $frame - 1 ];
         }
     }
 }
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
 

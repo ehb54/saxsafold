@@ -428,6 +428,9 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
             error_exit( "WAXSiS did not produce the expected I(q) file for model 0" );
         }
         run_cmd( "cp waxsis/intensity_waxsis.calc $waxsis_model0_cached_file" );
+        if ( file_exists( "waxsis/waxsisrun/notes.log" ) ) {
+            run_cmd( "cp waxsis/waxsisrun/notes.log waxsis/notes${waxsis_suffix}.log", false );
+        }
     }
 
     ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
@@ -583,6 +586,11 @@ foreach ( $names as $name ) {
                 }
 
                 run_cmd( "mv $waxsisiqfile $iqfile" );
+                $notes_src  = $waxsis_params->subdir . "/waxsisrun/notes.log";
+                $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
+                if ( file_exists( $notes_src ) ) {
+                    run_cmd( "cp $notes_src $notes_dest", false );
+                }
                 $iqfiles[] = $iqfile;
             } else {
                 $waxsis_failures[] = $frame;
@@ -715,28 +723,52 @@ $sas->save_fit( "Exp. I(q)", "I(q)<sub>W</sub> NNLS fit", $fitname );
 
 require_once "plotlyhist.php";
 
-$rg_map = [];
-
-if ( isset( $cgstate->state->output_load->Rg ) && isset( $iqresults[ $waxsis_data_name ] ) ) {
-    $rg_map[ $waxsis_data_name ] = $cgstate->state->output_load->Rg;
+$notes_rgs     = [];
+$m0_notes_file = "waxsis/notes${waxsis_suffix}.log";
+if ( file_exists( $m0_notes_file ) ) {
+    $notes_rgs[ $waxsis_data_name ] = waxsis_rg_from_notes( $m0_notes_file );
 }
-
-if ( isset( $cgstate->state->mmcdownloaded ) ) {
-    $histname  = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
-    $frame_rgs = frame_rgs_from_hist( $histname );
-    foreach ( $iqresults as $name => $v ) {
-        $frame = intval( end( explode( ' ', $name ) ) );
-        if ( $frame > 0 && isset( $frame_rgs[ $frame - 1 ] ) ) {
-            $rg_map[ $name ] = $frame_rgs[ $frame - 1 ];
+foreach ( $iqresults as $name => $v ) {
+    $frame = intval( end( explode( ' ', $name ) ) );
+    if ( $frame > 0 ) {
+        $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame ) ) . $frame;
+        $notes_file   = "$procdir/${bname}-somo-m${frame_padded}-waxsis${waxsis_suffix}-notes.log";
+        if ( file_exists( $notes_file ) ) {
+            $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
         }
     }
 }
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
+$rg_map    = [];
+$rg_header = 'Rg [&#8491;]';
+
+if ( count( $notes_rgs ) === count( $iqresults ) ) {
+    foreach ( $notes_rgs as $name => $rg_obj ) {
+        $rg_map[ $name ] = $rg_obj->rg;
+    }
+    $rg_header = 'Rg solv. [&#8491;]';
+} else {
+    if ( isset( $cgstate->state->output_load->Rg ) && isset( $iqresults[ $waxsis_data_name ] ) ) {
+        $rg_map[ $waxsis_data_name ] = $cgstate->state->output_load->Rg;
+    }
+    if ( isset( $cgstate->state->mmcdownloaded ) ) {
+        $histname  = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+        $frame_rgs = frame_rgs_from_hist( $histname );
+        foreach ( $iqresults as $name => $v ) {
+            $frame = intval( end( explode( ' ', $name ) ) );
+            if ( $frame > 0 && isset( $frame_rgs[ $frame - 1 ] ) ) {
+                $rg_map[ $name ] = $frame_rgs[ $frame - 1 ];
+            }
+        }
+    }
+}
+
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
 
 ### save results to state
 
-$cgstate->state->iq_waxsis_nnlsresults = json_decode( json_encode( $iqresults ) );
+$cgstate->state->iq_waxsis_nnlsresults    = json_decode( json_encode( $iqresults ) );
+$cgstate->state->waxsis_final_convergence = $input->waxsis_convergence_mode;
 
 ## setup csvdownloads
 
