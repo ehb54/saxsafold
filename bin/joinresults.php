@@ -375,12 +375,18 @@ foreach ( $iqresults as $name => $v ) {
 $rg_map    = [];
 $rg_header = 'Rg [&#8491;]';
 
-if ( count( $notes_rgs ) === count( $iqresults ) ) {
+if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) ) {
     foreach ( $notes_rgs as $name => $rg_obj ) {
         $rg_map[ $name ] = $rg_obj->rg;
     }
     $rg_header = 'Rg solv. [&#8491;]';
 } else {
+    $missing_notes = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
+    $output->_textarea .=
+        "WAXSiS solvated Rg not available for all selected models ("
+        . count( $notes_rgs ) . " of " . count( $iqresults ) . " have notes files). "
+        . "Using SOMO/MMC Rg in the NNLS summary table.\n"
+        . "Models without notes: " . implode( ", ", $missing_notes ) . "\n";
     foreach ( $iqresults as $name => $v ) {
         $frame = intval( end( explode( ' ', $name ) ) );
         if ( !preg_match( '/^([^:]+):/', $name, $m ) ) {
