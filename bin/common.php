@@ -185,9 +185,9 @@ function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_str
     $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
-function nnls_results_to_html( $obj, $rg_map = null ) {
+function nnls_results_to_html( $obj, $rg_map = null, $rg_header = 'Rg [&#8491;]' ) {
     $show_rg = !empty( $rg_map );
-    $rg_th   = $show_rg ? "<th style='padding:0 15px 0 15px'>Rg [&#8491;]</th>" : "";
+    $rg_th   = $show_rg ? "<th style='padding:0 15px 0 15px'>$rg_header</th>" : "";
     $res =
         "<div style='font-family:monospace;width=100%'><small>"
         . "<table>"

@@ -739,18 +739,22 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-$rg_map = [];
-foreach ( $notes_rgs as $name => $rg_obj ) {
-    $rg_map[ $name ] = $rg_obj->rg;
-}
-if ( !isset( $rg_map[ $waxsis_data_name ] ) && isset( $cgstate->state->output_load->Rg ) && isset( $iqresults[ $waxsis_data_name ] ) ) {
-    $rg_map[ $waxsis_data_name ] = $cgstate->state->output_load->Rg;
-}
-if ( isset( $cgstate->state->mmcdownloaded ) ) {
-    $histname  = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
-    $frame_rgs = frame_rgs_from_hist( $histname );
-    foreach ( $iqresults as $name => $v ) {
-        if ( !isset( $rg_map[ $name ] ) ) {
+$rg_map    = [];
+$rg_header = 'Rg [&#8491;]';
+
+if ( count( $notes_rgs ) === count( $iqresults ) ) {
+    foreach ( $notes_rgs as $name => $rg_obj ) {
+        $rg_map[ $name ] = $rg_obj->rg;
+    }
+    $rg_header = 'Rg solv. [&#8491;]';
+} else {
+    if ( isset( $cgstate->state->output_load->Rg ) && isset( $iqresults[ $waxsis_data_name ] ) ) {
+        $rg_map[ $waxsis_data_name ] = $cgstate->state->output_load->Rg;
+    }
+    if ( isset( $cgstate->state->mmcdownloaded ) ) {
+        $histname  = "monomer_monte_carlo/" . $cgstate->state->mmcrunname . ".dcd.accepted_rg_results_data.txt";
+        $frame_rgs = frame_rgs_from_hist( $histname );
+        foreach ( $iqresults as $name => $v ) {
             $frame = intval( end( explode( ' ', $name ) ) );
             if ( $frame > 0 && isset( $frame_rgs[ $frame - 1 ] ) ) {
                 $rg_map[ $name ] = $frame_rgs[ $frame - 1 ];
@@ -759,7 +763,7 @@ if ( isset( $cgstate->state->mmcdownloaded ) ) {
     }
 }
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
 
 ### save results to state
 

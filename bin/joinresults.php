@@ -348,7 +348,7 @@ foreach ( $input->projects as $project ) {
     }
 }
 
-$rg_map = [];
+$notes_rgs = [];
 foreach ( $iqresults as $name => $v ) {
     $frame = intval( end( explode( ' ', $name ) ) );
     if ( !preg_match( '/^([^:]+):/', $name, $m ) ) {
@@ -368,15 +368,34 @@ foreach ( $iqresults as $name => $v ) {
         $notes_file   = "../$project/waxsissets/${bname}-somo-m${frame_padded}-waxsis${suffix}-notes.log";
     }
     if ( file_exists( $notes_file ) ) {
-        $rg_map[ $name ] = waxsis_rg_from_notes( $notes_file )->rg;
-    } elseif ( $frame === 0 && isset( $cgstates->$project->state->output_load->Rg ) ) {
-        $rg_map[ $name ] = $cgstates->$project->state->output_load->Rg;
-    } elseif ( $frame > 0 && isset( $proj_frame_rgs[ $project ][ $frame - 1 ] ) ) {
-        $rg_map[ $name ] = $proj_frame_rgs[ $project ][ $frame - 1 ];
+        $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
     }
 }
 
-$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null );
+$rg_map    = [];
+$rg_header = 'Rg [&#8491;]';
+
+if ( count( $notes_rgs ) === count( $iqresults ) ) {
+    foreach ( $notes_rgs as $name => $rg_obj ) {
+        $rg_map[ $name ] = $rg_obj->rg;
+    }
+    $rg_header = 'Rg solv. [&#8491;]';
+} else {
+    foreach ( $iqresults as $name => $v ) {
+        $frame = intval( end( explode( ' ', $name ) ) );
+        if ( !preg_match( '/^([^:]+):/', $name, $m ) ) {
+            continue;
+        }
+        $project = $m[1];
+        if ( $frame === 0 && isset( $cgstates->$project->state->output_load->Rg ) ) {
+            $rg_map[ $name ] = $cgstates->$project->state->output_load->Rg;
+        } elseif ( $frame > 0 && isset( $proj_frame_rgs[ $project ][ $frame - 1 ] ) ) {
+            $rg_map[ $name ] = $proj_frame_rgs[ $project ][ $frame - 1 ];
+        }
+    }
+}
+
+$output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
 
