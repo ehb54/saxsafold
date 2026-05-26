@@ -570,10 +570,6 @@ foreach ( $names as $name ) {
     if ( !$do_testing ) {
         $iqfile     = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
         $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
-        if ( file_exists( $iqfile ) && !file_exists( $notes_dest ) ) {
-            $ga->tcpmessage( [ '_textarea' => "Frame $frame WAXSiS cache missing notes file, re-running\n" ] );
-            unlink( $iqfile );
-        }
         if ( !file_exists( $iqfile ) ) {
             $time_start = dt_now();
             $ok =
@@ -744,10 +740,12 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-$rg_map    = [];
-$rg_header = 'Rg [&#8491;]';
+$rg_map       = [];
+$rg_header    = 'Rg [&#8491;]';
+$use_solvated = false;
 
 if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) ) {
+    $use_solvated = true;
     foreach ( $notes_rgs as $name => $rg_obj ) {
         $rg_map[ $name ] = $rg_obj->rg;
     }
@@ -924,7 +922,7 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 $rgdata = (object) [];
 
 if ( isset( $cgstate->state->output_load->Rg ) ) {
-    $rgdata->{ "Original model<br>SOMO computed" } =
+    $rgdata->{ "Original model<br>SOMO (dry)" } =
         (object) [
             "Rg" => $cgstate->state->output_load->Rg
             ,"color" => "blue"
@@ -944,7 +942,7 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
         ];
 }
 
-final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames );
+final_hist( $output, $cgstate->state->iq_waxsis_nnlsresults, $cgstate->state->iq_waxsis_nnlsresults_colors, $rgdata, $input->adjacent_frames, $notes_rgs );
 $cgstate->state->final_adjacent_frames = $input->adjacent_frames;
 
 ## pr reconstruct
