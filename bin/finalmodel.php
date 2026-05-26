@@ -925,13 +925,7 @@ $output->iqplotwaxsis = $sas->plot( $plotname );
 
 $rgdata = (object) [];
 
-if ( $use_solvated && isset( $cgstate->state->output_load->Rg_ws ) ) {
-    $rgdata->{ "Original model<br>WAXSiS (solv.)" } =
-        (object) [
-            "Rg" => floatval( $cgstate->state->output_load->Rg_ws )
-            ,"color" => "blue"
-        ];
-} elseif ( isset( $cgstate->state->output_load->Rg ) ) {
+if ( isset( $cgstate->state->output_load->Rg ) ) {
     $rgdata->{ "Original model<br>SOMO computed" } =
         (object) [
             "Rg" => $cgstate->state->output_load->Rg
