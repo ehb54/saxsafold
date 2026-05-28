@@ -355,7 +355,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}'
                                             ,"name" => ""
                                             ,"yaxis" =>  "y3"
                                             ,"mode"  => "markers"
@@ -417,10 +417,10 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             }
 
             if ( $show_dry_nnls_avg_marker ) {
-                $rgdata->{ "Weighted avg. NNLS fit (dry)" }  = (object)[ "Rg" => $avgrg, "color" => "orange" ];
+                $rgdata->{ "Weighted avg. NNLS fit (dry)" }  = (object)[ "Rg" => $avgrg, "color" => "orange", "label" => "Weighted avg. NNLS fit", "rg_qualifier" => "dry " ];
             }
             if ( $use_solvated ) {
-                $rgdata->{ "Weighted avg. NNLS fit (solv.)" } = (object)[ "Rg" => sqrt( $avgrg2_solv ), "color" => "green" ];
+                $rgdata->{ "Weighted avg. NNLS fit (solv.)" } = (object)[ "Rg" => sqrt( $avgrg2_solv ), "color" => "green", "label" => "Weighted avg. NNLS fit", "rg_qualifier" => "solv. " ];
             }
             $rg_use_ordinate = [];
             
@@ -429,7 +429,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                 $rg_use_ordinate[ $rg_abscissa ] = isset( $rg_use_ordinate[ $rg_abscissa ] ) ? $rg_use_ordinate[ $rg_abscissa ] + .2 : 1;
                 $plot->data[3]->x[]              = floatval( $rg_abscissa );
                 $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_abscissa ];
-                $plot->data[3]->customdata[]     = $k;
+                $plot->data[3]->customdata[]     = [ isset( $v->label ) ? $v->label : $k, $v->rg_qualifier ?? "" ];
                 $plot->data[3]->marker->color[]  = $v->color;
             }
 
@@ -748,7 +748,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}'
                                             ,"name" => ""
                                             ,"yaxis" =>  "y3"
                                             ,"mode"  => "markers"
@@ -831,7 +831,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
         $rg_use_ordinate[ $rg_abscissa ] = isset( $rg_use_ordinate[ $rg_abscissa ] ) ? $rg_use_ordinate[ $rg_abscissa ] + .2 : 1;
         $plot->data[3]->x[]              = floatval( $rg_abscissa );
         $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_abscissa ];
-        $plot->data[3]->customdata[]     = $k;
+        $plot->data[3]->customdata[]     = [ isset( $v->label ) ? $v->label : $k, $v->rg_qualifier ?? "" ];
         $plot->data[3]->marker->color[]  = $v->color;
     }
 

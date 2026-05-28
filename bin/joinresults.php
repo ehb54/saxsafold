@@ -668,8 +668,10 @@ $rgdata = (object) [];
 if ( isset( $cgstates->{$best->iq->project}->state->output_load->Rg ) ) {
     $rgdata->{ "Original model<br>Project " . $best->iq->project . "<br>SOMO (dry)" } =
         (object) [
-            "Rg" => $cgstates->{$best->iq->project}->state->output_load->Rg
-            ,"color" => "blue"
+            "Rg"           => $cgstates->{$best->iq->project}->state->output_load->Rg
+            ,"color"       => "blue"
+            ,"label"       => "Original model<br>Project " . $best->iq->project . "<br>SOMO"
+            ,"rg_qualifier" => "dry "
         ];
 };
 
@@ -682,8 +684,9 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
     $sash->compute_rg_from_pr( "Exp. P(r)", $prrg );
     $rgdata->{ "Exp. P(r)<br>Project " . $best->pr->project . "<br>SOMO computed on regular grid" } =
         (object) [
-            "Rg" => $prrg
-            ,"color" => "brown"
+            "Rg"           => $prrg
+            ,"color"       => "brown"
+            ,"rg_qualifier" => ""
         ];
 }
 
