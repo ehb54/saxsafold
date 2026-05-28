@@ -317,7 +317,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                           ] );
                                            
-            $plot->layout->title              = "NNLS fitting models Rg (top)<br>MMC Rg Histogram (bottom)";
+            $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
             $plot->layout->showlegend         = true;
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
@@ -337,7 +337,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}'
                                             ,"name" => "WAXSiS NNLS fit"
                                             ,"type" => "bar"
                                             ,"yaxis" =>  "y2"
@@ -394,7 +394,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
 
                 $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
                 $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-                $plot->data[2]->customdata[]    = "Model $model (dry)";
+                $plot->data[2]->customdata[]    = "Model $model";
                 $plot->data[2]->marker->color[] =
                     (
                      isset( $nnlsresults_colors )
@@ -710,7 +710,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                   ] );
 
 
-    $plot->layout->title              = "NNLS fitting models Rg (top)<br>MMC Rg Histogram (bottom)";
+    $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
     $plot->layout->showlegend         = true;
 
     $plot->layout->yaxis->title->text = "Norm. Frequency";
@@ -730,7 +730,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}'
                                             ,"name" => "WAXSiS NNLS fit"
                                             ,"type" => "bar"
                                             ,"yaxis" =>  "y2"
@@ -796,7 +796,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
 
         $plot->data[2]->x[]             = floatval( sprintf( "%.1f", $bar_rg ) );
         $plot->data[2]->y[]             = floatval( sprintf( "%.1f", 100 * $v ) );
-        $plot->data[2]->customdata[]    = "$project Model $model (dry)";
+        $plot->data[2]->customdata[]    = "$project Model $model";
         $plot->data[2]->marker->color[] =
             (
              isset( $nnlsresults_colors )
