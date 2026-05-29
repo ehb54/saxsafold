@@ -337,7 +337,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}<extra></extra>'
                                             ,"name" => "WAXSiS NNLS fit"
                                             ,"type" => "bar"
                                             ,"yaxis" =>  "y2"
@@ -355,7 +355,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}<extra></extra>'
                                             ,"name" => ""
                                             ,"yaxis" =>  "y3"
                                             ,"mode"  => "markers"
@@ -730,7 +730,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata}<br>%{y}%<br>dry Rg %{x}<extra></extra>'
                                             ,"name" => "WAXSiS NNLS fit"
                                             ,"type" => "bar"
                                             ,"yaxis" =>  "y2"
@@ -748,7 +748,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                             "x" => []
                                             ,"y" => []
                                             ,"customdata" => []
-                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}'
+                                            ,"hovertemplate" => '%{customdata[0]}<br>%{customdata[1]}Rg %{x}<extra></extra>'
                                             ,"name" => ""
                                             ,"yaxis" =>  "y3"
                                             ,"mode"  => "markers"
