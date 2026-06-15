@@ -309,7 +309,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $plot = (object) array_merge( (array) $plot,
                                           [
                                            "config" => [
-                                           "showLink"         => true
+                                           "showLink"         => false
                                            ,"responsive"      => true
                                            ,"genapp_chart_editor" => [
                                                "enabled" => true
@@ -703,7 +703,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
     $plot = (object) array_merge( (array) $plot,
                                   [
                                    "config" => [
-                                           "showLink"         => true
+                                           "showLink"         => false
                                            ,"responsive"      => true
                                            ,"genapp_chart_editor" => [
                                                "enabled" => true

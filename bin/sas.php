@@ -139,7 +139,7 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink"         : true
+                    "showLink"         : false
                     ,"responsive"      : true
                     ,"genapp_chart_editor" : {
                         "enabled" : true
@@ -230,7 +230,7 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink"         : true
+                    "showLink"         : false
                     ,"responsive"      : true
                     ,"genapp_chart_editor" : {
                         "enabled" : true
@@ -1018,7 +1018,6 @@ class SAS {
                     break;
 
                 case "showeditchart" :
-                    $this->plots->$name->config->showLink = $v;
                     $this->plots->$name->config->genapp_chart_editor->enabled = $v;
                     break;
 
