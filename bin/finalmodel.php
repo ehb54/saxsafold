@@ -924,8 +924,10 @@ $rgdata = (object) [];
 if ( isset( $cgstate->state->output_load->Rg ) ) {
     $rgdata->{ "Original model<br>SOMO (dry)" } =
         (object) [
-            "Rg" => $cgstate->state->output_load->Rg
-            ,"color" => "blue"
+            "Rg"           => $cgstate->state->output_load->Rg
+            ,"color"       => "blue"
+            ,"label"       => "Original model<br>SOMO"
+            ,"rg_qualifier" => "dry "
         ];
 };
 
@@ -937,8 +939,9 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
     $sas->compute_rg_from_pr( "Exp. P(r)", $prrg );
     $rgdata->{ "Exp. P(r)<br>SOMO computed on regular grid" } =
         (object) [
-            "Rg" => $prrg
-            ,"color" => "brown"
+            "Rg"           => $prrg
+            ,"color"       => "brown"
+            ,"rg_qualifier" => ""
         ];
 }
 
