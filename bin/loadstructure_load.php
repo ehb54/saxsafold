@@ -44,6 +44,5 @@ if ( isset( $cgstate->state->output_load ) ) {
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
 
-
 echo json_encode( $result );
 exit;

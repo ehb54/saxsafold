@@ -15,6 +15,7 @@ class cgrun_state {
         $this->errors    = "";
         if ( file_exists( $this->statefile ) ) {
             $this->state = json_decode( file_get_contents( $this->statefile ) );
+            upgrade_plotly_figures( $this->state );
         } else {
             $this->state = (object)[];
         }
@@ -304,6 +305,54 @@ function confidence_legend() {
         . "<br> <br>"
         . "</small>"
         ;
+}
+
+## plotly chart-editor upgrade helpers
+
+function upgrade_plot_config( $config ) {
+    $arr = is_object( $config ) ? (array) $config : ( is_array( $config ) ? $config : [] );
+    unset( $arr['plotlyServerURL'], $arr['showSendToCloud'], $arr['linkText'] );
+
+    $enabled = true;
+    if ( isset( $arr['genapp_chart_editor'] ) ) {
+        $gce = (array) $arr['genapp_chart_editor'];
+        if ( isset( $gce['enabled'] ) ) {
+            $enabled = (bool) $gce['enabled'];
+        }
+    } else if ( isset( $arr['showLink'] ) ) {
+        $enabled = (bool) $arr['showLink'];
+    }
+
+    $arr['showLink']  = false;
+    if ( !isset( $arr['responsive'] ) ) {
+        $arr['responsive'] = true;
+    }
+    $arr['genapp_chart_editor'] = (object) [
+        "enabled" => $enabled
+        ,"url"    => "_cedit/_chart_edit.html"
+        ,"target" => "_blank"
+    ];
+
+    return (object) $arr;
+}
+
+function upgrade_plotly_figures( &$obj ) {
+    if ( is_object( $obj ) ) {
+        if ( isset( $obj->data ) && isset( $obj->layout ) ) {
+            $obj->config = upgrade_plot_config( isset( $obj->config ) ? $obj->config : null );
+        }
+        foreach ( $obj as $k => &$v ) {
+            if ( is_object( $v ) || is_array( $v ) ) {
+                upgrade_plotly_figures( $v );
+            }
+        }
+    } else if ( is_array( $obj ) ) {
+        foreach ( $obj as &$v ) {
+            if ( is_object( $v ) || is_array( $v ) ) {
+                upgrade_plotly_figures( $v );
+            }
+        }
+    }
 }
 
 ## tests
