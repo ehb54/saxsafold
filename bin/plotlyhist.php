@@ -76,6 +76,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                            ,"showline"       : true
                         }
                      }
+                     ,"config" : {
+                        "showLink"         : false
+                        ,"responsive"      : true
+                        ,"genapp_chart_editor" : {
+                            "enabled" : true
+                            ,"url"    : "_cedit/_chart_edit.html"
+                            ,"target" : "_blank"
+                        }
+                     }
                 }'
                 );
 
@@ -132,6 +141,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                             }
                          }
                            ,"showline"       : true
+                        }
+                     }
+                     ,"config" : {
+                        "showLink"         : false
+                        ,"responsive"      : true
+                        ,"genapp_chart_editor" : {
+                            "enabled" : true
+                            ,"url"    : "_cedit/_chart_edit.html"
+                            ,"target" : "_blank"
                         }
                      }
                 }'
@@ -309,11 +327,13 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             $plot = (object) array_merge( (array) $plot,
                                           [
                                            "config" => [
-                                           "showLink"         => true
-                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
-                                           ,"showSendToCloud" => true
+                                           "showLink"         => false
                                            ,"responsive"      => true
-                                           ,"linkText"        => "Edit chart"
+                                           ,"genapp_chart_editor" => [
+                                               "enabled" => true
+                                               ,"url"    => "_cedit/_chart_edit.html"
+                                               ,"target" => "_blank"
+                                           ]
                                            ]
                                           ] );
                                            
@@ -701,11 +721,13 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
     $plot = (object) array_merge( (array) $plot,
                                   [
                                    "config" => [
-                                           "showLink"         => true
-                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
-                                           ,"showSendToCloud" => true
+                                           "showLink"         => false
                                            ,"responsive"      => true
-                                           ,"linkText"        => "Edit chart"
+                                           ,"genapp_chart_editor" => [
+                                               "enabled" => true
+                                               ,"url"    => "_cedit/_chart_edit.html"
+                                               ,"target" => "_blank"
+                                           ]
                                    ]
                                   ] );
 

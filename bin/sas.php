@@ -139,11 +139,13 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink"         : true
-                    ,"plotlyServerURL" : "https://cloud.plotly.com"
-                    ,"showSendToCloud" : true
+                    "showLink"         : false
                     ,"responsive"      : true
-                    ,"linkText"        : "Edit chart"
+                    ,"genapp_chart_editor" : {
+                        "enabled" : true
+                        ,"url"    : "_cedit/_chart_edit.html"
+                        ,"target" : "_blank"
+                    }
                  }
             }'
         )
@@ -228,11 +230,13 @@ class SAS {
                    ]
                  }
                  ,"config" : {
-                    "showLink"         : true
-                    ,"plotlyServerURL" : "https://cloud.plotly.com"
-                    ,"showSendToCloud" : true
+                    "showLink"         : false
                     ,"responsive"      : true
-                    ,"linkText"        : "Edit chart"
+                    ,"genapp_chart_editor" : {
+                        "enabled" : true
+                        ,"url"    : "_cedit/_chart_edit.html"
+                        ,"target" : "_blank"
+                    }
                  }
             }'
         )
@@ -1014,7 +1018,7 @@ class SAS {
                     break;
 
                 case "showeditchart" :
-                    $this->plots->$name->config->showLink = $v;
+                    $this->plots->$name->config->genapp_chart_editor->enabled = $v;
                     break;
 
                 case "yaxistitle" :
