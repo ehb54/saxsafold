@@ -15,6 +15,7 @@ class cgrun_state {
         $this->errors    = "";
         if ( file_exists( $this->statefile ) ) {
             $this->state = json_decode( file_get_contents( $this->statefile ) );
+            upgrade_plotly_figures( $this->state );
         } else {
             $this->state = (object)[];
         }

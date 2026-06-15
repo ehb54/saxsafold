@@ -40,6 +40,5 @@ if ( isset( $cgstate->state->output_loadsaxs ) ) {
 $result->desc  = $cgstate->state->description;
 $result->pname = $request->_project;
 
-upgrade_plotly_figures( $result );
 echo json_encode( $result );
 exit;

@@ -52,6 +52,5 @@ if ( isset( $cgstate->state->output_flex ) && isset( $cgstate->state->output_fle
     $result->struct = $cgstate->state->output_flex->struct;
 }
 
-upgrade_plotly_figures( $result );
 echo json_encode( $result );
 exit;
