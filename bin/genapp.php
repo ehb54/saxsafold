@@ -77,6 +77,10 @@ class GenApp {
             return $result;
         }
 
+        if ( function_exists( 'upgrade_plotly_figures' ) ) {
+            upgrade_plotly_figures( $msg );
+        }
+
         foreach ( $msg as $k => $v ) {
             if ( $k == '_textarea' ) {
                 if ( isset( $this->cache_obj->$k ) ) {
