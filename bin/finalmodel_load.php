@@ -134,5 +134,6 @@ if ( !isset( $result->histplotfinal ) ) {
     }
 }
 
+upgrade_plotly_figures( $result );
 echo json_encode( $result );
 exit;

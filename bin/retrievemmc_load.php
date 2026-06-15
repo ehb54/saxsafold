@@ -72,5 +72,6 @@ if ( isset( $cgstate->state->mmcdownloaded ) ) {
     }
 }
 
+upgrade_plotly_figures( $result );
 echo json_encode( $result );
 exit;

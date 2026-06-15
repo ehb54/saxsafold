@@ -142,5 +142,6 @@ unset( $result->iq_c3_plotall );
 unset( $result->iqplotall );
 unset( $result->prplotall );
 
+upgrade_plotly_figures( $result );
 echo json_encode( $result );
 exit;
