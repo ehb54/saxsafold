@@ -76,6 +76,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                            ,"showline"       : true
                         }
                      }
+                     ,"config" : {
+                        "showLink"         : false
+                        ,"responsive"      : true
+                        ,"genapp_chart_editor" : {
+                            "enabled" : true
+                            ,"url"    : "_cedit/_chart_edit.html"
+                            ,"target" : "_blank"
+                        }
+                     }
                 }'
                 );
 
@@ -132,6 +141,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                             }
                          }
                            ,"showline"       : true
+                        }
+                     }
+                     ,"config" : {
+                        "showLink"         : false
+                        ,"responsive"      : true
+                        ,"genapp_chart_editor" : {
+                            "enabled" : true
+                            ,"url"    : "_cedit/_chart_edit.html"
+                            ,"target" : "_blank"
                         }
                      }
                 }'
