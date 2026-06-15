@@ -310,10 +310,12 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                           [
                                            "config" => [
                                            "showLink"         => true
-                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
-                                           ,"showSendToCloud" => true
                                            ,"responsive"      => true
-                                           ,"linkText"        => "Edit chart"
+                                           ,"genapp_chart_editor" => [
+                                               "enabled" => true
+                                               ,"url"    => "_cedit/_chart_edit.html"
+                                               ,"target" => "_blank"
+                                           ]
                                            ]
                                           ] );
                                            
@@ -702,10 +704,12 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                   [
                                    "config" => [
                                            "showLink"         => true
-                                           ,"plotlyServerURL" => "https://cloud.plotly.com"
-                                           ,"showSendToCloud" => true
                                            ,"responsive"      => true
-                                           ,"linkText"        => "Edit chart"
+                                           ,"genapp_chart_editor" => [
+                                               "enabled" => true
+                                               ,"url"    => "_cedit/_chart_edit.html"
+                                               ,"target" => "_blank"
+                                           ]
                                    ]
                                   ] );
 
