@@ -335,7 +335,7 @@ function upgrade_plot_config( $config ) {
 
     // temporary until upgrade_plot_config is deprecated
     $arr['genapp_plotly'] = (object) [
-        "linewidth"  => (object) [ "values" => [1, 2, 3] ]
+        "linewidth"  => (object) [ "values" => [1, 2, 3, 4] ]
         ,"errorbars" => (object) []
     ];
 
