@@ -333,6 +333,12 @@ function upgrade_plot_config( $config ) {
         ,"target" => "_blank"
     ];
 
+    // temporary until upgrade_plot_config is deprecated
+    $arr['genapp_plotly'] = (object) [
+        "linewidth"  => (object) [ "values" => [1, 2, 3] ]
+        ,"errorbars" => (object) []
+    ];
+
     return (object) $arr;
 }
 
