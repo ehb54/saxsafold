@@ -146,6 +146,9 @@ class SAS {
                         ,"url"    : "_cedit/_chart_edit.html"
                         ,"target" : "_blank"
                     }
+                    ,"genapp_plotly" : {
+                        "linewidth" : { "values" : [1, 2, 3] }
+                    }
                  }
             }'
         )
@@ -236,6 +239,9 @@ class SAS {
                         "enabled" : true
                         ,"url"    : "_cedit/_chart_edit.html"
                         ,"target" : "_blank"
+                    }
+                    ,"genapp_plotly" : {
+                        "linewidth" : { "values" : [1, 2, 3] }
                     }
                  }
             }'
