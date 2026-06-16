@@ -84,6 +84,10 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                             ,"url"    : "_cedit/_chart_edit.html"
                             ,"target" : "_blank"
                         }
+                        ,"genapp_plotly" : {
+                            "linewidth"  : { "values" : [1, 2, 3] }
+                            ,"errorbars" : {}
+                        }
                      }
                 }'
                 );
@@ -150,6 +154,10 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                             "enabled" : true
                             ,"url"    : "_cedit/_chart_edit.html"
                             ,"target" : "_blank"
+                        }
+                        ,"genapp_plotly" : {
+                            "linewidth"  : { "values" : [1, 2, 3] }
+                            ,"errorbars" : {}
                         }
                      }
                 }'
