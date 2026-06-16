@@ -147,7 +147,8 @@ class SAS {
                         ,"target" : "_blank"
                     }
                     ,"genapp_plotly" : {
-                        "linewidth" : { "values" : [1, 2, 3] }
+                        "linewidth"  : { "values" : [1, 2, 3] }
+                        ,"errorbars" : {}
                     }
                  }
             }'
@@ -241,7 +242,8 @@ class SAS {
                         ,"target" : "_blank"
                     }
                     ,"genapp_plotly" : {
-                        "linewidth" : { "values" : [1, 2, 3] }
+                        "linewidth"  : { "values" : [1, 2, 3] }
+                        ,"errorbars" : {}
                     }
                  }
             }'
