@@ -102,10 +102,15 @@ $cgstate = new cgrun_state( $statefile );
 $res = (object)[
     "iqfile"  => basename( $cgstate->state->saxsiqfile )
     ,"prfile" => basename( $cgstate->state->saxsprfile )
-    ,"pdb"    => basename(  $cgstate->state->output_load->name )
+    ,"pdb"    => basename( $cgstate->state->output_load->name )
     ];
 
-echo json_encode( $res, JSON_PRETTY_PRINT ) . "\n";
+$res_extra = unserialize( serialize( $res ) );
+if ( isset( $cgstate->state->mmcrunname ) ) {
+    $res_extra->mmcrunname = $cgstate->state->mmcrunname;
+}
+
+echo json_encode( $res_extra, JSON_PRETTY_PRINT ) . "\n";
 
 if ( isset( $tgzout ) ) {
     $cmd = "cd $dir && tar zcf $tgzout " . implode( " ", (array) $res );

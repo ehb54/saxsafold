@@ -1,9 +1,10 @@
 {
-    "moduleid"    : "joinresults"
-    ,"label"      : "Join results"
-    ,"help"       : "Join results from multiple projects"
-    ,"executable" : "joinresults.php"
-    ,"nojobcontrol" : "true"
+    "moduleid"         : "loaddcd"
+    ,"label"           : "Load DCD"
+    ,"help"            : "Load a DCD file computed elsewhere"
+    ,"executable"      : "loaddcd.php"
+    ,"requireproject"  : "true"
+    ,"loadfields"      : "loaddcd_load.php"
     ,"panels" : [
         {
             "root" : {
@@ -176,7 +177,7 @@
         {
             "role"       : "input"
             ,"id"        : "module_header"
-            ,"label"     : "Join results"
+            ,"label"     : "Load DCD"
             ,"type"      : "label"
             ,"default"   : "header4"
             ,"prehline"  : "true"
@@ -186,79 +187,120 @@
             }
         }
         ,{
-            "role"     : "input"
-            ,"id"       : "projects"
-            ,"label"    : "Select projects"
-            ,"type"     : "listbox"
-            ,"multiple" : "true"
-            ,"required" : "true"
-            ,"pull"     : "project"
-            ,"help"     : "Select two or more previously finalized projects with identical data"
-            ,"layout" : {
+            "role"              : "output"
+            ,"id"               : "pname"
+            ,"label"            : "Project name"
+            ,"type"             : "text"
+            ,"required"         : "true"
+            ,"help"             : "Name for this project - only letters, numbers and underscores are allowed"
+            ,"pattern"          : "[a-zA-Z0-9_]+"
+            ,"specifiedproject" : ""
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+
+        }
+        ,{
+            "role"              : "output"
+            ,"id"               : "desc"
+            ,"label"            : "Description"
+            ,"type"             : "textarea"
+            ,"required"         : "true"
+            ,"help"             : "Description information about this project"
+            ,"layout"     : {
                 "parent" : "inputpanel"
             }
         }
         ,{
             "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "iqplot"
+            ,"label"            : "Name"
+            ,"type"             : "text"
+            ,"help"             : "The structure file name or the full name from the AlphaFold database"
+            ,"id"               : "name"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "help"               : "As reported in the PDB TITLE information"
+            ,"id"                : "title"
+            ,"type"              : "textarea"
+            ,"role"              : "output"
+            ,"label"             : "Title"
+            ,"rows"              : 3
             ,"labelmargintop"    : "0.5rem"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
+            ,"layout"            : {
+                "parent" : "inputpanel"
             }
         }
         ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "iqplotwaxsis"
+            "help"               : "As reported in the PDB SOURCE information"
+            ,"id"                : "source"
+            ,"type"              : "textarea"
+            ,"role"              : "output"
+            ,"label"             : "Source"
+            ,"rows"              : 5
             ,"labelmargintop"    : "0.5rem"
-            ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
+            ,"layout"            : {
+                "parent" : "inputpanel"
             }
         }
         ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "pr_recon"
-            ,"labelmargintop"    : "0.5rem"
+            "label"             : "Downloads"
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "downloads"
+            ,"type"             : "html"
+            ,"labelmargintop"   : "0.5rem"
             ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
+                "parent" : "inputpanel"
             }
         }
         ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "html"
-            ,"id"                : "iqresultswaxsis"
+            "label"             : ""
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "spacer1"
+            ,"type"             : "label"
+            ,"labelmargintop"   : "0.5rem"
             ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
+                "parent" : "inputpanel"
             }
         }
         ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "plotly"
-            ,"id"                : "histplotfinal"
+            "role"              : "input"
+            ,"id"               : "topfile"
+            ,"help"             : "Select the PDB file used to create the dcd (the topology file), it may be the same as your original PDB file"
+            ,"type"             : "lrfile"
+            ,"label"            : "Select a topology file"
+            ,"labelmargintop"   : "0.5rem"
+            ,"required"         : "true"
             ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 1, 1 ]
+                "parent" : "inputpanel"
             }
         }
         ,{
-            "role"              : "output"
-            ,"label"             : ""
-            ,"type"              : "html"
-            ,"id"                : "csvdownloads"
+            "role"              : "input"
+            ,"id"               : "dcdfile"
+            ,"help"             : "Select a DCD file"
+            ,"type"             : "lrfile"
+            ,"label"            : "Select a DCD file"
+            ,"labelmargintop"   : "0.5rem"
+            ,"required"         : "true"
             ,"layout"           : {
-                "parent" : "resultpanel"
-                ,"data" : [ 0, 2 ]
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "label"             : ""
+            ,"role"             : "output"
+            ,"help"             : ""
+            ,"id"               : "spacer2"
+            ,"type"             : "label"
+            ,"labelmargintop"   : "0.5rem"
+            ,"layout"           : {
+                "parent" : "inputpanel"
             }
         }
         ,{
@@ -283,22 +325,5 @@
                 "parent"  : "msgspanel"
             }
         }
-        ,{
-            "width"              : "100%",
-            "height"             : "500",
-#            "label"              : "Structure",
-            "label"              : "",
-            "help"               : "Right click on structure for more options",
-            "role"               : "output",
-            "id"                 : "struct",
-            "type"               : "atomicstructure",
-#            "jsmoladd"           : "background white;frame 1;ribbon only;color green; frame all",
-#            "jsmoladd"           : "background white;ribbon only;",
-            "labelmargintop"     : "0.5rem"
-            ,"layout" : {
-                "parent" : "structure"
-            }
-        }
-
     ]
 }

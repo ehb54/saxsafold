@@ -219,7 +219,7 @@ function extract_dcd_frame( $frame, $pdb, $dcd, $outdir, $skipifexists = false )
     }
 
     $frame_padded = str_repeat( '0', $max_frame_digits - strlen( $frame + 0 ) ) . ( $frame + 0 );
-    $outname = "$outdir/" . preg_replace( '/\.pdb$/', '', $pdb ) . "-m$frame_padded.pdb";
+    $outname = "$outdir/" . preg_replace( '/^.*\//', '', preg_replace( '/\.pdb$/', '', $pdb ) ) . "-m$frame_padded.pdb";
 
     if ( file_exists( $outname ) ) {
         if ( $skipifexists ) {
