@@ -2050,10 +2050,12 @@ class SAS {
 
     # autorg_run() - run the us_saxs_cmds_t "autorg" json run type and return the decoded reply
     private function autorg_run( $cmdarg, &$resobj ) {
-        $cmd = "/ultrascan3/us_somo/bin64/us_saxs_cmds_t json '$cmdarg' 2>&1";
+        ## US_SAXS_CMDS_T in the environment overrides the container path ( testing outside the container )
+        $bin = getenv( 'US_SAXS_CMDS_T' ) ?: '/ultrascan3/us_somo/bin64/us_saxs_cmds_t';
+        $cmd = "$bin json '$cmdarg' 2>&1";
         $res = run_cmd( $cmd, false );
         if ( null === ( $resobj = json_decode( $res ) ) ) {
-            $this->last_error = "SAS::autorg() invalid JSON returned by us_saxs_cmds_t";
+            $this->last_error = "SAS::autorg() invalid JSON returned by us_saxs_cmds_t: " . substr( $res, 0, 200 );
             return false;
         }
         if ( isset( $resobj->errors ) ) {
