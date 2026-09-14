@@ -2110,14 +2110,15 @@ class SAS {
             . '}'
             ;
 
+        ## a failed search or a SOMO build without autorg is a normal outcome, never fatal: return false
         $resobj = null;
         if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
-            return $this->error_exit( $this->last_error );
+            return false;
         }
         $result = $resobj->results[ 0 ];
         if ( !isset( $result->ok ) || !$result->ok ) {
             $this->last_error = "SAS::autorg() '$name': " . ( $result->errormsg ?? "failed" );
-            return $this->error_exit( $this->last_error );
+            return false;
         }
         return true;
     }
@@ -2147,9 +2148,10 @@ class SAS {
             . '}'
             ;
 
+        ## a SOMO build without autorg is a normal outcome, never fatal: return false
         $resobj = null;
         if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
-            return $this->error_exit( $this->last_error );
+            return false;
         }
         foreach ( $resobj->results as $r ) {
             $results[ $r->name ] = $r;
