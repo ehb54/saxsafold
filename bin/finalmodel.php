@@ -821,8 +821,13 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
 
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
 if ( $use_solvated ) {
-    $n_waxsis  = count( $notes_rgs ) - count( $guinier_rg_names );
     $n_guinier = count( $guinier_rg_names );
+    $n_waxsis  = 0;
+    foreach ( $iqresults as $name => $v ) {
+        if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
+            ++$n_waxsis;
+        }
+    }
     $output->iqresultswaxsis .=
         "<small>Solvated Rg"
         . ( $n_waxsis  ? " from the WAXSiS log for $n_waxsis model(s)" : "" )
