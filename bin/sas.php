@@ -2048,6 +2048,130 @@ class SAS {
         return true;
     }
 
+    # autorg_run() - run the us_saxs_cmds_t "autorg" json run type and return the decoded reply
+    private function autorg_run( $cmdarg, &$resobj ) {
+        $cmd = "/ultrascan3/us_somo/bin64/us_saxs_cmds_t json '$cmdarg' 2>&1";
+        $res = run_cmd( $cmd, false );
+        if ( null === ( $resobj = json_decode( $res ) ) ) {
+            $this->last_error = "SAS::autorg() invalid JSON returned by us_saxs_cmds_t";
+            return false;
+        }
+        if ( isset( $resobj->errors ) ) {
+            if ( strpos( $resobj->errors, "no supported runtype" ) !== false ) {
+                $this->last_error = "SAS::autorg() the installed US-SOMO build does not support autorg";
+            } else {
+                $this->last_error = "SAS::autorg() " . $resobj->errors;
+            }
+            return false;
+        }
+        if ( !isset( $resobj->results ) || !is_array( $resobj->results ) ) {
+            $this->last_error = "SAS::autorg() no results returned";
+            return false;
+        }
+        return true;
+    }
+
+    # autorg_params_json() - encode optional autorg parameters ( minpts, qrgmax, ... ) for the json call
+    private function autorg_params_json( $params ) {
+        $res = "";
+        foreach ( $params as $k => $v ) {
+            $res .= ',"' . $k . '":' . json_encode( $v );
+        }
+        return $res;
+    }
+
+    # autorg() - automatic Guinier range search on a loaded I(q) curve via US-SOMO
+    #  $result receives the decoded result object ( ->rg, ->rg_sd, ->i0, ->i0_sd, ->qmin, ->qmax,
+    #  ->qrgmin, ->qrgmax, ->first, ->last, ->npts, ->quality, ->aggregation, ->repulsion, ->warnings ... )
+    function autorg( $name, &$result, $params = [] ) {
+        $this->debug_msg( "SAS::autorg( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::autorg() data name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::autorg() data name '$name' is not an I(q) curve";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $cmdarg =
+            '{"autorg":1'
+            . ',"name":' . json_encode( $name )
+            . ',"q":' . json_encode( $this->data->$name->x )
+            . ',"i":' . json_encode( $this->data->$name->y )
+            . ( isset( $this->data->$name->error_y ) && $this->data_has_errors( $name )
+                ? ',"e":' . json_encode( $this->data->$name->error_y ) : '' )
+            . $this->autorg_params_json( $params )
+            . '}'
+            ;
+
+        $resobj = null;
+        if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+        $result = $resobj->results[ 0 ];
+        if ( !isset( $result->ok ) || !$result->ok ) {
+            $this->last_error = "SAS::autorg() '$name': " . ( $result->errormsg ?? "failed" );
+            return $this->error_exit( $this->last_error );
+        }
+        return true;
+    }
+
+    # autorg_files() - automatic Guinier range search on I(q) files ( 2 or 3 numeric columns )
+    #  $results receives an array keyed by file name with the decoded result objects ( ->ok tells success )
+    function autorg_files( $files, &$results, $params = [] ) {
+        $this->debug_msg( "SAS::autorg_files( " . count( $files ) . " files )" );
+        $this->last_error = "";
+        $results          = [];
+
+        if ( !count( $files ) ) {
+            $this->last_error = "SAS::autorg_files() no files given";
+            return $this->error_exit( $this->last_error );
+        }
+        foreach ( $files as $f ) {
+            if ( !file_exists( $f ) ) {
+                $this->last_error = "SAS::autorg_files() file '$f' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        $cmdarg =
+            '{"autorg":1'
+            . ',"files":' . json_encode( array_values( $files ) )
+            . $this->autorg_params_json( $params )
+            . '}'
+            ;
+
+        $resobj = null;
+        if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
+            return $this->error_exit( $this->last_error );
+        }
+        foreach ( $resobj->results as $r ) {
+            $results[ $r->name ] = $r;
+        }
+        return true;
+    }
+
+    # autorg_summary() - one line describing an autorg result, html
+    static function autorg_summary( $r ) {
+        $flags = [];
+        if ( !empty( $r->aggregation ) ) {
+            $flags[] = "low-q upturn: possible aggregation";
+        }
+        if ( !empty( $r->repulsion ) ) {
+            $flags[] = "low-q downturn: possible repulsive interactions";
+        }
+        return
+            sprintf( "Guinier <i>R<sub>g</sub></i> %.2f &plusmn; %.2f &#8491;, <i>I(0)</i> %.4g &plusmn; %.2g, "
+                     . "<i>q</i> %.4f&#8211;%.4f &#8491;<sup>-1</sup> (<i>qR<sub>g</sub></i> %.2f&#8211;%.2f, %d points), quality %.2f",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+            . ( count( $flags ) ? " &#8212; " . implode( "; ", $flags ) : "" )
+            ;
+    }
+
     function compute_rg_from_pr( $name, &$rg ) {
         $this->debug_msg( "SAS::compute_rg_from_pr( '$name' )" );
         $this->last_error = "";
