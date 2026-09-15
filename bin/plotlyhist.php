@@ -326,9 +326,13 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ,"title" => [
                                                "text" => ""
                                            ]
-                                           ,"visible"        => false
+                                           ,"visible"        => true
                                            ,"showline"       => false
                                            ,"range"          => [ 0.5, 2.7 ]
+                                           ,"zeroline"       => false
+                                           ,"tickvals"       => [ 1, 2 ]
+                                           ,"ticktext"       => [ "computed", "expt." ]
+                                           ,"tickfont"       => [ "size" => 9 ]
                                        ]
                                       ]
                 );
@@ -725,9 +729,13 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                    ,"title" => [
                                        "text" => ""
                                    ]
-                                   ,"visible"        => false
+                                   ,"visible"        => true
                                    ,"showline"       => false
                                    ,"range"          => [ 0.5, 2.7 ]
+                                   ,"zeroline"       => false
+                                   ,"tickvals"       => [ 1, 2 ]
+                                   ,"ticktext"       => [ "computed", "expt." ]
+                                   ,"tickfont"       => [ "size" => 9 ]
                                ]
                               ]
         );

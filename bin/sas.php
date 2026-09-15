@@ -2159,7 +2159,23 @@ class SAS {
         return true;
     }
 
-    # guinier_search_summary() - one line describing an guinier_search result, html
+    # guinier_search_summary_text() - the same line in plain text, for the log textarea ( no html entities there )
+    static function guinier_search_summary_text( $r ) {
+        $flags = [];
+        if ( !empty( $r->aggregation ) ) {
+            $flags[] = "low-q upturn: possible aggregation";
+        }
+        if ( !empty( $r->repulsion ) ) {
+            $flags[] = "low-q downturn: possible repulsive interactions";
+        }
+        return
+            sprintf( "Guinier Rg %.2f +/- %.2f A, I(0) %.4g +/- %.2g, q %.4f-%.4f 1/A (qRg %.2f-%.2f, %d points), quality %.2f",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+            . ( count( $flags ) ? " - " . implode( "; ", $flags ) : "" )
+            ;
+    }
+
+    # guinier_search_summary() - one line describing a guinier_search result, html
     static function guinier_search_summary( $r ) {
         $flags = [];
         if ( !empty( $r->aggregation ) ) {

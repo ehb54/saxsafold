@@ -98,7 +98,7 @@ if (
         $cgstate->state->exp_guinier = $exp_guinier;
         $sas->annotate_plot( "I(q)", "<br>" . SAS::guinier_search_summary( $exp_guinier ), true );
         $output->_textarea = ( $output->_textarea ?? "" )
-            . "Experimental I(q) " . strip_tags( str_replace( [ "&plusmn;", "&#8211;", "&#8212;", "&#8491;" ], [ "+/-", "-", "-", "A" ], SAS::guinier_search_summary( $exp_guinier ) ) ) . "\n"
+            . "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n"
             . ( count( $exp_guinier->warnings ) ? "  " . implode( "\n  ", $exp_guinier->warnings ) . "\n" : "" );
     } else {
         unset( $cgstate->state->exp_guinier );

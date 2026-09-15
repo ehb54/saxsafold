@@ -727,7 +727,7 @@ if ( isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
     $exp_guinier = null;
     if ( $sas->guinier_search( "$firstproject: Exp. I(q)", $exp_guinier ) ) {
         $exp_guinier_rg = $exp_guinier->rg;
-        $output->_textarea .= "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n";
+        $output->_textarea .= "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n";
     } else {
         $output->_textarea .= "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
     }

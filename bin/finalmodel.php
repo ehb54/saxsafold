@@ -821,7 +821,7 @@ if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp.
     $exp_guinier = null;
     if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
         $cgstate->state->exp_guinier = $exp_guinier;
-        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n" ] );
+        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n" ] );
     } else {
         $ga->tcpmessage( [ $textarea_key => "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n" ] );
     }
