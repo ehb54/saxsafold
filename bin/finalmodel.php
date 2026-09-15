@@ -754,34 +754,63 @@ $guinier_rg_names = [];
             $guinier_files[ $name ] = $iqfile_by_name[ $name ];
         }
     }
-    if ( count( $guinier_files ) ) {
-        $guinier_results = [];
-        if ( $sas->guinier_search_files( array_values( $guinier_files ), $guinier_results ) ) {
-            foreach ( $guinier_files as $name => $file ) {
-                if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
-                    $r = $guinier_results[ $file ];
-                    $notes_rgs[ $name ] = (object)[
-                        'rg'        => $r->rg
-                        ,'rg_sd'    => $r->rg_sd
-                        ,'rg_solute' => null
-                        ,'source'   => 'guinier'
-                        ,'quality'  => $r->quality
-                        ,'qrgmax'   => $r->qrgmax
+    ## cached fits ( keyed by file, invalidated when the file changes ) are reused; the rest are computed now
+    if ( !isset( $cgstate->state->waxsis_guinier_cache ) ) {
+        $cgstate->state->waxsis_guinier_cache = (object)[];
+    }
+    $cache           = $cgstate->state->waxsis_guinier_cache;
+    $guinier_results = [];
+    $to_compute      = [];
+    foreach ( $guinier_files as $name => $file ) {
+        if ( isset( $cache->$file ) && $cache->$file->mtime == filemtime( $file ) ) {
+            $guinier_results[ $file ] = $cache->$file;
+        } else {
+            $to_compute[] = $file;
+        }
+    }
+    if ( count( $to_compute ) ) {
+        $computed = [];
+        if ( $sas->guinier_search_files( $to_compute, $computed ) ) {
+            foreach ( $computed as $file => $r ) {
+                $guinier_results[ $file ] = $r;
+                if ( $r->ok ) {
+                    $cache->$file = (object)[
+                        'ok'      => true
+                        ,'rg'     => $r->rg
+                        ,'rg_sd'  => $r->rg_sd
+                        ,'quality' => $r->quality
+                        ,'qrgmax' => $r->qrgmax
+                        ,'mtime'  => filemtime( $file )
                     ];
-                    $guinier_rg_names[] = $name;
-                } else {
-                    $ga->tcpmessage( [ $textarea_key =>
-                        "Guinier fit of the stored WAXSiS curve failed for $name: "
-                        . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
                 }
-            }
-            if ( count( $guinier_rg_names ) ) {
-                $ga->tcpmessage( [ $textarea_key =>
-                    "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
-                    . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n" ] );
             }
         } else {
             $ga->tcpmessage( [ $textarea_key => "Guinier fit of the stored WAXSiS curves not available: " . $sas->last_error . "\n" ] );
+        }
+    }
+    if ( count( $guinier_files ) ) {
+        foreach ( $guinier_files as $name => $file ) {
+            if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
+                $r = $guinier_results[ $file ];
+                $notes_rgs[ $name ] = (object)[
+                    'rg'        => $r->rg
+                    ,'rg_sd'    => $r->rg_sd
+                    ,'rg_solute' => null
+                    ,'source'   => 'guinier'
+                    ,'quality'  => $r->quality
+                    ,'qrgmax'   => $r->qrgmax
+                ];
+                $guinier_rg_names[] = $name;
+            } else {
+                $ga->tcpmessage( [ $textarea_key =>
+                    "Guinier fit of the stored WAXSiS curve failed for $name: "
+                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
+            }
+        }
+        if ( count( $guinier_rg_names ) ) {
+            $ga->tcpmessage( [ $textarea_key =>
+                "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
+                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n" ] );
         }
     }
 }
@@ -1005,6 +1034,17 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
             ,"rg_qualifier" => ""
             ,"row"         => 2
         ];
+}
+
+## experimental Guinier Rg: the value cached by Load SAXS, else computed now from the loaded curve and cached in state
+if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
+        $cgstate->state->exp_guinier = $exp_guinier;
+        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n" ] );
+    } else {
+        $ga->tcpmessage( [ $textarea_key => "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n" ] );
+    }
 }
 
 if ( isset( $cgstate->state->exp_guinier->rg ) ) {

@@ -719,10 +719,23 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
         ];
 }
 
+## experimental Guinier Rg: from the project state when Load SAXS cached it, else computed now from the loaded curve
+$exp_guinier_rg = null;
 if ( isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
+    $exp_guinier_rg = $cgstates->{$best->iq->project}->state->exp_guinier->rg;
+} elseif ( $sas->data_name_exists( "$firstproject: Exp. I(q)" ) ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "$firstproject: Exp. I(q)", $exp_guinier ) ) {
+        $exp_guinier_rg = $exp_guinier->rg;
+        $output->_textarea .= "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n";
+    } else {
+        $output->_textarea .= "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
+    }
+}
+if ( $exp_guinier_rg !== null ) {
     $rgdata->{ "Exp. I(q)<br>Project " . $best->iq->project . "<br>Guinier" } =
         (object) [
-            "Rg"           => $cgstates->{$best->iq->project}->state->exp_guinier->rg
+            "Rg"           => $exp_guinier_rg
             ,"color"       => "red"
             ,"label"       => "Exp. I(q) Guinier"
             ,"rg_qualifier" => ""
