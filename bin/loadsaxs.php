@@ -92,13 +92,13 @@ if (
     
     $sas->annotate_plot( "I(q)", pathinfo( $iqfile, PATHINFO_BASENAME ) . "  <i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
 
-    ## experimental Guinier Rg via US-SOMO autorg, kept in state for the final Rg plots
+    ## experimental Guinier Rg via US-SOMO Guinier search, kept in state for the final Rg plots
     $exp_guinier = null;
-    if ( $sas->autorg( "Exp. I(q)", $exp_guinier ) ) {
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
         $cgstate->state->exp_guinier = $exp_guinier;
-        $sas->annotate_plot( "I(q)", "<br>" . SAS::autorg_summary( $exp_guinier ), true );
+        $sas->annotate_plot( "I(q)", "<br>" . SAS::guinier_search_summary( $exp_guinier ), true );
         $output->_textarea = ( $output->_textarea ?? "" )
-            . "Experimental I(q) " . strip_tags( str_replace( [ "&plusmn;", "&#8211;", "&#8212;", "&#8491;" ], [ "+/-", "-", "-", "A" ], SAS::autorg_summary( $exp_guinier ) ) ) . "\n"
+            . "Experimental I(q) " . strip_tags( str_replace( [ "&plusmn;", "&#8211;", "&#8212;", "&#8491;" ], [ "+/-", "-", "-", "A" ], SAS::guinier_search_summary( $exp_guinier ) ) ) . "\n"
             . ( count( $exp_guinier->warnings ) ? "  " . implode( "\n  ", $exp_guinier->warnings ) . "\n" : "" );
     } else {
         unset( $cgstate->state->exp_guinier );

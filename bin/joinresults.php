@@ -380,7 +380,7 @@ foreach ( array_keys( array_diff_key( $iqresults, $notes_rgs ) ) as $name ) {
         continue;
     }
     $r = null;
-    if ( $sas->autorg( $name, $r ) ) {
+    if ( $sas->guinier_search( $name, $r ) ) {
         $notes_rgs[ $name ] = (object)[
             'rg'        => $r->rg
             ,'rg_sd'    => $r->rg_sd

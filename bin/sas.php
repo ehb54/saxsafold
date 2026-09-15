@@ -2048,33 +2048,33 @@ class SAS {
         return true;
     }
 
-    # autorg_run() - run the us_saxs_cmds_t "autorg" json run type and return the decoded reply
-    private function autorg_run( $cmdarg, &$resobj ) {
+    # guinier_search_run() - run the us_saxs_cmds_t "guinier_search" json run type and return the decoded reply
+    private function guinier_search_run( $cmdarg, &$resobj ) {
         ## US_SAXS_CMDS_T in the environment overrides the container path ( testing outside the container )
         $bin = getenv( 'US_SAXS_CMDS_T' ) ?: '/ultrascan3/us_somo/bin64/us_saxs_cmds_t';
         $cmd = "$bin json '$cmdarg' 2>&1";
         $res = run_cmd( $cmd, false );
         if ( null === ( $resobj = json_decode( $res ) ) ) {
-            $this->last_error = "SAS::autorg() invalid JSON returned by us_saxs_cmds_t: " . substr( $res, 0, 200 );
+            $this->last_error = "SAS::guinier_search() invalid JSON returned by us_saxs_cmds_t: " . substr( $res, 0, 200 );
             return false;
         }
         if ( isset( $resobj->errors ) ) {
             if ( strpos( $resobj->errors, "no supported runtype" ) !== false ) {
-                $this->last_error = "SAS::autorg() the installed US-SOMO build does not support autorg";
+                $this->last_error = "SAS::guinier_search() the installed US-SOMO build does not support guinier_search";
             } else {
-                $this->last_error = "SAS::autorg() " . $resobj->errors;
+                $this->last_error = "SAS::guinier_search() " . $resobj->errors;
             }
             return false;
         }
         if ( !isset( $resobj->results ) || !is_array( $resobj->results ) ) {
-            $this->last_error = "SAS::autorg() no results returned";
+            $this->last_error = "SAS::guinier_search() no results returned";
             return false;
         }
         return true;
     }
 
-    # autorg_params_json() - encode optional autorg parameters ( minpts, qrgmax, ... ) for the json call
-    private function autorg_params_json( $params ) {
+    # guinier_search_params_json() - encode optional guinier_search parameters ( minpts, qrgmax, ... ) for the json call
+    private function guinier_search_params_json( $params ) {
         $res = "";
         foreach ( $params as $k => $v ) {
             $res .= ',"' . $k . '":' . json_encode( $v );
@@ -2082,75 +2082,75 @@ class SAS {
         return $res;
     }
 
-    # autorg() - automatic Guinier range search on a loaded I(q) curve via US-SOMO
+    # guinier_search() - automatic Guinier range search on a loaded I(q) curve via US-SOMO
     #  $result receives the decoded result object ( ->rg, ->rg_sd, ->i0, ->i0_sd, ->qmin, ->qmax,
     #  ->qrgmin, ->qrgmax, ->first, ->last, ->npts, ->quality, ->aggregation, ->repulsion, ->warnings ... )
-    function autorg( $name, &$result, $params = [] ) {
-        $this->debug_msg( "SAS::autorg( '$name' )" );
+    function guinier_search( $name, &$result, $params = [] ) {
+        $this->debug_msg( "SAS::guinier_search( '$name' )" );
         $this->last_error = "";
 
         if ( !$this->data_name_exists( $name ) ) {
-            $this->last_error = "SAS::autorg() data name '$name' does not exist";
+            $this->last_error = "SAS::guinier_search() data name '$name' does not exist";
             return $this->error_exit( $this->last_error );
         }
 
         if ( $this->data->$name->type != self::PLOT_IQ ) {
-            $this->last_error = "SAS::autorg() data name '$name' is not an I(q) curve";
+            $this->last_error = "SAS::guinier_search() data name '$name' is not an I(q) curve";
             return $this->error_exit( $this->last_error );
         }
 
         $cmdarg =
-            '{"autorg":1'
+            '{"guinier_search":1'
             . ',"name":' . json_encode( $name )
             . ',"q":' . json_encode( $this->data->$name->x )
             . ',"i":' . json_encode( $this->data->$name->y )
             . ( isset( $this->data->$name->error_y ) && $this->data_has_errors( $name )
                 ? ',"e":' . json_encode( $this->data->$name->error_y ) : '' )
-            . $this->autorg_params_json( $params )
+            . $this->guinier_search_params_json( $params )
             . '}'
             ;
 
-        ## a failed search or a SOMO build without autorg is a normal outcome, never fatal: return false
+        ## a failed search or a SOMO build without guinier_search is a normal outcome, never fatal: return false
         $resobj = null;
-        if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
+        if ( !$this->guinier_search_run( $cmdarg, $resobj ) ) {
             return false;
         }
         $result = $resobj->results[ 0 ];
         if ( !isset( $result->ok ) || !$result->ok ) {
-            $this->last_error = "SAS::autorg() '$name': " . ( $result->errormsg ?? "failed" );
+            $this->last_error = "SAS::guinier_search() '$name': " . ( $result->errormsg ?? "failed" );
             return false;
         }
         return true;
     }
 
-    # autorg_files() - automatic Guinier range search on I(q) files ( 2 or 3 numeric columns )
+    # guinier_search_files() - automatic Guinier range search on I(q) files ( 2 or 3 numeric columns )
     #  $results receives an array keyed by file name with the decoded result objects ( ->ok tells success )
-    function autorg_files( $files, &$results, $params = [] ) {
-        $this->debug_msg( "SAS::autorg_files( " . count( $files ) . " files )" );
+    function guinier_search_files( $files, &$results, $params = [] ) {
+        $this->debug_msg( "SAS::guinier_search_files( " . count( $files ) . " files )" );
         $this->last_error = "";
         $results          = [];
 
         if ( !count( $files ) ) {
-            $this->last_error = "SAS::autorg_files() no files given";
+            $this->last_error = "SAS::guinier_search_files() no files given";
             return $this->error_exit( $this->last_error );
         }
         foreach ( $files as $f ) {
             if ( !file_exists( $f ) ) {
-                $this->last_error = "SAS::autorg_files() file '$f' does not exist";
+                $this->last_error = "SAS::guinier_search_files() file '$f' does not exist";
                 return $this->error_exit( $this->last_error );
             }
         }
 
         $cmdarg =
-            '{"autorg":1'
+            '{"guinier_search":1'
             . ',"files":' . json_encode( array_values( $files ) )
-            . $this->autorg_params_json( $params )
+            . $this->guinier_search_params_json( $params )
             . '}'
             ;
 
-        ## a SOMO build without autorg is a normal outcome, never fatal: return false
+        ## a SOMO build without guinier_search is a normal outcome, never fatal: return false
         $resobj = null;
-        if ( !$this->autorg_run( $cmdarg, $resobj ) ) {
+        if ( !$this->guinier_search_run( $cmdarg, $resobj ) ) {
             return false;
         }
         foreach ( $resobj->results as $r ) {
@@ -2159,8 +2159,8 @@ class SAS {
         return true;
     }
 
-    # autorg_summary() - one line describing an autorg result, html
-    static function autorg_summary( $r ) {
+    # guinier_search_summary() - one line describing an guinier_search result, html
+    static function guinier_search_summary( $r ) {
         $flags = [];
         if ( !empty( $r->aggregation ) ) {
             $flags[] = "low-q upturn: possible aggregation";

@@ -756,7 +756,7 @@ $guinier_rg_names = [];
     }
     if ( count( $guinier_files ) ) {
         $guinier_results = [];
-        if ( $sas->autorg_files( array_values( $guinier_files ), $guinier_results ) ) {
+        if ( $sas->guinier_search_files( array_values( $guinier_files ), $guinier_results ) ) {
             foreach ( $guinier_files as $name => $file ) {
                 if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
                     $r = $guinier_results[ $file ];
