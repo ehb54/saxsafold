@@ -815,6 +815,18 @@ $guinier_rg_names = [];
     }
 }
 
+## experimental Guinier Rg: the value cached by Load SAXS, else computed now from the loaded curve and cached in state
+## ( must run here: the SAS object is replaced by a P(r)-only one further down )
+if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
+        $cgstate->state->exp_guinier = $exp_guinier;
+        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n" ] );
+    } else {
+        $ga->tcpmessage( [ $textarea_key => "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n" ] );
+    }
+}
+
 $rg_map       = [];
 $rg_header    = 'Rg [&#8491;]';
 $use_solvated = false;
@@ -1034,17 +1046,6 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
             ,"rg_qualifier" => ""
             ,"row"         => 2
         ];
-}
-
-## experimental Guinier Rg: the value cached by Load SAXS, else computed now from the loaded curve and cached in state
-if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
-    $exp_guinier = null;
-    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
-        $cgstate->state->exp_guinier = $exp_guinier;
-        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . strip_tags( SAS::guinier_search_summary( $exp_guinier ) ) . "\n" ] );
-    } else {
-        $ga->tcpmessage( [ $textarea_key => "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n" ] );
-    }
 }
 
 if ( isset( $cgstate->state->exp_guinier->rg ) ) {

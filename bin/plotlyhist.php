@@ -328,7 +328,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                            ,"visible"        => false
                                            ,"showline"       => false
-                                           ,"range"          => [ 0.6, 2.8 ]
+                                           ,"range"          => [ 0.5, 2.7 ]
                                        ]
                                       ]
                 );
@@ -351,8 +351,8 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
             $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-            $plot->layout->yaxis2->domain     = [ 0.5, .9 ];
-            $plot->layout->yaxis3->domain     = [ 0.915, 1 ];
+            $plot->layout->yaxis2->domain     = [ 0.5, .83 ];
+            $plot->layout->yaxis3->domain     = [ 0.85, 1 ];   ## marker strip: two rows of triangles
             $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
 #            $plot->layout->barmode            = "group";
@@ -727,7 +727,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                    ]
                                    ,"visible"        => false
                                    ,"showline"       => false
-                                   ,"range"          => [ 0.6, 2.8 ]
+                                   ,"range"          => [ 0.5, 2.7 ]
                                ]
                               ]
         );
@@ -751,8 +751,8 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
 
     $plot->layout->yaxis->title->text = "Norm. Frequency";
     $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-    $plot->layout->yaxis2->domain     = [ 0.5, .9 ];
-    $plot->layout->yaxis3->domain     = [ 0.915, 1 ];
+    $plot->layout->yaxis2->domain     = [ 0.5, .83 ];
+    $plot->layout->yaxis3->domain     = [ 0.85, 1 ];   ## marker strip: two rows of triangles
     $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
     #            $plot->layout->barmode            = "group";
