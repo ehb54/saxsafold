@@ -2159,6 +2159,62 @@ class SAS {
         return true;
     }
 
+    # guinier_search_plot() - plotly object of the Guinier plot ( ln I vs q^2 ) for a guinier_search result:
+    #  all points up to twice the fitted window, the points used highlighted, the fitted line, the summary as title
+    function guinier_search_plot( $name, $r, $title = "Guinier plot" ) {
+        $this->debug_msg( "SAS::guinier_search_plot( '$name' )" );
+        if ( !$this->data_name_exists( $name ) || !isset( $r->ok ) || !$r->ok ) {
+            return null;
+        }
+        $x     = $this->data->$name->x;
+        $y     = $this->data->$name->y;
+        $qlim  = 2 * $r->qmax;
+        $all_x = [];
+        $all_y = [];
+        $use_x = [];
+        $use_y = [];
+        for ( $i = 0; $i < count( $x ); ++$i ) {
+            if ( $x[ $i ] > $qlim || $y[ $i ] <= 0 ) {
+                continue;
+            }
+            $q2 = $x[ $i ] * $x[ $i ];
+            $li = log( $y[ $i ] );
+            $all_x[] = $q2;
+            $all_y[] = $li;
+            if ( $i + 1 >= $r->first && $i + 1 <= $r->last ) {
+                $use_x[] = $q2;
+                $use_y[] = $li;
+            }
+        }
+        $fit_x = [ 0, $r->qmax * $r->qmax * 1.15 ];
+        $fit_y = [ $r->intercept, $r->intercept + $r->slope * $fit_x[ 1 ] ];
+
+        return (object)[
+            "data" => [
+                (object)[ "x" => $all_x, "y" => $all_y, "type" => "scatter", "mode" => "markers", "name" => "ln I(q)"
+                          ,"marker" => [ "color" => "rgb(150,150,222)", "size" => 4 ] ]
+                ,(object)[ "x" => $use_x, "y" => $use_y, "type" => "scatter", "mode" => "markers", "name" => "points used"
+                           ,"marker" => [ "color" => "rgb(220,40,40)", "size" => 6 ] ]
+                ,(object)[ "x" => $fit_x, "y" => $fit_y, "type" => "scatter", "mode" => "lines", "name" => "Guinier fit"
+                           ,"line" => [ "color" => "rgb(0,5,80)", "width" => 1.5 ] ]
+            ]
+            ,"layout" => (object)[
+                "title"         => $title . "<br>" . self::guinier_search_summary( $r )
+                ,"font"         => [ "color" => "rgb(0,5,80)", "size" => 11 ]
+                ,"paper_bgcolor" => "rgba(0,0,0,0)"
+                ,"plot_bgcolor"  => "rgba(0,0,0,0)"
+                ,"xaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "q<sup>2</sup> [&#8491;<sup>-2</sup>]" ] ]
+                ,"yaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "ln I(q)" ] ]
+                ,"legend"       => [ "orientation" => "h" ]
+            ]
+            ,"config" => [
+                "showLink"     => false
+                ,"responsive" => true
+                ,"genapp_chart_editor" => [ "enabled" => true, "url" => "_cedit/_chart_edit.html", "target" => "_blank" ]
+            ]
+        ];
+    }
+
     # guinier_search_summary_text() - the same line in plain text, for the log textarea ( no html entities there )
     static function guinier_search_summary_text( $r ) {
         $flags = [];

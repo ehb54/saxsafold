@@ -56,6 +56,9 @@ $restore_old_data = function() {
         if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
             $obj->prplot = $cgstate->state->output_loadsaxs->prplot;
         }
+        if ( isset( $cgstate->state->output_loadsaxs->guinierplot ) ) {
+            $obj->guinierplot = $cgstate->state->output_loadsaxs->guinierplot;
+        }
     }
     
     $ga->tcpmessage( $obj );
@@ -100,9 +103,22 @@ if (
         $output->_textarea = ( $output->_textarea ?? "" )
             . "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n"
             . ( count( $exp_guinier->warnings ) ? "  " . implode( "\n  ", $exp_guinier->warnings ) . "\n" : "" );
+        $output->guinierplot = $sas->guinier_search_plot( "Exp. I(q)", $exp_guinier, "Guinier plot of " . pathinfo( $iqfile, PATHINFO_BASENAME ) );
     } else {
         unset( $cgstate->state->exp_guinier );
         $output->_textarea = ( $output->_textarea ?? "" ) . "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
+    }
+
+    ## optional user supplied Rg overrides the automatic value in every downstream use ( the automatic one is kept for reference )
+    if ( isset( $input->saxs_rg_override ) && strlen( trim( $input->saxs_rg_override ) ) && floatval( $input->saxs_rg_override ) > 0 ) {
+        $rg_user = floatval( $input->saxs_rg_override );
+        $cgstate->state->exp_guinier = (object)[
+            'rg'      => $rg_user
+            ,'rg_sd'  => 0
+            ,'source' => 'user'
+            ,'auto'   => $exp_guinier
+        ];
+        $output->_textarea = ( $output->_textarea ?? "" ) . sprintf( "Experimental Rg set by the user to %.2f A; this value is used in the Rg plots\n", $rg_user );
     }
 
     $output->iqplot = $sas->plot( "I(q)" );

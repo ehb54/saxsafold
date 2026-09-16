@@ -35,6 +35,9 @@ if ( isset( $cgstate->state->output_loadsaxs ) ) {
     if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
         $result->prplot = $cgstate->state->output_loadsaxs->prplot;
     }
+    if ( isset( $cgstate->state->output_loadsaxs->guinierplot ) ) {
+        $result->guinierplot = $cgstate->state->output_loadsaxs->guinierplot;
+    }
 }
 
 $result->desc  = $cgstate->state->description;

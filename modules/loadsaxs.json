@@ -216,6 +216,16 @@
         }
         ,{
             "role"       : "input"
+            ,"id"        : "saxs_rg_override"
+            ,"label"     : "Experimental R<sub>g</sub> override [&#8491;] (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Leave empty to use the automatic Guinier R<sub>g</sub> of the I(q) file. A value entered here is used instead in the R<sub>g</sub> plots of the final models; the automatic value is still computed and shown for reference."
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
             ,"id"        : "saxspr_in_nm"
             ,"label"     : "Turn on if P(r) data is in <strong>nm</strong> units"
             ,"type"      : "checkbox"
@@ -243,6 +253,16 @@
             ,"layout"           : {
                 "parent" : "resultpanel"
                 ,"data" : [ 0, 2 ]
+            }
+        }
+        ,{
+            "role"              : "output"
+            ,"label"            : ""
+            ,"type"             : "plotly"
+            ,"id"               : "guinierplot"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
             }
         }
     ]
