@@ -149,6 +149,7 @@ class SAS {
                     ,"genapp_plotly" : {
                         "linewidth"  : { "values" : [1, 2, 3, 4] }
                         ,"errorbars" : {}
+                        ,"fontsize"  : {}
                     }
                  }
             }'
@@ -244,6 +245,7 @@ class SAS {
                     ,"genapp_plotly" : {
                         "linewidth"  : { "values" : [1, 2, 3, 4] }
                         ,"errorbars" : {}
+                        ,"fontsize"  : {}
                     }
                  }
             }'
