@@ -216,6 +216,46 @@
         }
         ,{
             "role"       : "input"
+            ,"id"        : "guinier_qmin"
+            ,"label"     : "Guinier <i>q</i> min [&#8491;<sup>-1</sup>] (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Lower q limit of the automatic Guinier range search. Empty = from the first point."
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_qmax"
+            ,"label"     : "Guinier <i>q</i> max [&#8491;<sup>-1</sup>] (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Upper q limit of the automatic Guinier range search. Empty = no limit beyond q&middot;R<sub>g</sub> max."
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_qrgmax"
+            ,"label"     : "Guinier <i>q</i>&middot;<i>R<sub>g</sub></i> max (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Maximum q&middot;R<sub>g</sub> at the end of the fitted range. Empty = 1.3. Use about 1.0 for elongated or flexible particles."
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_maxrelsd"
+            ,"label"     : "Guinier: exclude points with relative error above (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out of the Guinier search, as ATSAS does with the leading noisy points. Empty = keep every point; noisy points carry little weight in the SD-weighted fit anyway."
+            ,"layout" : {
+                "parent" : "inputpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
             ,"id"        : "saxs_rg_override"
             ,"label"     : "Experimental R<sub>g</sub> override [&#8491;] (optional)"
             ,"type"      : "text"

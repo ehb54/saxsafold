@@ -96,12 +96,30 @@ if (
     $sas->annotate_plot( "I(q)", pathinfo( $iqfile, PATHINFO_BASENAME ) . "  <i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
 
     ## experimental Guinier Rg via US-SOMO Guinier search, kept in state for the final Rg plots
+    ## optional Guinier controls from the form ( empty = the search's defaults ); recorded with the result
+    $guinier_params = [];
+    foreach ( [ 'guinier_qmin' => 'qmin', 'guinier_qmax' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
+        if ( isset( $input->$field ) && strlen( trim( $input->$field ) ) ) {
+            if ( !is_numeric( trim( $input->$field ) ) || floatval( $input->$field ) < 0 ) {
+                error_exit( "Guinier setting '$field' must be a non-negative number" );
+            }
+            if ( floatval( $input->$field ) > 0 ) {
+                $guinier_params[ $key ] = floatval( $input->$field );
+            }
+        }
+    }
+    if ( isset( $guinier_params[ 'qmin' ] ) && isset( $guinier_params[ 'qmax' ] ) && $guinier_params[ 'qmin' ] >= $guinier_params[ 'qmax' ] ) {
+        error_exit( "Guinier q min must be below Guinier q max" );
+    }
+
     $exp_guinier = null;
-    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
+        $exp_guinier->params = (object) $guinier_params;
         $cgstate->state->exp_guinier = $exp_guinier;
         $sas->annotate_plot( "I(q)", "<br>" . SAS::guinier_search_summary( $exp_guinier ), true );
         $output->_textarea = ( $output->_textarea ?? "" )
             . "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n"
+            . ( count( $guinier_params ) ? "  Guinier settings: " . json_encode( $guinier_params ) . "\n" : "" )
             . ( count( $exp_guinier->warnings ) ? "  " . implode( "\n  ", $exp_guinier->warnings ) . "\n" : "" );
         $output->guinierplot = $sas->guinier_search_plot( "Exp. I(q)", $exp_guinier, "Guinier plot of " . pathinfo( $iqfile, PATHINFO_BASENAME ) );
     } else {
