@@ -257,20 +257,20 @@
         }
         ,{
             "role"       : "input"
-            ,"id"        : "guinier_qmin"
-            ,"label"     : "Guinier <i>q</i> min [&#8491;<sup>-1</sup>] (optional)"
+            ,"id"        : "guinier_q2min"
+            ,"label"     : "Guinier <i>q</i><sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
-            ,"help"      : "Lower q limit of the automatic Guinier range search. Empty = from the first point."
+            ,"help"      : "Lower q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = from the first point."
             ,"layout" : {
                 "parent" : "resultpanel"
             }
         }
         ,{
             "role"       : "input"
-            ,"id"        : "guinier_qmax"
-            ,"label"     : "Guinier <i>q</i> max [&#8491;<sup>-1</sup>] (optional)"
+            ,"id"        : "guinier_q2max"
+            ,"label"     : "Guinier <i>q</i><sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
-            ,"help"      : "Upper q limit of the automatic Guinier range search. Empty = no limit beyond q&middot;R<sub>g</sub> max."
+            ,"help"      : "Upper q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = no limit beyond q&middot;R<sub>g</sub> max."
             ,"layout" : {
                 "parent" : "resultpanel"
             }
@@ -291,16 +291,6 @@
             ,"label"     : "Guinier: exclude points with relative error above (optional)"
             ,"type"      : "text"
             ,"help"      : "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out of the Guinier search, as ATSAS does with the leading noisy points. Empty = keep every point; noisy points carry little weight in the SD-weighted fit anyway."
-            ,"layout" : {
-                "parent" : "resultpanel"
-            }
-        }
-        ,{
-            "role"       : "input"
-            ,"id"        : "saxs_rg_override"
-            ,"label"     : "Experimental R<sub>g</sub> override [&#8491;] (optional)"
-            ,"type"      : "text"
-            ,"help"      : "Leave empty to use the automatic Guinier R<sub>g</sub> of the I(q) file. A value entered here is used instead in the R<sub>g</sub> plots of the final models; the automatic value is still computed and shown for reference."
             ,"layout" : {
                 "parent" : "resultpanel"
             }

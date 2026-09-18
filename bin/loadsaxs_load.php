@@ -40,18 +40,17 @@ if ( isset( $cgstate->state->output_loadsaxs ) ) {
     }
 }
 
-## Guinier fields below the graph show the settings and range actually used, so a resubmit reproduces the fit
-if ( isset( $cgstate->state->exp_guinier ) ) {
+## Guinier fields below the graph show the settings and range actually used ( as q^2, like the plot ),
+## so a resubmit reproduces the fit and an edit refines it
+if ( isset( $cgstate->state->exp_guinier->qmin ) ) {
     $g      = $cgstate->state->exp_guinier;
-    $auto   = ( ( $g->source ?? "" ) == "user" && isset( $g->auto ) ) ? $g->auto : $g;
-    $params = isset( $auto->params ) ? $auto->params : (object)[];
-    if ( isset( $auto->qmin ) ) {
-        $result->guinier_qmin     = sprintf( "%.4f", $params->qmin ?? $auto->qmin );
-        $result->guinier_qmax     = sprintf( "%.4f", $params->qmax ?? $auto->qmax );
-        $result->guinier_qrgmax   = sprintf( "%.2f", $params->qrgmax ?? 1.3 );
-        $result->guinier_maxrelsd = isset( $params->maxrelsd ) ? sprintf( "%g", $params->maxrelsd ) : "";
-    }
-    $result->saxs_rg_override = ( $g->source ?? "" ) == "user" ? sprintf( "%.2f", $g->rg ) : "";
+    $params = isset( $g->params ) ? $g->params : (object)[];
+    $qmin   = $params->qmin ?? $g->qmin;
+    $qmax   = $params->qmax ?? $g->qmax;
+    $result->guinier_q2min    = sprintf( "%.6f", $qmin * $qmin );
+    $result->guinier_q2max    = sprintf( "%.6f", $qmax * $qmax );
+    $result->guinier_qrgmax   = sprintf( "%.2f", $params->qrgmax ?? 1.3 );
+    $result->guinier_maxrelsd = isset( $params->maxrelsd ) ? sprintf( "%g", $params->maxrelsd ) : "";
 }
 
 $result->desc  = $cgstate->state->description;

@@ -1053,7 +1053,7 @@ if ( isset( $cgstate->state->exp_guinier->rg ) ) {
         (object) [
             "Rg"           => $cgstate->state->exp_guinier->rg
             ,"color"       => "red"
-            ,"label"       => ( $cgstate->state->exp_guinier->source ?? "" ) == "user" ? "Exp. Rg (user supplied)" : "Exp. I(q) Guinier"
+            ,"label"       => "Exp. I(q) Guinier"
             ,"rg_qualifier" => ""
             ,"row"         => 2
         ];

@@ -98,18 +98,19 @@ if (
     ## experimental Guinier Rg via US-SOMO Guinier search, kept in state for the final Rg plots
     ## optional Guinier controls from the form ( empty = the search's defaults ); recorded with the result
     $guinier_params = [];
-    foreach ( [ 'guinier_qmin' => 'qmin', 'guinier_qmax' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
+    ## the form takes q^2 limits ( what the Guinier plot shows ); the search takes q
+    foreach ( [ 'guinier_q2min' => 'qmin', 'guinier_q2max' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
         if ( isset( $input->$field ) && strlen( trim( $input->$field ) ) ) {
             if ( !is_numeric( trim( $input->$field ) ) || floatval( $input->$field ) < 0 ) {
                 error_exit( "Guinier setting '$field' must be a non-negative number" );
             }
             if ( floatval( $input->$field ) > 0 ) {
-                $guinier_params[ $key ] = floatval( $input->$field );
+                $guinier_params[ $key ] = ( $key == 'qmin' || $key == 'qmax' ) ? sqrt( floatval( $input->$field ) ) : floatval( $input->$field );
             }
         }
     }
     if ( isset( $guinier_params[ 'qmin' ] ) && isset( $guinier_params[ 'qmax' ] ) && $guinier_params[ 'qmin' ] >= $guinier_params[ 'qmax' ] ) {
-        error_exit( "Guinier q min must be below Guinier q max" );
+        error_exit( "Guinier q^2 min must be below Guinier q^2 max" );
     }
 
     $exp_guinier = null;
@@ -125,18 +126,6 @@ if (
     } else {
         unset( $cgstate->state->exp_guinier );
         $output->_textarea = ( $output->_textarea ?? "" ) . "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
-    }
-
-    ## optional user supplied Rg overrides the automatic value in every downstream use ( the automatic one is kept for reference )
-    if ( isset( $input->saxs_rg_override ) && strlen( trim( $input->saxs_rg_override ) ) && floatval( $input->saxs_rg_override ) > 0 ) {
-        $rg_user = floatval( $input->saxs_rg_override );
-        $cgstate->state->exp_guinier = (object)[
-            'rg'      => $rg_user
-            ,'rg_sd'  => 0
-            ,'source' => 'user'
-            ,'auto'   => $exp_guinier
-        ];
-        $output->_textarea = ( $output->_textarea ?? "" ) . sprintf( "Experimental Rg set by the user to %.2f A; this value is used in the Rg plots\n", $rg_user );
     }
 
     $output->iqplot = $sas->plot( "I(q)" );
