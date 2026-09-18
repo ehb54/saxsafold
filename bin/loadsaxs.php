@@ -117,7 +117,8 @@ if (
     if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
         $exp_guinier->params = (object) $guinier_params;
         $cgstate->state->exp_guinier = $exp_guinier;
-        $sas->annotate_plot( "I(q)", "<br>" . SAS::guinier_search_summary( $exp_guinier ), true );
+        ## the summary is the title of the Guinier plot; a second annotation line on the I(q) plot
+        ## spills below that plot and collides with the Guinier plot placed under it
         $output->_textarea = ( $output->_textarea ?? "" )
             . "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n"
             . ( count( $guinier_params ) ? "  Guinier settings: " . json_encode( $guinier_params ) . "\n" : "" )
