@@ -245,5 +245,55 @@
                 ,"data" : [ 0, 2 ]
             }
         }
+        ,{
+            "role"              : "output"
+            ,"label"            : ""
+            ,"type"             : "plotly"
+            ,"id"               : "guinierplot"
+            ,"layout"           : {
+                "parent" : "resultpanel"
+                ,"data" : [ 1, 1 ]
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_q2min"
+            ,"label"     : "Guinier <i>q</i><sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Lower q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = from the first point."
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_q2max"
+            ,"label"     : "Guinier <i>q</i><sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Upper q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = no limit beyond q&middot;R<sub>g</sub> max."
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_qrgmax"
+            ,"label"     : "Guinier <i>q</i>&middot;<i>R<sub>g</sub></i> max (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Maximum q&middot;R<sub>g</sub> at the end of the fitted range. Empty = 1.3. Use about 1.0 for elongated or flexible particles."
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
+            ,"id"        : "guinier_maxrelsd"
+            ,"label"     : "Guinier: exclude points with relative error above (optional)"
+            ,"type"      : "text"
+            ,"help"      : "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out of the Guinier search, as ATSAS does with the leading noisy points. Empty = keep every point; noisy points carry little weight in the SD-weighted fit anyway."
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
     ]
 }

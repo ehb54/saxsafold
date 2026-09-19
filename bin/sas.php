@@ -2048,6 +2048,222 @@ class SAS {
         return true;
     }
 
+    # guinier_search_run() - run the us_saxs_cmds_t "guinier_search" json run type and return the decoded reply
+    private function guinier_search_run( $cmdarg, &$resobj ) {
+        ## US_SAXS_CMDS_T in the environment overrides the container path ( testing outside the container )
+        $bin = getenv( 'US_SAXS_CMDS_T' ) ?: '/ultrascan3/us_somo/bin64/us_saxs_cmds_t';
+        $cmd = "$bin json '$cmdarg' 2>&1";
+        $res = run_cmd( $cmd, false );
+        if ( null === ( $resobj = json_decode( $res ) ) ) {
+            $this->last_error = "SAS::guinier_search() invalid JSON returned by us_saxs_cmds_t: " . substr( $res, 0, 200 );
+            return false;
+        }
+        if ( isset( $resobj->errors ) ) {
+            if ( strpos( $resobj->errors, "no supported runtype" ) !== false ) {
+                $this->last_error = "SAS::guinier_search() the installed US-SOMO build does not support guinier_search";
+            } else {
+                $this->last_error = "SAS::guinier_search() " . $resobj->errors;
+            }
+            return false;
+        }
+        if ( !isset( $resobj->results ) || !is_array( $resobj->results ) ) {
+            $this->last_error = "SAS::guinier_search() no results returned";
+            return false;
+        }
+        return true;
+    }
+
+    # guinier_search_params_json() - encode optional guinier_search parameters ( minpts, qrgmax, ... ) for the json call
+    private function guinier_search_params_json( $params ) {
+        $res = "";
+        foreach ( $params as $k => $v ) {
+            $res .= ',"' . $k . '":' . json_encode( $v );
+        }
+        return $res;
+    }
+
+    # guinier_search() - automatic Guinier range search on a loaded I(q) curve via US-SOMO
+    #  $result receives the decoded result object ( ->rg, ->rg_sd, ->i0, ->i0_sd, ->qmin, ->qmax,
+    #  ->qrgmin, ->qrgmax, ->first, ->last, ->npts, ->quality, ->aggregation, ->repulsion, ->warnings ... )
+    function guinier_search( $name, &$result, $params = [] ) {
+        $this->debug_msg( "SAS::guinier_search( '$name' )" );
+        $this->last_error = "";
+
+        if ( !$this->data_name_exists( $name ) ) {
+            $this->last_error = "SAS::guinier_search() data name '$name' does not exist";
+            return $this->error_exit( $this->last_error );
+        }
+
+        if ( $this->data->$name->type != self::PLOT_IQ ) {
+            $this->last_error = "SAS::guinier_search() data name '$name' is not an I(q) curve";
+            return $this->error_exit( $this->last_error );
+        }
+
+        $cmdarg =
+            '{"guinier_search":1'
+            . ',"name":' . json_encode( $name )
+            . ',"q":' . json_encode( $this->data->$name->x )
+            . ',"i":' . json_encode( $this->data->$name->y )
+            . ( isset( $this->data->$name->error_y ) && $this->data_has_errors( $name )
+                ? ',"e":' . json_encode( $this->data->$name->error_y ) : '' )
+            . $this->guinier_search_params_json( $params )
+            . '}'
+            ;
+
+        ## a failed search or a SOMO build without guinier_search is a normal outcome, never fatal: return false
+        $resobj = null;
+        if ( !$this->guinier_search_run( $cmdarg, $resobj ) ) {
+            return false;
+        }
+        $result = $resobj->results[ 0 ];
+        if ( !isset( $result->ok ) || !$result->ok ) {
+            $this->last_error = "SAS::guinier_search() '$name': " . ( $result->errormsg ?? "failed" );
+            return false;
+        }
+        return true;
+    }
+
+    # guinier_search_files() - automatic Guinier range search on I(q) files ( 2 or 3 numeric columns )
+    #  $results receives an array keyed by file name with the decoded result objects ( ->ok tells success )
+    function guinier_search_files( $files, &$results, $params = [] ) {
+        $this->debug_msg( "SAS::guinier_search_files( " . count( $files ) . " files )" );
+        $this->last_error = "";
+        $results          = [];
+
+        if ( !count( $files ) ) {
+            $this->last_error = "SAS::guinier_search_files() no files given";
+            return $this->error_exit( $this->last_error );
+        }
+        foreach ( $files as $f ) {
+            if ( !file_exists( $f ) ) {
+                $this->last_error = "SAS::guinier_search_files() file '$f' does not exist";
+                return $this->error_exit( $this->last_error );
+            }
+        }
+
+        $cmdarg =
+            '{"guinier_search":1'
+            . ',"files":' . json_encode( array_values( $files ) )
+            . $this->guinier_search_params_json( $params )
+            . '}'
+            ;
+
+        ## a SOMO build without guinier_search is a normal outcome, never fatal: return false
+        $resobj = null;
+        if ( !$this->guinier_search_run( $cmdarg, $resobj ) ) {
+            return false;
+        }
+        foreach ( $resobj->results as $r ) {
+            $results[ $r->name ] = $r;
+        }
+        return true;
+    }
+
+    # guinier_search_plot() - plotly object of the Guinier plot ( ln I vs q^2 ) for a guinier_search result:
+    #  all points up to twice the fitted window, the points used highlighted, the fitted line, the summary as title
+    function guinier_search_plot( $name, $r, $title = "Guinier plot" ) {
+        $this->debug_msg( "SAS::guinier_search_plot( '$name' )" );
+        if ( !$this->data_name_exists( $name ) || !isset( $r->ok ) || !$r->ok ) {
+            return null;
+        }
+        $x     = $this->data->$name->x;
+        $y     = $this->data->$name->y;
+        $e     = isset( $this->data->$name->error_y ) && count( $this->data->$name->error_y ) == count( $x )
+            ? $this->data->$name->error_y : null;
+        $qlim  = 1.3 * $r->qmax;   ## a little beyond the fitted range, to show where the line departs
+        $all_x = [];
+        $all_y = [];
+        $all_e = [];
+        $use_x = [];
+        $use_y = [];
+        $use_e = [];
+        for ( $i = 0; $i < count( $x ); ++$i ) {
+            if ( $x[ $i ] > $qlim || $y[ $i ] <= 0 ) {
+                continue;
+            }
+            $q2 = $x[ $i ] * $x[ $i ];
+            $li = log( $y[ $i ] );
+            $le = $e ? abs( $e[ $i ] / $y[ $i ] ) : 0;   ## SD of ln I
+            $all_x[] = $q2;
+            $all_y[] = $li;
+            $all_e[] = $le;
+            if ( $i + 1 >= $r->first && $i + 1 <= $r->last ) {
+                $use_x[] = $q2;
+                $use_y[] = $li;
+                $use_e[] = $le;
+            }
+        }
+        $fit_x = [ 0, $r->qmax * $r->qmax * 1.15 ];
+        $fit_y = [ $r->intercept, $r->intercept + $r->slope * $fit_x[ 1 ] ];
+
+        return (object)[
+            "data" => [
+                (object) array_merge(
+                    [ "x" => $all_x, "y" => $all_y, "type" => "scatter", "mode" => "markers", "name" => "ln I(q)"
+                      ,"marker" => [ "color" => "rgb(150,150,222)", "size" => 4 ] ]
+                    ,$e ? [ "error_y" => [ "type" => "data", "array" => $all_e, "visible" => true, "thickness" => 1, "width" => 2
+                                           ,"color" => "rgb(150,150,222)" ] ] : []
+                )
+                ,(object) array_merge(
+                    [ "x" => $use_x, "y" => $use_y, "type" => "scatter", "mode" => "markers", "name" => "points used"
+                      ,"marker" => [ "color" => "rgb(220,40,40)", "size" => 6 ] ]
+                    ,$e ? [ "error_y" => [ "type" => "data", "array" => $use_e, "visible" => true, "thickness" => 1, "width" => 2
+                                           ,"color" => "rgb(220,40,40)" ] ] : []
+                )
+                ,(object)[ "x" => $fit_x, "y" => $fit_y, "type" => "scatter", "mode" => "lines", "name" => "Guinier fit"
+                           ,"line" => [ "color" => "rgb(0,5,80)", "width" => 1.5 ] ]
+            ]
+            ,"layout" => (object)[
+                "title"         => $title . "<br>" . self::guinier_search_summary( $r )
+                ,"font"         => [ "color" => "rgb(0,5,80)", "size" => 11 ]
+                ,"paper_bgcolor" => "rgba(0,0,0,0)"
+                ,"plot_bgcolor"  => "rgba(0,0,0,0)"
+                ,"xaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "q<sup>2</sup> [&#8491;<sup>-2</sup>]" ] ]
+                ,"yaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "ln I(q)" ] ]
+                ,"legend"       => [ "orientation" => "h" ]
+            ]
+            ,"config" => [
+                "showLink"     => false
+                ,"responsive" => true
+                ,"genapp_chart_editor" => [ "enabled" => true, "url" => "_cedit/_chart_edit.html", "target" => "_blank" ]
+                ,"genapp_plotly"       => [ "linewidth" => [ "values" => [ 1, 2, 3, 4 ] ], "errorbars" => (object)[] ]
+            ]
+        ];
+    }
+
+    # guinier_search_summary_text() - the same line in plain text, for the log textarea ( no html entities there )
+    static function guinier_search_summary_text( $r ) {
+        $flags = [];
+        if ( !empty( $r->aggregation ) ) {
+            $flags[] = "low-q upturn: possible aggregation";
+        }
+        if ( !empty( $r->repulsion ) ) {
+            $flags[] = "low-q downturn: possible repulsive interactions";
+        }
+        return
+            sprintf( "Guinier Rg %.2f +/- %.2f A, I(0) %.4g +/- %.2g, q %.4f-%.4f 1/A (qRg %.2f-%.2f, %d points), quality %.2f",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+            . ( count( $flags ) ? " - " . implode( "; ", $flags ) : "" )
+            ;
+    }
+
+    # guinier_search_summary() - one line describing a guinier_search result, html
+    static function guinier_search_summary( $r ) {
+        $flags = [];
+        if ( !empty( $r->aggregation ) ) {
+            $flags[] = "low-q upturn: possible aggregation";
+        }
+        if ( !empty( $r->repulsion ) ) {
+            $flags[] = "low-q downturn: possible repulsive interactions";
+        }
+        return
+            sprintf( "Guinier <i>R<sub>g</sub></i> %.2f &plusmn; %.2f &#8491;, <i>I(0)</i> %.4g &plusmn; %.2g, "
+                     . "<i>q</i> %.4f&#8211;%.4f &#8491;<sup>-1</sup> (<i>qR<sub>g</sub></i> %.2f&#8211;%.2f, %d points), quality %.2f",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+            . ( count( $flags ) ? " &#8212; " . implode( "; ", $flags ) : "" )
+            ;
+    }
+
     function compute_rg_from_pr( $name, &$rg ) {
         $this->debug_msg( "SAS::compute_rg_from_pr( '$name' )" );
         $this->last_error = "";

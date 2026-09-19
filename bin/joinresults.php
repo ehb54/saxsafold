@@ -369,7 +369,35 @@ foreach ( $iqresults as $name => $v ) {
     }
     if ( file_exists( $notes_file ) ) {
         $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
+        $notes_rgs[ $name ]->source = "waxsis";
     }
+}
+
+## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the loaded WAXSiS curve
+$guinier_rg_names = [];
+foreach ( array_keys( array_diff_key( $iqresults, $notes_rgs ) ) as $name ) {
+    if ( !$sas->data_name_exists( $name ) ) {
+        continue;
+    }
+    $r = null;
+    if ( $sas->guinier_search( $name, $r ) ) {
+        $notes_rgs[ $name ] = (object)[
+            'rg'        => $r->rg
+            ,'rg_sd'    => $r->rg_sd
+            ,'rg_solute' => null
+            ,'source'   => 'guinier'
+            ,'quality'  => $r->quality
+            ,'qrgmax'   => $r->qrgmax
+        ];
+        $guinier_rg_names[] = $name;
+    } else {
+        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for $name: " . $sas->last_error . "\n";
+    }
+}
+if ( count( $guinier_rg_names ) ) {
+    $output->_textarea .=
+        "Solvated Rg from a Guinier fit of the WAXSiS curve (no WAXSiS log) for "
+        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n";
 }
 
 $rg_map       = [];
@@ -687,6 +715,31 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
             "Rg"           => $prrg
             ,"color"       => "brown"
             ,"rg_qualifier" => ""
+            ,"row"         => 2
+        ];
+}
+
+## experimental Guinier Rg: from the project state when Load SAXS cached it, else computed now from the loaded curve
+$exp_guinier_rg = null;
+if ( isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
+    $exp_guinier_rg = $cgstates->{$best->iq->project}->state->exp_guinier->rg;
+} elseif ( $sas->data_name_exists( "$firstproject: Exp. I(q)" ) ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "$firstproject: Exp. I(q)", $exp_guinier ) ) {
+        $exp_guinier_rg = $exp_guinier->rg;
+        $output->_textarea .= "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n";
+    } else {
+        $output->_textarea .= "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
+    }
+}
+if ( $exp_guinier_rg !== null ) {
+    $rgdata->{ "Exp. I(q)<br>Project " . $best->iq->project . "<br>Guinier" } =
+        (object) [
+            "Rg"           => $exp_guinier_rg
+            ,"color"       => "red"
+            ,"label"       => "Exp. I(q) Guinier"
+            ,"rg_qualifier" => ""
+            ,"row"         => 2
         ];
 }
 

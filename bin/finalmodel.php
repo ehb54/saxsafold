@@ -398,6 +398,7 @@ $waxsis_cb = function( $line ) {
 ## check if model 0 (load structure) WAXSiS needs recomputing for the selected convergence mode
 
 $waxsis_model0_cached_file = "waxsis/intensity_waxsis${waxsis_suffix}.calc";
+$iqfile_by_name            = [ $waxsis_data_name => $waxsis_model0_cached_file ];   ## raw WAXSiS curve per NNLS curve name
 
 $load_convergence = isset( $cgstate->state->waxsis_load_convergence )
     ? $cgstate->state->waxsis_load_convergence
@@ -611,6 +612,7 @@ foreach ( $names as $name ) {
     if ( $ok ) {
         $thisiqframe   = "I(q)<sub>W</sub> mod. $frame";
         $alliqframes[] = $thisiqframe;
+        $iqfile_by_name[ $thisiqframe ] = end( $iqfiles );
         #    $ga->tcpmessage( [
         #                         "_textarea" =>
         #                         "thisiqframe $thisiqframe\n"
@@ -728,6 +730,7 @@ $notes_rgs     = [];
 $m0_notes_file = "waxsis/notes${waxsis_suffix}.log";
 if ( file_exists( $m0_notes_file ) ) {
     $notes_rgs[ $waxsis_data_name ] = waxsis_rg_from_notes( $m0_notes_file );
+    $notes_rgs[ $waxsis_data_name ]->source = "waxsis";
 }
 foreach ( $iqresults as $name => $v ) {
     $frame = intval( end( explode( ' ', $name ) ) );
@@ -736,7 +739,91 @@ foreach ( $iqresults as $name => $v ) {
         $notes_file   = "$procdir/${bname}-somo-m${frame_padded}-waxsis${waxsis_suffix}-notes.log";
         if ( file_exists( $notes_file ) ) {
             $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
+            $notes_rgs[ $name ]->source = "waxsis";
         }
+    }
+}
+
+## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the stored WAXSiS curve
+$guinier_rg_names = [];
+{
+    $missing_names = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
+    $guinier_files = [];
+    foreach ( $missing_names as $name ) {
+        if ( isset( $iqfile_by_name[ $name ] ) && file_exists( $iqfile_by_name[ $name ] ) ) {
+            $guinier_files[ $name ] = $iqfile_by_name[ $name ];
+        }
+    }
+    ## cached fits ( keyed by file, invalidated when the file changes ) are reused; the rest are computed now
+    if ( !isset( $cgstate->state->waxsis_guinier_cache ) ) {
+        $cgstate->state->waxsis_guinier_cache = (object)[];
+    }
+    $cache           = $cgstate->state->waxsis_guinier_cache;
+    $guinier_results = [];
+    $to_compute      = [];
+    foreach ( $guinier_files as $name => $file ) {
+        if ( isset( $cache->$file ) && $cache->$file->mtime == filemtime( $file ) ) {
+            $guinier_results[ $file ] = $cache->$file;
+        } else {
+            $to_compute[] = $file;
+        }
+    }
+    if ( count( $to_compute ) ) {
+        $computed = [];
+        if ( $sas->guinier_search_files( $to_compute, $computed ) ) {
+            foreach ( $computed as $file => $r ) {
+                $guinier_results[ $file ] = $r;
+                if ( $r->ok ) {
+                    $cache->$file = (object)[
+                        'ok'      => true
+                        ,'rg'     => $r->rg
+                        ,'rg_sd'  => $r->rg_sd
+                        ,'quality' => $r->quality
+                        ,'qrgmax' => $r->qrgmax
+                        ,'mtime'  => filemtime( $file )
+                    ];
+                }
+            }
+        } else {
+            $ga->tcpmessage( [ $textarea_key => "Guinier fit of the stored WAXSiS curves not available: " . $sas->last_error . "\n" ] );
+        }
+    }
+    if ( count( $guinier_files ) ) {
+        foreach ( $guinier_files as $name => $file ) {
+            if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
+                $r = $guinier_results[ $file ];
+                $notes_rgs[ $name ] = (object)[
+                    'rg'        => $r->rg
+                    ,'rg_sd'    => $r->rg_sd
+                    ,'rg_solute' => null
+                    ,'source'   => 'guinier'
+                    ,'quality'  => $r->quality
+                    ,'qrgmax'   => $r->qrgmax
+                ];
+                $guinier_rg_names[] = $name;
+            } else {
+                $ga->tcpmessage( [ $textarea_key =>
+                    "Guinier fit of the stored WAXSiS curve failed for $name: "
+                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
+            }
+        }
+        if ( count( $guinier_rg_names ) ) {
+            $ga->tcpmessage( [ $textarea_key =>
+                "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
+                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n" ] );
+        }
+    }
+}
+
+## experimental Guinier Rg: the value cached by Load SAXS, else computed now from the loaded curve and cached in state
+## ( must run here: the SAS object is replaced by a P(r)-only one further down )
+if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
+        $cgstate->state->exp_guinier = $exp_guinier;
+        $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n" ] );
+    } else {
+        $ga->tcpmessage( [ $textarea_key => "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n" ] );
     }
 }
 
@@ -774,6 +861,21 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
 }
 
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
+if ( $use_solvated ) {
+    $n_guinier = count( $guinier_rg_names );
+    $n_waxsis  = 0;
+    foreach ( $iqresults as $name => $v ) {
+        if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
+            ++$n_waxsis;
+        }
+    }
+    $output->iqresultswaxsis .=
+        "<small>Solvated Rg"
+        . ( $n_waxsis  ? " from the WAXSiS log for $n_waxsis model(s)" : "" )
+        . ( $n_waxsis && $n_guinier ? ";" : "" )
+        . ( $n_guinier ? " from a Guinier fit of the stored WAXSiS curve (<i>qR<sub>g</sub></i> &le; 1.3) for $n_guinier model(s)" : "" )
+        . ".</small><br>";
+}
 
 ### save results to state
 
@@ -942,6 +1044,18 @@ if ( isset( $cgstate->state->output_load->prplot ) ) {
             "Rg"           => $prrg
             ,"color"       => "brown"
             ,"rg_qualifier" => ""
+            ,"row"         => 2
+        ];
+}
+
+if ( isset( $cgstate->state->exp_guinier->rg ) ) {
+    $rgdata->{ "Exp. I(q)<br>Guinier" } =
+        (object) [
+            "Rg"           => $cgstate->state->exp_guinier->rg
+            ,"color"       => "red"
+            ,"label"       => "Exp. I(q) Guinier"
+            ,"rg_qualifier" => ""
+            ,"row"         => 2
         ];
 }
 
