@@ -2168,22 +2168,29 @@ class SAS {
         }
         $x     = $this->data->$name->x;
         $y     = $this->data->$name->y;
-        $qlim  = 2 * $r->qmax;
+        $e     = isset( $this->data->$name->error_y ) && count( $this->data->$name->error_y ) == count( $x )
+            ? $this->data->$name->error_y : null;
+        $qlim  = 1.3 * $r->qmax;   ## a little beyond the fitted range, to show where the line departs
         $all_x = [];
         $all_y = [];
+        $all_e = [];
         $use_x = [];
         $use_y = [];
+        $use_e = [];
         for ( $i = 0; $i < count( $x ); ++$i ) {
             if ( $x[ $i ] > $qlim || $y[ $i ] <= 0 ) {
                 continue;
             }
             $q2 = $x[ $i ] * $x[ $i ];
             $li = log( $y[ $i ] );
+            $le = $e ? abs( $e[ $i ] / $y[ $i ] ) : 0;   ## SD of ln I
             $all_x[] = $q2;
             $all_y[] = $li;
+            $all_e[] = $le;
             if ( $i + 1 >= $r->first && $i + 1 <= $r->last ) {
                 $use_x[] = $q2;
                 $use_y[] = $li;
+                $use_e[] = $le;
             }
         }
         $fit_x = [ 0, $r->qmax * $r->qmax * 1.15 ];
@@ -2191,10 +2198,18 @@ class SAS {
 
         return (object)[
             "data" => [
-                (object)[ "x" => $all_x, "y" => $all_y, "type" => "scatter", "mode" => "markers", "name" => "ln I(q)"
-                          ,"marker" => [ "color" => "rgb(150,150,222)", "size" => 4 ] ]
-                ,(object)[ "x" => $use_x, "y" => $use_y, "type" => "scatter", "mode" => "markers", "name" => "points used"
-                           ,"marker" => [ "color" => "rgb(220,40,40)", "size" => 6 ] ]
+                (object) array_merge(
+                    [ "x" => $all_x, "y" => $all_y, "type" => "scatter", "mode" => "markers", "name" => "ln I(q)"
+                      ,"marker" => [ "color" => "rgb(150,150,222)", "size" => 4 ] ]
+                    ,$e ? [ "error_y" => [ "type" => "data", "array" => $all_e, "visible" => true, "thickness" => 1, "width" => 2
+                                           ,"color" => "rgb(150,150,222)" ] ] : []
+                )
+                ,(object) array_merge(
+                    [ "x" => $use_x, "y" => $use_y, "type" => "scatter", "mode" => "markers", "name" => "points used"
+                      ,"marker" => [ "color" => "rgb(220,40,40)", "size" => 6 ] ]
+                    ,$e ? [ "error_y" => [ "type" => "data", "array" => $use_e, "visible" => true, "thickness" => 1, "width" => 2
+                                           ,"color" => "rgb(220,40,40)" ] ] : []
+                )
                 ,(object)[ "x" => $fit_x, "y" => $fit_y, "type" => "scatter", "mode" => "lines", "name" => "Guinier fit"
                            ,"line" => [ "color" => "rgb(0,5,80)", "width" => 1.5 ] ]
             ]
@@ -2211,6 +2226,7 @@ class SAS {
                 "showLink"     => false
                 ,"responsive" => true
                 ,"genapp_chart_editor" => [ "enabled" => true, "url" => "_cedit/_chart_edit.html", "target" => "_blank" ]
+                ,"genapp_plotly"       => [ "linewidth" => [ "values" => [ 1, 2, 3, 4 ] ], "errorbars" => (object)[] ]
             ]
         ];
     }
