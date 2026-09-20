@@ -2193,6 +2193,20 @@ class SAS {
                 $use_e[] = $le;
             }
         }
+        ## y range: the highest point near the top, the last visible points ( median of up to 5, they are noisy )
+        ## at one third of the height, so the data do not run into the bottom of the frame
+        $yrange = null;
+        if ( count( $all_y ) >= 3 ) {
+            $tail = array_slice( $all_y, -min( 5, count( $all_y ) ) );
+            sort( $tail );
+            $ylast = $tail[ intdiv( count( $tail ), 2 ) ];
+            $ytop  = max( max( $all_y ), $r->intercept );
+            if ( $ytop > $ylast ) {
+                $ytop  += 0.05 * ( $ytop - $ylast );
+                $yrange = [ $ylast - ( $ytop - $ylast ) / 2, $ytop ];
+            }
+        }
+
         $fit_x = [ 0, $r->qmax * $r->qmax * 1.15 ];
         $fit_y = [ $r->intercept, $r->intercept + $r->slope * $fit_x[ 1 ] ];
 
@@ -2220,7 +2234,10 @@ class SAS {
                 ,"paper_bgcolor" => "rgba(0,0,0,0)"
                 ,"plot_bgcolor"  => "rgba(0,0,0,0)"
                 ,"xaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "q<sup>2</sup> [&#8491;<sup>-2</sup>]" ] ]
-                ,"yaxis"        => [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "ln I(q)" ] ]
+                ,"yaxis"        => array_merge(
+                    [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "ln I(q)" ] ]
+                    ,$yrange ? [ "range" => $yrange ] : []
+                )
                 ,"legend"       => [ "orientation" => "h" ]
             ]
             ,"config" => [
