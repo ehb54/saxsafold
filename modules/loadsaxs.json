@@ -257,7 +257,19 @@
         }
         ,{
             "role"       : "input"
+            ,"id"        : "guinier_adjust"
+            ,"label"     : "Adjust the Guinier settings and resubmit"
+            ,"type"      : "checkbox"
+            ,"help"      : "The Guinier range is found automatically. Turn this on to set the q<sup>2</sup> limits, the q&middot;R<sub>g</sub> limit or a maximum relative error yourself, then press Submit again."
+            ,"repeater"  : "true"
+            ,"layout" : {
+                "parent" : "resultpanel"
+            }
+        }
+        ,{
+            "role"       : "input"
             ,"id"        : "guinier_q2min"
+            ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i><sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
             ,"help"      : "Lower q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = from the first point."
@@ -268,6 +280,7 @@
         ,{
             "role"       : "input"
             ,"id"        : "guinier_q2max"
+            ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i><sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
             ,"help"      : "Upper q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = no limit beyond q&middot;R<sub>g</sub> max."
@@ -278,6 +291,7 @@
         ,{
             "role"       : "input"
             ,"id"        : "guinier_qrgmax"
+            ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i>&middot;<i>R<sub>g</sub></i> max (optional)"
             ,"type"      : "text"
             ,"help"      : "Maximum q&middot;R<sub>g</sub> at the end of the fitted range. Empty = 1.3. Use about 1.0 for elongated or flexible particles."
@@ -288,6 +302,7 @@
         ,{
             "role"       : "input"
             ,"id"        : "guinier_maxrelsd"
+            ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier: exclude points with relative error above (optional)"
             ,"type"      : "text"
             ,"help"      : "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out of the Guinier search, as ATSAS does with the leading noisy points. Empty = keep every point; noisy points carry little weight in the SD-weighted fit anyway."

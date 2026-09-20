@@ -100,7 +100,7 @@ if (
     $guinier_params = [];
     ## the form takes q^2 limits ( what the Guinier plot shows ); the search takes q
     foreach ( [ 'guinier_q2min' => 'qmin', 'guinier_q2max' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
-        if ( isset( $input->$field ) && strlen( trim( $input->$field ) ) ) {
+        if ( isset( $input->guinier_adjust ) && isset( $input->$field ) && strlen( trim( $input->$field ) ) ) {
             if ( !is_numeric( trim( $input->$field ) ) || floatval( $input->$field ) < 0 ) {
                 error_exit( "Guinier setting '$field' must be a non-negative number" );
             }

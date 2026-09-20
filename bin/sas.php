@@ -2214,7 +2214,8 @@ class SAS {
                            ,"line" => [ "color" => "rgb(0,5,80)", "width" => 1.5 ] ]
             ]
             ,"layout" => (object)[
-                "title"         => $title . "<br>" . self::guinier_search_summary( $r )
+                "title"         => [ "text" => $title . "<br>" . self::guinier_search_summary( $r, true ), "font" => [ "size" => 12 ] ]
+                ,"margin"       => [ "t" => 110 ]
                 ,"font"         => [ "color" => "rgb(0,5,80)", "size" => 11 ]
                 ,"paper_bgcolor" => "rgba(0,0,0,0)"
                 ,"plot_bgcolor"  => "rgba(0,0,0,0)"
@@ -2241,14 +2242,14 @@ class SAS {
             $flags[] = "low-q downturn: possible repulsive interactions";
         }
         return
-            sprintf( "Guinier Rg %.2f +/- %.2f A, I(0) %.4g +/- %.2g, q %.4f-%.4f 1/A (qRg %.2f-%.2f, %d points), quality %.2f",
-                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+            sprintf( "Guinier Rg %.2f +/- %.2f A, I(0) %.4g +/- %.2g, q^2 %.6f-%.6f 1/A^2 (qRg %.2f-%.2f, %d points), quality %.2f",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin * $r->qmin, $r->qmax * $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
             . ( count( $flags ) ? " - " . implode( "; ", $flags ) : "" )
             ;
     }
 
     # guinier_search_summary() - one line describing a guinier_search result, html
-    static function guinier_search_summary( $r ) {
+    static function guinier_search_summary( $r, $multiline = false ) {
         $flags = [];
         if ( !empty( $r->aggregation ) ) {
             $flags[] = "low-q upturn: possible aggregation";
@@ -2256,12 +2257,17 @@ class SAS {
         if ( !empty( $r->repulsion ) ) {
             $flags[] = "low-q downturn: possible repulsive interactions";
         }
-        return
-            sprintf( "Guinier <i>R<sub>g</sub></i> %.2f &plusmn; %.2f &#8491;, <i>I(0)</i> %.4g &plusmn; %.2g, "
-                     . "<i>q</i> %.4f&#8211;%.4f &#8491;<sup>-1</sup> (<i>qR<sub>g</sub></i> %.2f&#8211;%.2f, %d points), quality %.2f",
-                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd, $r->qmin, $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
-            . ( count( $flags ) ? " &#8212; " . implode( "; ", $flags ) : "" )
-            ;
+        ## the range is given as q^2, the axis of the Guinier plot and the unit of the form fields
+        $lines = [
+            sprintf( "Guinier <i>R<sub>g</sub></i> %.2f &plusmn; %.2f &#8491;, <i>I(0)</i> %.4g &plusmn; %.2g",
+                     $r->rg, $r->rg_sd, $r->i0, $r->i0_sd )
+            ,sprintf( "<i>q</i><sup>2</sup> %.6f&#8211;%.6f &#8491;<sup>-2</sup> (<i>qR<sub>g</sub></i> %.2f&#8211;%.2f, %d points), quality %.2f",
+                      $r->qmin * $r->qmin, $r->qmax * $r->qmax, $r->qrgmin, $r->qrgmax, $r->npts, $r->quality )
+        ];
+        if ( count( $flags ) ) {
+            $lines[] = implode( "; ", $flags );
+        }
+        return implode( $multiline ? "<br>" : ", ", $lines );
     }
 
     function compute_rg_from_pr( $name, &$rg ) {
