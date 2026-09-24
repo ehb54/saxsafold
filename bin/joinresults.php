@@ -369,7 +369,108 @@ foreach ( $iqresults as $name => $v ) {
     }
     if ( file_exists( $notes_file ) ) {
         $notes_rgs[ $name ] = waxsis_rg_from_notes( $notes_file );
+        $notes_rgs[ $name ]->source = "waxsis";
     }
+}
+
+## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the loaded WAXSiS curve;
+## experimental Guinier Rg when the best project's Load SAXS did not cache one. As in Final model, the
+## Guinier settings are asked once and applied to every fit ( nothing is stored: joined runs own no state )
+$guinier_rg_names = [];
+$missing_names    = [];
+foreach ( array_keys( array_diff_key( $iqresults, $notes_rgs ) ) as $name ) {
+    if ( $sas->data_name_exists( $name ) ) {
+        $missing_names[] = $name;
+    }
+}
+$need_exp_guinier = !isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg )
+    && $sas->data_name_exists( "$firstproject: Exp. I(q)" );
+$guinier_params   = [];
+
+if ( count( $missing_names ) || $need_exp_guinier ) {
+    $last = [];
+    foreach ( [ $best->iq->project, $firstproject ] as $project ) {
+        if ( isset( $cgstates->$project->state->final_guinier_params ) ) {
+            $last = (array) $cgstates->$project->state->final_guinier_params;
+            break;
+        } elseif ( isset( $cgstates->$project->state->exp_guinier->params ) ) {
+            $last = (array) $cgstates->$project->state->exp_guinier->params;
+            break;
+        }
+    }
+    $what = [];
+    if ( count( $missing_names ) ) {
+        $what[] = "the solvated R<sub>g</sub> of " . count( $missing_names ) . " model(s) without a WAXSiS log, from their WAXSiS curves";
+    }
+    if ( $need_exp_guinier ) {
+        $what[] = "the R<sub>g</sub> of the experimental I(q)";
+    }
+    $response =
+        json_decode(
+            $ga->tcpquestion(
+                [
+                 "id"           => "q1"
+                 ,"title"       => "<h5>Guinier settings</h5>"
+                 ,"icon"        => "noicon.png"
+                 ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
+                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
+                                   . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
+                                   . "with the q&middot;R<sub>g</sub> limit and the relative-error cut-off.<hr>"
+                 ,"timeouttext" => "The time to respond has expired, please submit again."
+                 ,"buttons"     => [ "Use these settings", "Cancel for now" ]
+                 ,"fields"      => guinier_question_fields( $last )
+                ]
+            )
+        );
+    if ( isset( $response->error ) && strlen( $response->error ) ) {
+        error_exit( "Please submit again" );
+    }
+    if ( !isset( $response->_response->button ) || $response->_response->button != "usethesesettings" ) {
+        error_exit( "Canceled", true, null, 'information.png' );
+    }
+    $guinier_err    = "";
+    $guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
+    if ( strlen( $guinier_err ) ) {
+        error_exit( $guinier_err );
+    }
+    $output->_textarea .= "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n";
+
+    ## a stored experimental Rg that Final model determined with other settings is redone for this run
+    if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg )
+         && $sas->data_name_exists( "$firstproject: Exp. I(q)" ) ) {
+        $stored = $cgstates->{$best->iq->project}->state->exp_guinier;
+        if ( json_encode( (array) ( $stored->params ?? [] ) ) != json_encode( $guinier_params ) ) {
+            if ( ( $stored->origin ?? "" ) == "loadsaxs" ) {
+                $output->_textarea .= "The experimental Guinier Rg keeps the settings chosen on Load SAXS.\n";
+            } else {
+                $need_exp_guinier = true;
+                $output->_textarea .= "The experimental Guinier Rg is redetermined with the new settings for this run.\n";
+            }
+        }
+    }
+}
+
+$model_guinier_params = guinier_model_params( $guinier_params );
+foreach ( $missing_names as $name ) {
+    $r = null;
+    if ( $sas->guinier_search( $name, $r, $model_guinier_params ) ) {
+        $notes_rgs[ $name ] = (object)[
+            'rg'        => $r->rg
+            ,'rg_sd'    => $r->rg_sd
+            ,'rg_solute' => null
+            ,'source'   => 'guinier'
+            ,'quality'  => $r->quality
+            ,'qrgmax'   => $r->qrgmax
+        ];
+        $guinier_rg_names[] = $name;
+    } else {
+        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for " . curve_name_text( $name ) . ": " . $sas->last_error . "\n";
+    }
+}
+if ( count( $guinier_rg_names ) ) {
+    $output->_textarea .=
+        "Solvated Rg from a Guinier fit of the WAXSiS curve (no WAXSiS log) for "
+        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n";
 }
 
 $rg_map       = [];
@@ -687,6 +788,31 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
             "Rg"           => $prrg
             ,"color"       => "brown"
             ,"rg_qualifier" => ""
+            ,"row"         => 2
+        ];
+}
+
+## experimental Guinier Rg: from the project state when Load SAXS cached it, else computed now from the loaded curve
+$exp_guinier_rg = null;
+if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
+    $exp_guinier_rg = $cgstates->{$best->iq->project}->state->exp_guinier->rg;
+} elseif ( $need_exp_guinier ) {
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "$firstproject: Exp. I(q)", $exp_guinier, $guinier_params ) ) {
+        $exp_guinier_rg = $exp_guinier->rg;
+        $output->_textarea .= "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n";
+    } else {
+        $output->_textarea .= "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
+    }
+}
+if ( $exp_guinier_rg !== null ) {
+    $rgdata->{ "Exp. I(q)<br>Project " . $best->iq->project . "<br>Guinier" } =
+        (object) [
+            "Rg"           => $exp_guinier_rg
+            ,"color"       => "red"
+            ,"label"       => "Exp. I(q) Guinier"
+            ,"rg_qualifier" => ""
+            ,"row"         => 2
         ];
 }
 

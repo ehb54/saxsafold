@@ -328,8 +328,13 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ,"title" => [
                                                "text" => ""
                                            ]
-                                           ,"visible"        => false
+                                           ,"visible"        => true
                                            ,"showline"       => false
+                                           ,"range"          => [ 0.8, 1.8 ]
+                                           ,"zeroline"       => false
+                                           ,"tickvals"       => [ 1, 1.5 ]
+                                           ,"ticktext"       => [ "computed", "expt." ]
+                                           ,"tickfont"       => [ "size" => 9 ]
                                        ]
                                       ]
                 );
@@ -347,13 +352,13 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                           ] );
                                            
-            $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
+            $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
             $plot->layout->showlegend         = true;
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
             $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-            $plot->layout->yaxis2->domain     = [ 0.5, .9 ];
-            $plot->layout->yaxis3->domain     = [ 0.915, 1 ];
+            $plot->layout->yaxis2->domain     = [ 0.5, .86 ];
+            $plot->layout->yaxis3->domain     = [ 0.87, 0.97 ];   ## marker strip: two rows of triangles, just above the bars
             $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
 #            $plot->layout->barmode            = "group";
@@ -454,11 +459,15 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
             }
             $rg_use_ordinate = [];
             
+            ## markers: experimental Rg values on the upper row ( row 2 ), computed on the lower row ( row 1 ),
+            ## coincident abscissae stacked by .2 within a row
             foreach ( $rgdata as $k => $v ) {
                 $rg_abscissa                     = sprintf( "%.1f", $v->Rg );
-                $rg_use_ordinate[ $rg_abscissa ] = isset( $rg_use_ordinate[ $rg_abscissa ] ) ? $rg_use_ordinate[ $rg_abscissa ] + .2 : 1;
+                $rg_row                          = isset( $v->row ) && $v->row == 2 ? 1.5 : 1;   ## row 2 ( expt. ) sits at 1.5
+                $rg_key                          = "$rg_row:$rg_abscissa";
+                $rg_use_ordinate[ $rg_key ]      = isset( $rg_use_ordinate[ $rg_key ] ) ? $rg_use_ordinate[ $rg_key ] + .12 : $rg_row;
                 $plot->data[3]->x[]              = floatval( $rg_abscissa );
-                $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_abscissa ];
+                $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_key ];
                 $plot->data[3]->customdata[]     = [ isset( $v->label ) ? $v->label : $k, $v->rg_qualifier ?? "" ];
                 $plot->data[3]->marker->color[]  = $v->color;
             }
@@ -722,8 +731,13 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                    ,"title" => [
                                        "text" => ""
                                    ]
-                                   ,"visible"        => false
+                                   ,"visible"        => true
                                    ,"showline"       => false
+                                   ,"range"          => [ 0.8, 1.8 ]
+                                   ,"zeroline"       => false
+                                   ,"tickvals"       => [ 1, 1.5 ]
+                                   ,"ticktext"       => [ "computed", "expt." ]
+                                   ,"tickfont"       => [ "size" => 9 ]
                                ]
                               ]
         );
@@ -742,13 +756,13 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                   ] );
 
 
-    $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
+    $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
     $plot->layout->showlegend         = true;
 
     $plot->layout->yaxis->title->text = "Norm. Frequency";
     $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-    $plot->layout->yaxis2->domain     = [ 0.5, .9 ];
-    $plot->layout->yaxis3->domain     = [ 0.915, 1 ];
+    $plot->layout->yaxis2->domain     = [ 0.5, .86 ];
+    $plot->layout->yaxis3->domain     = [ 0.87, 0.97 ];   ## marker strip: two rows of triangles, just above the bars
     $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
     #            $plot->layout->barmode            = "group";
@@ -858,11 +872,14 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
     }
     $rg_use_ordinate = [];
     
+    ## markers: experimental Rg values on the upper row ( row 2 ), computed on the lower row ( row 1 )
     foreach ( $rgdata as $k => $v ) {
         $rg_abscissa                     = sprintf( "%.1f", $v->Rg );
-        $rg_use_ordinate[ $rg_abscissa ] = isset( $rg_use_ordinate[ $rg_abscissa ] ) ? $rg_use_ordinate[ $rg_abscissa ] + .2 : 1;
+        $rg_row                          = isset( $v->row ) && $v->row == 2 ? 1.5 : 1;   ## row 2 ( expt. ) sits at 1.5
+        $rg_key                          = "$rg_row:$rg_abscissa";
+        $rg_use_ordinate[ $rg_key ]      = isset( $rg_use_ordinate[ $rg_key ] ) ? $rg_use_ordinate[ $rg_key ] + .12 : $rg_row;
         $plot->data[3]->x[]              = floatval( $rg_abscissa );
-        $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_abscissa ];
+        $plot->data[3]->y[]              = $rg_use_ordinate[ $rg_key ];
         $plot->data[3]->customdata[]     = [ isset( $v->label ) ? $v->label : $k, $v->rg_qualifier ?? "" ];
         $plot->data[3]->marker->color[]  = $v->color;
     }
