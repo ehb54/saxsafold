@@ -109,8 +109,12 @@ if (
             }
         }
     }
-    if ( isset( $guinier_params[ 'qmin' ] ) && isset( $guinier_params[ 'qmax' ] ) && $guinier_params[ 'qmin' ] >= $guinier_params[ 'qmax' ] ) {
-        error_exit( "Guinier q^2 min must be below Guinier q^2 max" );
+    if ( isset( $guinier_params[ 'qmin' ] ) && isset( $guinier_params[ 'qmax' ] ) ) {
+        if ( $guinier_params[ 'qmin' ] >= $guinier_params[ 'qmax' ] ) {
+            error_exit( "Guinier q^2 min must be below Guinier q^2 max" );
+        }
+        ## both limits given: fit exactly that range ( one limit only bounds the search )
+        $guinier_params[ 'fixed' ] = 1;
     }
 
     $exp_guinier = null;

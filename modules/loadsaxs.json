@@ -260,7 +260,7 @@
             ,"id"        : "guinier_adjust"
             ,"label"     : "Adjust the Guinier settings and resubmit"
             ,"type"      : "checkbox"
-            ,"help"      : "The Guinier range is found automatically. Turn this on to set the q<sup>2</sup> limits, the q&middot;R<sub>g</sub> limit or a maximum relative error yourself, then press Submit again."
+            ,"help"      : "The Guinier range is found automatically. Turn this on to set the q<sup>2</sup> limits (both = fit exactly that range), the q&middot;R<sub>g</sub> limit or a maximum relative error yourself, then press Submit again."
             ,"repeater"  : "true"
             ,"layout" : {
                 "parent" : "resultpanel"
@@ -272,7 +272,7 @@
             ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i><sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
-            ,"help"      : "Lower q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = from the first point."
+            ,"help"      : "Lower q<sup>2</sup> limit, as read on the Guinier plot. With both limits set the fit uses exactly that range; with one limit the search is bounded by it. Empty = from the first point."
             ,"layout" : {
                 "parent" : "resultpanel"
             }
@@ -283,7 +283,7 @@
             ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i><sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
             ,"type"      : "text"
-            ,"help"      : "Upper q<sup>2</sup> limit of the automatic Guinier range search, as read on the Guinier plot. Empty = no limit beyond q&middot;R<sub>g</sub> max."
+            ,"help"      : "Upper q<sup>2</sup> limit, as read on the Guinier plot. With both limits set the fit uses exactly that range; with one limit the search is bounded by it. Empty = no limit beyond q&middot;R<sub>g</sub> max."
             ,"layout" : {
                 "parent" : "resultpanel"
             }

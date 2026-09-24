@@ -2238,7 +2238,7 @@ class SAS {
                     [ "gridcolor" => "rgba(111,111,111,0.5)", "title" => [ "text" => "ln I(q)" ] ]
                     ,$yrange ? [ "range" => $yrange ] : []
                 )
-                ,"legend"       => [ "orientation" => "h" ]
+                ,"legend"       => [ "orientation" => "h", "x" => 1, "y" => 1, "xanchor" => "right", "yanchor" => "top", "bgcolor" => "rgba(0,0,0,0)" ]
             ]
             ,"config" => [
                 "showLink"     => false
