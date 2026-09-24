@@ -744,17 +744,67 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the stored WAXSiS curve
+## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the stored WAXSiS curve;
+## experimental Guinier Rg when Load SAXS did not cache one. Both use the same Guinier settings, asked
+## from the user once ( prefilled with the last settings ), so all the Rg values are determined alike.
 $guinier_rg_names = [];
-{
-    $missing_names = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
-    $guinier_files = [];
-    foreach ( $missing_names as $name ) {
-        if ( isset( $iqfile_by_name[ $name ] ) && file_exists( $iqfile_by_name[ $name ] ) ) {
-            $guinier_files[ $name ] = $iqfile_by_name[ $name ];
-        }
+$missing_names    = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
+$guinier_files    = [];
+foreach ( $missing_names as $name ) {
+    if ( isset( $iqfile_by_name[ $name ] ) && file_exists( $iqfile_by_name[ $name ] ) ) {
+        $guinier_files[ $name ] = $iqfile_by_name[ $name ];
     }
-    ## cached fits ( keyed by file, invalidated when the file changes ) are reused; the rest are computed now
+}
+$need_exp_guinier = !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" );
+$guinier_params   = [];
+
+if ( count( $guinier_files ) || $need_exp_guinier ) {
+    $last = [];
+    if ( isset( $cgstate->state->final_guinier_params ) ) {
+        $last = (array) $cgstate->state->final_guinier_params;
+    } elseif ( isset( $cgstate->state->exp_guinier->params ) ) {
+        $last = (array) $cgstate->state->exp_guinier->params;
+    }
+    $what = [];
+    if ( count( $guinier_files ) ) {
+        $what[] = "the solvated R<sub>g</sub> of " . count( $guinier_files ) . " model(s) without a WAXSiS log, from their stored WAXSiS curves";
+    }
+    if ( $need_exp_guinier ) {
+        $what[] = "the R<sub>g</sub> of the experimental I(q)";
+    }
+    $response =
+        json_decode(
+            $ga->tcpquestion(
+                [
+                 "id"           => "q1"
+                 ,"title"       => "<h5>Guinier settings</h5>"
+                 ,"icon"        => "noicon.png"
+                 ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
+                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page.<hr>"
+                 ,"timeouttext" => "The time to respond has expired, please submit again."
+                 ,"buttons"     => [ "Use these settings", "Cancel for now" ]
+                 ,"fields"      => guinier_question_fields( $last )
+                ]
+            )
+        );
+    if ( isset( $response->error ) && strlen( $response->error ) ) {
+        error_exit( "Please submit again", true, $restore_old_data );
+    }
+    if ( !isset( $response->_response->button ) || $response->_response->button != "usethesesettings" ) {
+        error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
+    }
+    $guinier_err    = "";
+    $guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
+    if ( strlen( $guinier_err ) ) {
+        error_exit( $guinier_err, true, $restore_old_data );
+    }
+    $cgstate->state->final_guinier_params = (object) $guinier_params;
+    $ga->tcpmessage( [ $textarea_key => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
+}
+$guinier_signature = json_encode( $guinier_params );
+
+{
+    ## cached fits ( keyed by file, invalidated when the file or the settings change ) are reused; the rest are computed now
     if ( !isset( $cgstate->state->waxsis_guinier_cache ) ) {
         $cgstate->state->waxsis_guinier_cache = (object)[];
     }
@@ -762,7 +812,9 @@ $guinier_rg_names = [];
     $guinier_results = [];
     $to_compute      = [];
     foreach ( $guinier_files as $name => $file ) {
-        if ( isset( $cache->$file ) && $cache->$file->mtime == filemtime( $file ) ) {
+        if ( isset( $cache->$file )
+             && $cache->$file->mtime == filemtime( $file )
+             && ( $cache->$file->signature ?? "" ) == $guinier_signature ) {
             $guinier_results[ $file ] = $cache->$file;
         } else {
             $to_compute[] = $file;
@@ -770,17 +822,18 @@ $guinier_rg_names = [];
     }
     if ( count( $to_compute ) ) {
         $computed = [];
-        if ( $sas->guinier_search_files( $to_compute, $computed ) ) {
+        if ( $sas->guinier_search_files( $to_compute, $computed, $guinier_params ) ) {
             foreach ( $computed as $file => $r ) {
                 $guinier_results[ $file ] = $r;
                 if ( $r->ok ) {
                     $cache->$file = (object)[
-                        'ok'      => true
-                        ,'rg'     => $r->rg
-                        ,'rg_sd'  => $r->rg_sd
-                        ,'quality' => $r->quality
-                        ,'qrgmax' => $r->qrgmax
-                        ,'mtime'  => filemtime( $file )
+                        'ok'        => true
+                        ,'rg'       => $r->rg
+                        ,'rg_sd'    => $r->rg_sd
+                        ,'quality'  => $r->quality
+                        ,'qrgmax'   => $r->qrgmax
+                        ,'mtime'    => filemtime( $file )
+                        ,'signature' => $guinier_signature
                     ];
                 }
             }
@@ -815,11 +868,12 @@ $guinier_rg_names = [];
     }
 }
 
-## experimental Guinier Rg: the value cached by Load SAXS, else computed now from the loaded curve and cached in state
+## experimental Guinier Rg: the value cached by Load SAXS, else computed now with the settings above and cached in state
 ## ( must run here: the SAS object is replaced by a P(r)-only one further down )
-if ( !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
+if ( $need_exp_guinier ) {
     $exp_guinier = null;
-    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier ) ) {
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
+        $exp_guinier->params         = (object) $guinier_params;
         $cgstate->state->exp_guinier = $exp_guinier;
         $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n" ] );
     } else {

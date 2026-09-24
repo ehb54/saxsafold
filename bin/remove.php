@@ -73,6 +73,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             $toclear[] = "iq_waxsis_nnlsresults";
             $toclear[] = "output_final";
             $toclear[] = "iq_waxsis_nnlsresults_colors";
+            $toclear[] = "final_guinier_params";
         }
 
         break;
@@ -186,6 +187,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             case "iq_waxsis_nnlsresults" :
             case "output_final" :
             case "iq_waxsis_nnlsresults_colors" :
+            case "final_guinier_params" :
             {
                 $title = "Final model selection using WAXSiS";
                 if ( !isset( $reported[ $title ] ) ) {

@@ -97,24 +97,14 @@ if (
 
     ## experimental Guinier Rg via US-SOMO Guinier search, kept in state for the final Rg plots
     ## optional Guinier controls from the form ( empty = the search's defaults ); recorded with the result
+    ## optional Guinier controls from the form ( only when "adjust" is on; empty = the search's defaults )
     $guinier_params = [];
-    ## the form takes q^2 limits ( what the Guinier plot shows ); the search takes q
-    foreach ( [ 'guinier_q2min' => 'qmin', 'guinier_q2max' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
-        if ( isset( $input->guinier_adjust ) && isset( $input->$field ) && strlen( trim( $input->$field ) ) ) {
-            if ( !is_numeric( trim( $input->$field ) ) || floatval( $input->$field ) < 0 ) {
-                error_exit( "Guinier setting '$field' must be a non-negative number" );
-            }
-            if ( floatval( $input->$field ) > 0 ) {
-                $guinier_params[ $key ] = ( $key == 'qmin' || $key == 'qmax' ) ? sqrt( floatval( $input->$field ) ) : floatval( $input->$field );
-            }
+    if ( isset( $input->guinier_adjust ) ) {
+        $guinier_err    = "";
+        $guinier_params = guinier_params_from_fields( $input, $guinier_err );
+        if ( strlen( $guinier_err ) ) {
+            error_exit( $guinier_err );
         }
-    }
-    if ( isset( $guinier_params[ 'qmin' ] ) && isset( $guinier_params[ 'qmax' ] ) ) {
-        if ( $guinier_params[ 'qmin' ] >= $guinier_params[ 'qmax' ] ) {
-            error_exit( "Guinier q^2 min must be below Guinier q^2 max" );
-        }
-        ## both limits given: fit exactly that range ( one limit only bounds the search )
-        $guinier_params[ 'fixed' ] = 1;
     }
 
     $exp_guinier = null;
