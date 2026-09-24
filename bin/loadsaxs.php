@@ -56,6 +56,9 @@ $restore_old_data = function() {
         if ( isset( $cgstate->state->output_loadsaxs->prplot ) ) {
             $obj->prplot = $cgstate->state->output_loadsaxs->prplot;
         }
+        if ( isset( $cgstate->state->output_loadsaxs->guinierplot ) ) {
+            $obj->guinierplot = $cgstate->state->output_loadsaxs->guinierplot;
+        }
     }
     
     $ga->tcpmessage( $obj );
@@ -91,6 +94,35 @@ if (
     $qmax = sprintf( "%.4f", $qmax );
     
     $sas->annotate_plot( "I(q)", pathinfo( $iqfile, PATHINFO_BASENAME ) . "  <i>q<sub>max</sub></i> = $qmax &#x212B;<sup>-1</sup>" );
+
+    ## experimental Guinier Rg via US-SOMO Guinier search, kept in state for the final Rg plots
+    ## optional Guinier controls from the form ( empty = the search's defaults ); recorded with the result
+    ## optional Guinier controls from the form ( only when "adjust" is on; empty = the search's defaults )
+    $guinier_params = [];
+    if ( isset( $input->guinier_adjust ) ) {
+        $guinier_err    = "";
+        $guinier_params = guinier_params_from_fields( $input, $guinier_err );
+        if ( strlen( $guinier_err ) ) {
+            error_exit( $guinier_err );
+        }
+    }
+
+    $exp_guinier = null;
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
+        $exp_guinier->params = (object) $guinier_params;
+        $exp_guinier->origin = 'loadsaxs';
+        $cgstate->state->exp_guinier = $exp_guinier;
+        ## the summary is the title of the Guinier plot; a second annotation line on the I(q) plot
+        ## spills below that plot and collides with the Guinier plot placed under it
+        $output->_textarea = ( $output->_textarea ?? "" )
+            . "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n"
+            . ( count( $guinier_params ) ? "  Guinier settings: " . json_encode( $guinier_params ) . "\n" : "" )
+            . ( count( $exp_guinier->warnings ) ? "  " . implode( "\n  ", $exp_guinier->warnings ) . "\n" : "" );
+        $output->guinierplot = $sas->guinier_search_plot( "Exp. I(q)", $exp_guinier, "Guinier plot of " . pathinfo( $iqfile, PATHINFO_BASENAME ) );
+    } else {
+        unset( $cgstate->state->exp_guinier );
+        $output->_textarea = ( $output->_textarea ?? "" ) . "Guinier Rg of the experimental I(q) not computed: " . $sas->last_error . "\n";
+    }
 
     $output->iqplot = $sas->plot( "I(q)" );
 } else {

@@ -35,6 +35,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             $toclear[] = "output_loadsaxs";
             $toclear[] = "saxsiqfile";
             $toclear[] = "saxsprfile";
+            $toclear[] = "exp_guinier";
         }
         case  "loadstructure" : {
             $toclear[] = "solvent_e_density";
@@ -51,6 +52,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             $toclear[] = "mmcdownloaded";
             $toclear[] = "mmcstride";
             $toclear[] = "mmcoffset";
+            $toclear[] = "waxsis_guinier_cache";
             $toremove[] = "waxsissets";
             $toremove[] = "preselected";
         }
@@ -71,6 +73,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             $toclear[] = "iq_waxsis_nnlsresults";
             $toclear[] = "output_final";
             $toclear[] = "iq_waxsis_nnlsresults_colors";
+            $toclear[] = "final_guinier_params";
         }
 
         break;
@@ -109,6 +112,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             case "output_loadsaxs" :
             case "saxsiqfile" :
             case "saxsprfile" :
+            case "exp_guinier" :
             {
                 $title = "Load SAXS";
                 if ( !isset( $reported[ $title  ] ) ) {
@@ -146,6 +150,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             case "mmcdownloaded" :
             case "mmcstride" :
             case "mmcoffset" :
+            case "waxsis_guinier_cache" :
             {
                 $title = "Run MMC";
                 if ( !isset( $reported[ $title ] ) ) {
@@ -182,6 +187,7 @@ function any_prior_results( $name, &$toclear, &$toremove, &$moduleswithresults )
             case "iq_waxsis_nnlsresults" :
             case "output_final" :
             case "iq_waxsis_nnlsresults_colors" :
+            case "final_guinier_params" :
             {
                 $title = "Final model selection using WAXSiS";
                 if ( !isset( $reported[ $title ] ) ) {
@@ -294,13 +300,6 @@ function question_prior_results( $name, $removecb = null, $labeladdition = '' ) 
                 error_exit( "Please submit again", true, $removecb );
             }
 
-            if ( $response->_response->button == "erasepreviousresults" ) {
-                $cgstate->state               = (object)[];
-                $cgstate->state->loaded       = true;
-                $cgstate->state->description  = $input->desc;
-                unset( $toclear->loaded );
-                unset( $toclear->description );
-            }
             return true;
         } else {
 #            error_exit( "Canceled '$usename'" );
@@ -308,8 +307,17 @@ function question_prior_results( $name, $removecb = null, $labeladdition = '' ) 
         }
     }
 
-    foreach ( $toclear as $v ) {
-        unset( $cgstate->state->$v );
+    if ( $usename == "defineproject" ) {
+        ## erase chosen while (re)defining: start from a clean state that is still a defined project.
+        ## ( this used to sit inside the "keep" branch where it could never run, so the generic loop below
+        ##   also unset "loaded" and the next module reported the project as undefined )
+        $cgstate->state               = (object)[];
+        $cgstate->state->loaded       = true;
+        $cgstate->state->description  = $input->desc;
+    } else {
+        foreach ( $toclear as $v ) {
+            unset( $cgstate->state->$v );
+        }
     }
 
     if ( count( $toremove ) ) {

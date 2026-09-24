@@ -186,6 +186,68 @@ function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_str
     $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
+## Guinier settings shared by Load SAXS ( form fields ) and Final model ( question dialog ):
+## guinier_q2min, guinier_q2max [A^-2], guinier_qrgmax, guinier_maxrelsd. Returns the guinier_search
+## parameter array ( q limits converted from q^2, both limits -> fixed range ); $err set on bad input.
+function guinier_params_from_fields( $obj, &$err ) {
+    $err    = "";
+    $params = [];
+    foreach ( [ 'guinier_q2min' => 'qmin', 'guinier_q2max' => 'qmax', 'guinier_qrgmax' => 'qrgmax', 'guinier_maxrelsd' => 'maxrelsd' ] as $field => $key ) {
+        if ( isset( $obj->$field ) && strlen( trim( $obj->$field ) ) ) {
+            if ( !is_numeric( trim( $obj->$field ) ) || floatval( $obj->$field ) < 0 ) {
+                $err = "Guinier setting '$field' must be a non-negative number";
+                return [];
+            }
+            if ( floatval( $obj->$field ) > 0 ) {
+                $params[ $key ] = ( $key == 'qmin' || $key == 'qmax' ) ? sqrt( floatval( $obj->$field ) ) : floatval( $obj->$field );
+            }
+        }
+    }
+    if ( isset( $params[ 'qmin' ] ) && isset( $params[ 'qmax' ] ) ) {
+        if ( $params[ 'qmin' ] >= $params[ 'qmax' ] ) {
+            $err = "Guinier q^2 min must be below Guinier q^2 max";
+            return [];
+        }
+        $params[ 'fixed' ] = 1;
+    }
+    return $params;
+}
+
+## the model (WAXSiS curve) fits use the automatic search from the first point with only the q*Rg limit and
+## the relative-error cut-off; the q^2 limits ( and the exact-range mode ) apply to the experimental curve only,
+## because the Guinier slopes of differently extended models vary too much for one fixed range
+function guinier_model_params( $params ) {
+    $model = [];
+    foreach ( [ 'qrgmax', 'maxrelsd' ] as $k ) {
+        if ( isset( $params[ $k ] ) ) {
+            $model[ $k ] = $params[ $k ];
+        }
+    }
+    return $model;
+}
+
+## the same settings as text fields for a $ga->tcpquestion() dialog, prefilled from a parameter array
+function guinier_question_fields( $params = [] ) {
+    $q2 = function( $k ) use ( $params ) { return isset( $params[ $k ] ) ? sprintf( "%.6f", $params[ $k ] * $params[ $k ] ) : ""; };
+    return [
+        [ "id" => "guinier_q2min", "type" => "text", "label" => "Guinier q<sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
+          ,"default" => $q2( 'qmin' ), "help" => "Experimental curve only. With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
+        ,[ "id" => "guinier_q2max", "type" => "text", "label" => "Guinier q<sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
+           ,"default" => $q2( 'qmax' ), "help" => "Experimental curve only. With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
+        ,[ "id" => "guinier_qrgmax", "type" => "text", "label" => "Guinier q&middot;R<sub>g</sub> max (optional)"
+           ,"default" => isset( $params[ 'qrgmax' ] ) ? sprintf( "%g", $params[ 'qrgmax' ] ) : "", "help" => "Applies to every fit. In the search, empty = 1.3; with both q<sup>2</sup> limits set it trims the end of that range and empty = no limit. Use about 1.0 for elongated or flexible particles." ]
+        ,[ "id" => "guinier_maxrelsd", "type" => "text", "label" => "Guinier: exclude points with relative error above (optional)"
+           ,"default" => isset( $params[ 'maxrelsd' ] ) ? sprintf( "%g", $params[ 'maxrelsd' ] ) : "", "help" => "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out. Empty = keep every point." ]
+    ];
+}
+
+## plain-text form of a curve name for the log textarea, where html is shown verbatim:
+## "I(q)<sub>W</sub> mod. 1926" -> "model 1926", "proj: name WAXSiS mod. 3" unchanged apart from tags
+function curve_name_text( $name ) {
+    $name = preg_replace( '/I\(q\)<sub>W<\/sub> mod\. /', 'model ', $name );
+    return strip_tags( $name );
+}
+
 function nnls_results_to_html( $obj, $rg_map = null, $rg_header = 'Rg [&#8491;]' ) {
     $show_rg = !empty( $rg_map );
     $rg_th   = $show_rg ? "<th style='padding:0 15px 0 15px'>$rg_header</th>" : "";

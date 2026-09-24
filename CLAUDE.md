@@ -95,7 +95,7 @@ The working directory when a script runs is the project's data directory (where 
 Central class for SAXS data management and Plotly figure construction.
 
 **Constructor:** `new SAS( $debug = false, $exit_on_error = true )`  
-With `SAS(false)` errors return `false` silently instead of calling `exit`.
+The first argument is `$debug`. Errors return `false` silently instead of calling `exit` only with `new SAS( false, false )`; the usual `new SAS( false )` still exits with a toast message on any SAS error.
 
 **Internal stores:**
 - `$data` — named data store: each entry has `->x`, `->y`, optionally `->error_y`, `->type` (`PLOT_IQ=0` or `PLOT_PR=1`)
