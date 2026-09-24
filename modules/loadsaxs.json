@@ -294,7 +294,7 @@
             ,"repeat"    : "guinier_adjust"
             ,"label"     : "Guinier <i>q</i>&middot;<i>R<sub>g</sub></i> max (optional)"
             ,"type"      : "text"
-            ,"help"      : "Maximum q&middot;R<sub>g</sub> at the end of the fitted range. Empty = 1.3. Use about 1.0 for elongated or flexible particles."
+            ,"help"      : "Maximum q&middot;R<sub>g</sub> at the end of the fitted range. In the search, empty = 1.3; with both q<sup>2</sup> limits set it trims the end of that range and empty = no limit. Use about 1.0 for elongated or flexible particles."
             ,"layout" : {
                 "parent" : "resultpanel"
             }

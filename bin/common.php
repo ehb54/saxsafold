@@ -213,16 +213,29 @@ function guinier_params_from_fields( $obj, &$err ) {
     return $params;
 }
 
+## the model (WAXSiS curve) fits use the automatic search from the first point with only the q*Rg limit and
+## the relative-error cut-off; the q^2 limits ( and the exact-range mode ) apply to the experimental curve only,
+## because the Guinier slopes of differently extended models vary too much for one fixed range
+function guinier_model_params( $params ) {
+    $model = [];
+    foreach ( [ 'qrgmax', 'maxrelsd' ] as $k ) {
+        if ( isset( $params[ $k ] ) ) {
+            $model[ $k ] = $params[ $k ];
+        }
+    }
+    return $model;
+}
+
 ## the same settings as text fields for a $ga->tcpquestion() dialog, prefilled from a parameter array
 function guinier_question_fields( $params = [] ) {
     $q2 = function( $k ) use ( $params ) { return isset( $params[ $k ] ) ? sprintf( "%.6f", $params[ $k ] * $params[ $k ] ) : ""; };
     return [
         [ "id" => "guinier_q2min", "type" => "text", "label" => "Guinier q<sup>2</sup> min [&#8491;<sup>-2</sup>] (optional)"
-          ,"default" => $q2( 'qmin' ), "help" => "With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
+          ,"default" => $q2( 'qmin' ), "help" => "Experimental curve only. With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
         ,[ "id" => "guinier_q2max", "type" => "text", "label" => "Guinier q<sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
-           ,"default" => $q2( 'qmax' ), "help" => "With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
+           ,"default" => $q2( 'qmax' ), "help" => "Experimental curve only. With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
         ,[ "id" => "guinier_qrgmax", "type" => "text", "label" => "Guinier q&middot;R<sub>g</sub> max (optional)"
-           ,"default" => isset( $params[ 'qrgmax' ] ) ? sprintf( "%g", $params[ 'qrgmax' ] ) : "", "help" => "Empty = 1.3. Use about 1.0 for elongated or flexible particles." ]
+           ,"default" => isset( $params[ 'qrgmax' ] ) ? sprintf( "%g", $params[ 'qrgmax' ] ) : "", "help" => "Applies to every fit. In the search, empty = 1.3; with both q<sup>2</sup> limits set it trims the end of that range and empty = no limit. Use about 1.0 for elongated or flexible particles." ]
         ,[ "id" => "guinier_maxrelsd", "type" => "text", "label" => "Guinier: exclude points with relative error above (optional)"
            ,"default" => isset( $params[ 'maxrelsd' ] ) ? sprintf( "%g", $params[ 'maxrelsd' ] ) : "", "help" => "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out. Empty = keep every point." ]
     ];

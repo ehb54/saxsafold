@@ -780,7 +780,9 @@ if ( count( $guinier_files ) || $need_exp_guinier ) {
                  ,"title"       => "<h5>Guinier settings</h5>"
                  ,"icon"        => "noicon.png"
                  ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
-                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page.<hr>"
+                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
+                                   . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
+                                   . "with the q&middot;R<sub>g</sub> limit and the relative-error cut-off.<hr>"
                  ,"timeouttext" => "The time to respond has expired, please submit again."
                  ,"buttons"     => [ "Use these settings", "Cancel for now" ]
                  ,"fields"      => guinier_question_fields( $last )
@@ -815,7 +817,8 @@ if ( count( $guinier_files ) || $need_exp_guinier ) {
         }
     }
 }
-$guinier_signature = json_encode( $guinier_params );
+$model_guinier_params = guinier_model_params( $guinier_params );
+$guinier_signature    = json_encode( $model_guinier_params );
 
 {
     ## cached fits ( keyed by file, invalidated when the file or the settings change ) are reused; the rest are computed now
@@ -836,7 +839,7 @@ $guinier_signature = json_encode( $guinier_params );
     }
     if ( count( $to_compute ) ) {
         $computed = [];
-        if ( $sas->guinier_search_files( $to_compute, $computed, $guinier_params ) ) {
+        if ( $sas->guinier_search_files( $to_compute, $computed, $model_guinier_params ) ) {
             foreach ( $computed as $file => $r ) {
                 $guinier_results[ $file ] = $r;
                 if ( $r->ok ) {

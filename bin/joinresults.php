@@ -413,7 +413,9 @@ if ( count( $missing_names ) || $need_exp_guinier ) {
                  ,"title"       => "<h5>Guinier settings</h5>"
                  ,"icon"        => "noicon.png"
                  ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
-                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page.<hr>"
+                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
+                                   . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
+                                   . "with the q&middot;R<sub>g</sub> limit and the relative-error cut-off.<hr>"
                  ,"timeouttext" => "The time to respond has expired, please submit again."
                  ,"buttons"     => [ "Use these settings", "Cancel for now" ]
                  ,"fields"      => guinier_question_fields( $last )
@@ -448,9 +450,10 @@ if ( count( $missing_names ) || $need_exp_guinier ) {
     }
 }
 
+$model_guinier_params = guinier_model_params( $guinier_params );
 foreach ( $missing_names as $name ) {
     $r = null;
-    if ( $sas->guinier_search( $name, $r, $guinier_params ) ) {
+    if ( $sas->guinier_search( $name, $r, $model_guinier_params ) ) {
         $notes_rgs[ $name ] = (object)[
             'rg'        => $r->rg
             ,'rg_sd'    => $r->rg_sd
