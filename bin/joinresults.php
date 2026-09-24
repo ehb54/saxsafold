@@ -391,13 +391,13 @@ foreach ( array_keys( array_diff_key( $iqresults, $notes_rgs ) ) as $name ) {
         ];
         $guinier_rg_names[] = $name;
     } else {
-        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for $name: " . $sas->last_error . "\n";
+        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for " . curve_name_text( $name ) . ": " . $sas->last_error . "\n";
     }
 }
 if ( count( $guinier_rg_names ) ) {
     $output->_textarea .=
         "Solvated Rg from a Guinier fit of the WAXSiS curve (no WAXSiS log) for "
-        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n";
+        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n";
 }
 
 $rg_map       = [];

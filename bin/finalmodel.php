@@ -803,14 +803,14 @@ $guinier_rg_names = [];
                 $guinier_rg_names[] = $name;
             } else {
                 $ga->tcpmessage( [ $textarea_key =>
-                    "Guinier fit of the stored WAXSiS curve failed for $name: "
+                    "Guinier fit of the stored WAXSiS curve failed for " . curve_name_text( $name ) . ": "
                     . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
             }
         }
         if ( count( $guinier_rg_names ) ) {
             $ga->tcpmessage( [ $textarea_key =>
                 "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
-                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $guinier_rg_names ) . "\n" ] );
+                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n" ] );
         }
     }
 }
@@ -1153,13 +1153,13 @@ $output->$pr_recon_id = $sas->plot( $plotnamewaxsis );
 
 if ( count( $waxsis_failures ) ) {
     $msg =
-        "WAXSiS simulation failures occured on " . count( $waxsis_failures ) . " Models:\n"
-        . implode( ' ', $waxsis_failures ) . "'<br>"
-        . "These frames are excluded from the final NNLS fit<br>"
+        "WAXSiS simulation failures occurred on " . count( $waxsis_failures ) . " model(s): "
+        . implode( ' ', $waxsis_failures ) . "\n"
+        . "These frames are excluded from the final NNLS fit\n"
         ;
 
     $output->_message = [
-        "text" => $msg
+        "text" => str_replace( "\n", "<br>", $msg )
         ,"icon" => "warning.png"
         ];
 
