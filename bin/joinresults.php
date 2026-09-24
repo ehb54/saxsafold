@@ -432,6 +432,20 @@ if ( count( $missing_names ) || $need_exp_guinier ) {
         error_exit( $guinier_err );
     }
     $output->_textarea .= "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n";
+
+    ## a stored experimental Rg that Final model determined with other settings is redone for this run
+    if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg )
+         && $sas->data_name_exists( "$firstproject: Exp. I(q)" ) ) {
+        $stored = $cgstates->{$best->iq->project}->state->exp_guinier;
+        if ( json_encode( (array) ( $stored->params ?? [] ) ) != json_encode( $guinier_params ) ) {
+            if ( ( $stored->origin ?? "" ) == "loadsaxs" ) {
+                $output->_textarea .= "The experimental Guinier Rg keeps the settings chosen on Load SAXS.\n";
+            } else {
+                $need_exp_guinier = true;
+                $output->_textarea .= "The experimental Guinier Rg is redetermined with the new settings for this run.\n";
+            }
+        }
+    }
 }
 
 foreach ( $missing_names as $name ) {
@@ -777,7 +791,7 @@ if ( isset( $cgstates->{$best->pr->project}->state->output_load->prplot ) ) {
 
 ## experimental Guinier Rg: from the project state when Load SAXS cached it, else computed now from the loaded curve
 $exp_guinier_rg = null;
-if ( isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
+if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg ) ) {
     $exp_guinier_rg = $cgstates->{$best->iq->project}->state->exp_guinier->rg;
 } elseif ( $need_exp_guinier ) {
     $exp_guinier = null;

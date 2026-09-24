@@ -110,6 +110,7 @@ if (
     $exp_guinier = null;
     if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
         $exp_guinier->params = (object) $guinier_params;
+        $exp_guinier->origin = 'loadsaxs';
         $cgstate->state->exp_guinier = $exp_guinier;
         ## the summary is the title of the Guinier plot; a second annotation line on the I(q) plot
         ## spills below that plot and collides with the Guinier plot placed under it

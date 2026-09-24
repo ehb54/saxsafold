@@ -800,6 +800,20 @@ if ( count( $guinier_files ) || $need_exp_guinier ) {
     }
     $cgstate->state->final_guinier_params = (object) $guinier_params;
     $ga->tcpmessage( [ $textarea_key => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
+
+    ## an experimental Rg that Final model itself determined earlier is redone when the settings change,
+    ## so it stays consistent with the model fits; one from Load SAXS is the user's choice there and is kept
+    if ( !$need_exp_guinier && isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" ) ) {
+        $prev = json_encode( (array) ( $cgstate->state->exp_guinier->params ?? [] ) );
+        if ( $prev != json_encode( $guinier_params ) ) {
+            if ( ( $cgstate->state->exp_guinier->origin ?? "" ) == "loadsaxs" ) {
+                $ga->tcpmessage( [ $textarea_key => "The experimental Guinier Rg keeps the settings chosen on Load SAXS; resubmit there to change it.\n" ] );
+            } else {
+                $need_exp_guinier = true;
+                $ga->tcpmessage( [ $textarea_key => "The experimental Guinier Rg is redetermined with the new settings.\n" ] );
+            }
+        }
+    }
 }
 $guinier_signature = json_encode( $guinier_params );
 
@@ -874,6 +888,7 @@ if ( $need_exp_guinier ) {
     $exp_guinier = null;
     if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
         $exp_guinier->params         = (object) $guinier_params;
+        $exp_guinier->origin         = 'finalmodel';
         $cgstate->state->exp_guinier = $exp_guinier;
         $ga->tcpmessage( [ $textarea_key => "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n" ] );
     } else {
