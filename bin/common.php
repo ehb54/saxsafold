@@ -186,6 +186,13 @@ function progress_text( $msg, $decor = '&diams;&diams;&diams;', $just_return_str
     $ga->tcpmessage( [ 'progress_text' => $str ] );
 }
 
+## plain-text form of a curve name for the log textarea, where html is shown verbatim:
+## "I(q)<sub>W</sub> mod. 1926" -> "model 1926", "proj: name WAXSiS mod. 3" unchanged apart from tags
+function curve_name_text( $name ) {
+    $name = preg_replace( '/I\(q\)<sub>W<\/sub> mod\. /', 'model ', $name );
+    return strip_tags( $name );
+}
+
 function nnls_results_to_html( $obj, $rg_map = null, $rg_header = 'Rg [&#8491;]' ) {
     $show_rg = !empty( $rg_map );
     $rg_th   = $show_rg ? "<th style='padding:0 15px 0 15px'>$rg_header</th>" : "";
