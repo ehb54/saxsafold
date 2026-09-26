@@ -856,10 +856,14 @@ $guinier_signature    = json_encode( $model_guinier_params );
             }
         } else {
             $ga->tcpmessage( [ $textarea_key => "Guinier fit of the stored WAXSiS curves not available: " . $sas->last_error . "\n" ] );
+            $guinier_call_failed = true;
         }
     }
     if ( count( $guinier_files ) ) {
         foreach ( $guinier_files as $name => $file ) {
+            if ( !empty( $guinier_call_failed ) && !isset( $guinier_results[ $file ] ) ) {
+                continue;   ## already reported once above
+            }
             if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
                 $r = $guinier_results[ $file ];
                 $notes_rgs[ $name ] = (object)[
