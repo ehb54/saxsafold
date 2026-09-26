@@ -149,6 +149,7 @@ class SAS {
                     ,"genapp_plotly" : {
                         "linewidth"  : { "values" : [1, 2, 3, 4] }
                         ,"errorbars" : {}
+                        ,"fontsize"  : {}
                     }
                  }
             }'
@@ -244,6 +245,7 @@ class SAS {
                     ,"genapp_plotly" : {
                         "linewidth"  : { "values" : [1, 2, 3, 4] }
                         ,"errorbars" : {}
+                        ,"fontsize"  : {}
                     }
                  }
             }'
@@ -2244,7 +2246,7 @@ class SAS {
                 "showLink"     => false
                 ,"responsive" => true
                 ,"genapp_chart_editor" => [ "enabled" => true, "url" => "_cedit/_chart_edit.html", "target" => "_blank" ]
-                ,"genapp_plotly"       => [ "linewidth" => [ "values" => [ 1, 2, 3, 4 ] ], "errorbars" => (object)[] ]
+                ,"genapp_plotly"       => [ "linewidth" => [ "values" => [ 1, 2, 3, 4 ] ], "errorbars" => (object)[], "fontsize" => (object)[] ]
             ]
         ];
     }

@@ -87,6 +87,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                         ,"genapp_plotly" : {
                             "linewidth"  : { "values" : [1, 2, 3, 4] }
                             ,"errorbars" : {}
+                            ,"fontsize"  : {}
                         }
                      }
                 }'
@@ -158,6 +159,7 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                         ,"genapp_plotly" : {
                             "linewidth"  : { "values" : [1, 2, 3, 4] }
                             ,"errorbars" : {}
+                            ,"fontsize"  : {}
                         }
                      }
                 }'
