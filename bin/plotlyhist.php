@@ -352,7 +352,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                           ] );
                                            
-            $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
+            $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
             $plot->layout->showlegend         = true;
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
@@ -756,7 +756,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                   ] );
 
 
-    $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
+    $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
     $plot->layout->showlegend         = true;
 
     $plot->layout->yaxis->title->text = "Norm. Frequency";
