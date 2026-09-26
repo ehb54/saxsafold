@@ -399,6 +399,7 @@ function upgrade_plot_config( $config ) {
     $arr['genapp_plotly'] = (object) [
         "linewidth"  => (object) [ "values" => [1, 2, 3, 4] ]
         ,"errorbars" => (object) []
+        ,"fontsize"  => (object) []
     ];
 
     return (object) $arr;
