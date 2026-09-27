@@ -505,6 +505,9 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
 }
 
 $output->iqresultswaxsis = nnls_results_to_html( $iqresults, $rg_map ?: null, $rg_header );
+if ( $use_solvated ) {
+    $output->iqresultswaxsis .= "<small>" . rg_weighted_averages_html( $iqresults, $rg_map, "solvated" ) . "</small><br>";
+}
 
 $output->iqplotwaxsis = $sas->plot( $plotname );
 

@@ -241,6 +241,27 @@ function guinier_question_fields( $params = [] ) {
     ];
 }
 
+## the two weighted averages of the NNLS-selected models' Rg: root mean square ( sqrt of the weight-averaged Rg^2,
+## what a Guinier fit of the mixture measures, the value the histogram markers show ) and the plain weighted mean
+function rg_weighted_averages_html( $iqresults, $rg_of, $what ) {
+    $sw   = 0;
+    $s1   = 0;
+    $s2   = 0;
+    foreach ( $iqresults as $k => $w ) {
+        if ( !isset( $rg_of[ $k ] ) ) {
+            return "";
+        }
+        $sw += $w;
+        $s1 += $w * $rg_of[ $k ];
+        $s2 += $w * $rg_of[ $k ] * $rg_of[ $k ];
+    }
+    if ( $sw <= 0 ) {
+        return "";
+    }
+    return sprintf( "Weighted average %s Rg: %.1f &#8491; root mean square (&radic;&Sigma;<i>w</i>Rg<sup>2</sup>, what a Guinier fit of the mixture measures; the histogram marker), %.1f &#8491; linear mean (&Sigma;<i>w</i>Rg).",
+                    $what, sqrt( $s2 / $sw ), $s1 / $sw );
+}
+
 ## plain-text form of a curve name for the log textarea, where html is shown verbatim:
 ## "I(q)<sub>W</sub> mod. 1926" -> "model 1926", "proj: name WAXSiS mod. 3" unchanged apart from tags
 function curve_name_text( $name ) {

@@ -949,8 +949,8 @@ if ( $use_solvated ) {
         "<small>Solvated Rg"
         . ( $n_waxsis  ? " from the WAXSiS log for $n_waxsis model(s)" : "" )
         . ( $n_waxsis && $n_guinier ? ";" : "" )
-        . ( $n_guinier ? " from a Guinier fit of the stored WAXSiS curve (<i>qR<sub>g</sub></i> &le; 1.3) for $n_guinier model(s)" : "" )
-        . ".</small><br>";
+        . ( $n_guinier ? " from a Guinier fit of the stored WAXSiS curve for $n_guinier model(s)" : "" )
+        . ". " . rg_weighted_averages_html( $iqresults, $rg_map, "solvated" ) . "</small><br>";
 }
 
 ### save results to state
