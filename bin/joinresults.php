@@ -469,7 +469,7 @@ foreach ( $missing_names as $name ) {
 }
 if ( count( $guinier_rg_names ) ) {
     $output->_textarea .=
-        "Solvated Rg from a Guinier fit of the WAXSiS curve (no WAXSiS log) for "
+        "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the WAXSiS curve (no WAXSiS log) for "
         . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n";
 }
 

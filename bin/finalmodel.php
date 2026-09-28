@@ -883,7 +883,7 @@ $guinier_signature    = json_encode( $model_guinier_params );
         }
         if ( count( $guinier_rg_names ) ) {
             $ga->tcpmessage( [ $textarea_key =>
-                "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
+                "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve (no WAXSiS log) for "
                 . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n" ] );
         }
     }
@@ -949,7 +949,7 @@ if ( $use_solvated ) {
         "<small>Solvated Rg"
         . ( $n_waxsis  ? " from the WAXSiS log for $n_waxsis model(s)" : "" )
         . ( $n_waxsis && $n_guinier ? ";" : "" )
-        . ( $n_guinier ? " from a Guinier fit of the stored WAXSiS curve for $n_guinier model(s)" : "" )
+        . ( $n_guinier ? " from a Guinier fit (q&middot;R<sub>g</sub> &le; " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve for $n_guinier model(s)" : "" )
         . ". " . rg_weighted_averages_html( $iqresults, $rg_map, "solvated" ) . "</small><br>";
 }
 

@@ -215,13 +215,20 @@ function guinier_params_from_fields( $obj, &$err ) {
 
 ## the model (WAXSiS curve) fits use the automatic search from the first point with only the q*Rg limit and
 ## the relative-error cut-off; the q^2 limits ( and the exact-range mode ) apply to the experimental curve only,
-## because the Guinier slopes of differently extended models vary too much for one fixed range
+## because the Guinier slopes of differently extended models vary too much for one fixed range.
+## The q*Rg limit of the model fits is capped at GUINIER_MODEL_QRGMAX: the computed curves are smooth, so the
+## fit can stay close to q = 0, where the Guinier approximation holds for every shape. Out to q*Rg 1.3 the
+## Guinier plot of an extended or flexible chain curves upward and the fitted Rg comes out low by several %
+## ( a sphere's comes out high by ~1.5% ); at 0.5 the residual bias is about 1%.
+define( "GUINIER_MODEL_QRGMAX", 0.5 );
+
 function guinier_model_params( $params ) {
-    $model = [];
-    foreach ( [ 'qrgmax', 'maxrelsd' ] as $k ) {
-        if ( isset( $params[ $k ] ) ) {
-            $model[ $k ] = $params[ $k ];
-        }
+    $model = [ 'qrgmax' => GUINIER_MODEL_QRGMAX ];
+    if ( isset( $params[ 'qrgmax' ] ) && $params[ 'qrgmax' ] > 0 && $params[ 'qrgmax' ] < GUINIER_MODEL_QRGMAX ) {
+        $model[ 'qrgmax' ] = $params[ 'qrgmax' ];
+    }
+    if ( isset( $params[ 'maxrelsd' ] ) ) {
+        $model[ 'maxrelsd' ] = $params[ 'maxrelsd' ];
     }
     return $model;
 }
@@ -235,7 +242,7 @@ function guinier_question_fields( $params = [] ) {
         ,[ "id" => "guinier_q2max", "type" => "text", "label" => "Guinier q<sup>2</sup> max [&#8491;<sup>-2</sup>] (optional)"
            ,"default" => $q2( 'qmax' ), "help" => "Experimental curve only. With both limits set the fit uses exactly that range; with one limit the search is bounded by it." ]
         ,[ "id" => "guinier_qrgmax", "type" => "text", "label" => "Guinier q&middot;R<sub>g</sub> max (optional)"
-           ,"default" => isset( $params[ 'qrgmax' ] ) ? sprintf( "%g", $params[ 'qrgmax' ] ) : "", "help" => "Applies to every fit. In the search, empty = 1.3; with both q<sup>2</sup> limits set it trims the end of that range and empty = no limit. Use about 1.0 for elongated or flexible particles." ]
+           ,"default" => isset( $params[ 'qrgmax' ] ) ? sprintf( "%g", $params[ 'qrgmax' ] ) : "", "help" => "Applies to the experimental fit. In the search, empty = 1.3; with both q<sup>2</sup> limits set it trims the end of that range and empty = no limit. Use about 1.0 for elongated or flexible particles. The fits of the model (WAXSiS) curves use at most " . GUINIER_MODEL_QRGMAX . ", or this value when it is smaller." ]
         ,[ "id" => "guinier_maxrelsd", "type" => "text", "label" => "Guinier: exclude points with relative error above (optional)"
            ,"default" => isset( $params[ 'maxrelsd' ] ) ? sprintf( "%g", $params[ 'maxrelsd' ] ) : "", "help" => "Points whose SD / I(q) exceeds this fraction (e.g. 0.1) are left out. Empty = keep every point." ]
     ];
