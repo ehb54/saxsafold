@@ -373,12 +373,15 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the loaded WAXSiS curve;
-## experimental Guinier Rg when the best project's Load SAXS did not cache one. As in Final model, the
-## Guinier settings are asked once and applied to every fit ( nothing is stored: joined runs own no state )
+## solvated Rg of every model from a Guinier fit of its loaded WAXSiS curve ( q*Rg <= GUINIER_MODEL_QRGMAX ); the
+## WAXSiS log Rg ( WAXSiS' own wider-range Guinier fit, low for extended models ) is reported for reference and
+## used only when our fit is not available. Experimental Guinier Rg when the best project's Load SAXS did not
+## cache one. As in Final model, the settings are asked once and applied to every fit ( nothing is stored:
+## joined runs own no state )
+$waxsis_log_rgs   = $notes_rgs;
 $guinier_rg_names = [];
 $missing_names    = [];
-foreach ( array_keys( array_diff_key( $iqresults, $notes_rgs ) ) as $name ) {
+foreach ( array_keys( $iqresults ) as $name ) {
     if ( $sas->data_name_exists( $name ) ) {
         $missing_names[] = $name;
     }
@@ -400,7 +403,7 @@ if ( count( $missing_names ) || $need_exp_guinier ) {
     }
     $what = [];
     if ( count( $missing_names ) ) {
-        $what[] = "the solvated R<sub>g</sub> of " . count( $missing_names ) . " model(s) without a WAXSiS log, from their WAXSiS curves";
+        $what[] = "the solvated R<sub>g</sub> of " . count( $missing_names ) . " model(s) from their WAXSiS curves";
     }
     if ( $need_exp_guinier ) {
         $what[] = "the R<sub>g</sub> of the experimental I(q)";
@@ -457,20 +460,29 @@ foreach ( $missing_names as $name ) {
         $notes_rgs[ $name ] = (object)[
             'rg'        => $r->rg
             ,'rg_sd'    => $r->rg_sd
-            ,'rg_solute' => null
+            ,'rg_solute' => $waxsis_log_rgs[ $name ]->rg_solute ?? null
+            ,'rg_log'   => $waxsis_log_rgs[ $name ]->rg ?? null
             ,'source'   => 'guinier'
             ,'quality'  => $r->quality
             ,'qrgmax'   => $r->qrgmax
         ];
         $guinier_rg_names[] = $name;
     } else {
-        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for " . curve_name_text( $name ) . ": " . $sas->last_error . "\n";
+        $output->_textarea .= "Guinier fit of the WAXSiS curve failed for " . curve_name_text( $name ) . ": " . $sas->last_error
+            . ( isset( $waxsis_log_rgs[ $name ] ) ? sprintf( "; using the WAXSiS log value %.1f", $waxsis_log_rgs[ $name ]->rg ) : "" ) . "\n";
     }
 }
 if ( count( $guinier_rg_names ) ) {
+    $lines = [];
+    foreach ( $guinier_rg_names as $name ) {
+        $lines[] = curve_name_text( $name ) . sprintf( " %.1f", $notes_rgs[ $name ]->rg )
+            . ( isset( $notes_rgs[ $name ]->rg_log ) ? sprintf( " (WAXSiS log %.1f)", $notes_rgs[ $name ]->rg_log ) : "" );
+    }
     $output->_textarea .=
-        "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the WAXSiS curve (no WAXSiS log) for "
-        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n";
+        "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the WAXSiS curve for "
+        . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $lines ) . "\n"
+        . ( count( array_filter( $guinier_rg_names, function( $n ) use ( $notes_rgs ) { return isset( $notes_rgs[ $n ]->rg_log ); } ) )
+            ? "The WAXSiS log values are WAXSiS' own Guinier fits over a wider q range, listed for reference only.\n" : "" );
 }
 
 $rg_map       = [];
@@ -483,7 +495,7 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
         $rg_map[ $name ] = $rg_obj->rg;
     }
     $rg_header = 'Rg solv. [&#8491;]';
-    ## say plainly where the values come from: models with a WAXSiS log are NOT refitted
+    ## say plainly when a value had to be taken from the WAXSiS log ( our fit of the curve not available )
     $from_log = [];
     foreach ( $iqresults as $name => $v ) {
         if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
@@ -492,9 +504,8 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
     }
     if ( count( $from_log ) ) {
         $output->_textarea .=
-            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit, not refitted here) for " . count( $from_log )
-            . " model(s): " . implode( ", ", $from_log ) . "\n"
-            . ( count( $from_log ) == count( $iqresults ) ? "All selected models have a WAXSiS log, so no Guinier fit of the WAXSiS curves was needed and the Guinier settings dialog is not shown.\n" : "" );
+            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit over a wider q range) because our fit of the curve is not available for "
+            . count( $from_log ) . " model(s): " . implode( ", ", $from_log ) . "\n";
     }
 } else {
     $missing_notes = array_keys( array_diff_key( $iqresults, $notes_rgs ) );

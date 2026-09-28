@@ -744,13 +744,15 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the stored WAXSiS curve;
-## experimental Guinier Rg when Load SAXS did not cache one. Both use the same Guinier settings, asked
-## from the user once ( prefilled with the last settings ), so all the Rg values are determined alike.
+## solvated Rg of every model from a Guinier fit of its stored WAXSiS curve ( q*Rg <= GUINIER_MODEL_QRGMAX );
+## the Rg in the WAXSiS log is WAXSiS' own Guinier fit over a wider range, which comes out low for extended
+## models, so it is only reported for reference and used when our fit is not available. The experimental
+## Guinier Rg is determined here when Load SAXS did not cache one. All fits use the same Guinier settings,
+## asked from the user once ( prefilled with the last settings ), so all the Rg values are determined alike.
+$waxsis_log_rgs   = $notes_rgs;
 $guinier_rg_names = [];
-$missing_names    = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
 $guinier_files    = [];
-foreach ( $missing_names as $name ) {
+foreach ( $iqresults as $name => $v ) {
     if ( isset( $iqfile_by_name[ $name ] ) && file_exists( $iqfile_by_name[ $name ] ) ) {
         $guinier_files[ $name ] = $iqfile_by_name[ $name ];
     }
@@ -767,7 +769,7 @@ if ( count( $guinier_files ) || $need_exp_guinier ) {
     }
     $what = [];
     if ( count( $guinier_files ) ) {
-        $what[] = "the solvated R<sub>g</sub> of " . count( $guinier_files ) . " model(s) without a WAXSiS log, from their stored WAXSiS curves";
+        $what[] = "the solvated R<sub>g</sub> of " . count( $guinier_files ) . " model(s) from their stored WAXSiS curves";
     }
     if ( $need_exp_guinier ) {
         $what[] = "the R<sub>g</sub> of the experimental I(q)";
@@ -869,7 +871,8 @@ $guinier_signature    = json_encode( $model_guinier_params );
                 $notes_rgs[ $name ] = (object)[
                     'rg'        => $r->rg
                     ,'rg_sd'    => $r->rg_sd
-                    ,'rg_solute' => null
+                    ,'rg_solute' => $waxsis_log_rgs[ $name ]->rg_solute ?? null
+                    ,'rg_log'   => $waxsis_log_rgs[ $name ]->rg ?? null
                     ,'source'   => 'guinier'
                     ,'quality'  => $r->quality
                     ,'qrgmax'   => $r->qrgmax
@@ -878,13 +881,21 @@ $guinier_signature    = json_encode( $model_guinier_params );
             } else {
                 $ga->tcpmessage( [ $textarea_key =>
                     "Guinier fit of the stored WAXSiS curve failed for " . curve_name_text( $name ) . ": "
-                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
+                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" )
+                    . ( isset( $waxsis_log_rgs[ $name ] ) ? sprintf( "; using the WAXSiS log value %.1f", $waxsis_log_rgs[ $name ]->rg ) : "" ) . "\n" ] );
             }
         }
         if ( count( $guinier_rg_names ) ) {
+            $lines = [];
+            foreach ( $guinier_rg_names as $name ) {
+                $lines[] = curve_name_text( $name ) . sprintf( " %.1f", $notes_rgs[ $name ]->rg )
+                    . ( isset( $notes_rgs[ $name ]->rg_log ) ? sprintf( " (WAXSiS log %.1f)", $notes_rgs[ $name ]->rg_log ) : "" );
+            }
             $ga->tcpmessage( [ $textarea_key =>
-                "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve (no WAXSiS log) for "
-                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n" ] );
+                "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve for "
+                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $lines ) . "\n"
+                . ( count( array_filter( $guinier_rg_names, function( $n ) use ( $notes_rgs ) { return isset( $notes_rgs[ $n ]->rg_log ); } ) )
+                    ? "The WAXSiS log values are WAXSiS' own Guinier fits over a wider q range, listed for reference only.\n" : "" ) ] );
         }
     }
 }
@@ -913,7 +924,7 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
         $rg_map[ $name ] = $rg_obj->rg;
     }
     $rg_header = 'Rg solv. [&#8491;]';
-    ## say plainly where the values come from: models with a WAXSiS log are NOT refitted
+    ## say plainly when a value had to be taken from the WAXSiS log ( our fit of the stored curve not available )
     $from_log = [];
     foreach ( $iqresults as $name => $v ) {
         if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
@@ -922,9 +933,8 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
     }
     if ( count( $from_log ) ) {
         $ga->tcpmessage( [ $textarea_key =>
-            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit, not refitted here) for " . count( $from_log )
-            . " model(s): " . implode( ", ", $from_log ) . "\n"
-            . ( count( $from_log ) == count( $iqresults ) ? "All selected models have a WAXSiS log, so no Guinier fit of the stored curves was needed and the Guinier settings dialog is not shown.\n" : "" ) ] );
+            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit over a wider q range) because our fit of the stored curve is not available for "
+            . count( $from_log ) . " model(s): " . implode( ", ", $from_log ) . "\n" ] );
     }
 } else {
     $missing_notes = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
