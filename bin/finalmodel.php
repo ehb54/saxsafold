@@ -913,6 +913,19 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
         $rg_map[ $name ] = $rg_obj->rg;
     }
     $rg_header = 'Rg solv. [&#8491;]';
+    ## say plainly where the values come from: models with a WAXSiS log are NOT refitted
+    $from_log = [];
+    foreach ( $iqresults as $name => $v ) {
+        if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
+            $from_log[] = curve_name_text( $name ) . sprintf( " %.1f", $notes_rgs[ $name ]->rg );
+        }
+    }
+    if ( count( $from_log ) ) {
+        $ga->tcpmessage( [ $textarea_key =>
+            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit, not refitted here) for " . count( $from_log )
+            . " model(s): " . implode( ", ", $from_log ) . "\n"
+            . ( count( $from_log ) == count( $iqresults ) ? "All selected models have a WAXSiS log, so no Guinier fit of the stored curves was needed and the Guinier settings dialog is not shown.\n" : "" ) ] );
+    }
 } else {
     $missing_notes = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
     $ga->tcpmessage( [ $textarea_key =>
