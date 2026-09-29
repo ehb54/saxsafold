@@ -387,7 +387,7 @@ foreach ( array_keys( $iqresults ) as $name ) {
     }
 }
 $need_exp_guinier = !isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg )
-    && $sas->data_name_exists( "$firstproject: Exp. I(q)" );
+    && $sas->data_name_exists( "Exp. I(q)" );
 $guinier_params   = [];
 
 if ( count( $missing_names ) || $need_exp_guinier ) {
@@ -440,7 +440,7 @@ if ( count( $missing_names ) || $need_exp_guinier ) {
 
     ## a stored experimental Rg that Final model determined with other settings is redone for this run
     if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_guinier->rg )
-         && $sas->data_name_exists( "$firstproject: Exp. I(q)" ) ) {
+         && $sas->data_name_exists( "Exp. I(q)" ) ) {
         $stored = $cgstates->{$best->iq->project}->state->exp_guinier;
         if ( json_encode( (array) ( $stored->params ?? [] ) ) != json_encode( $guinier_params ) ) {
             if ( ( $stored->origin ?? "" ) == "loadsaxs" ) {
@@ -825,7 +825,7 @@ if ( !$need_exp_guinier && isset( $cgstates->{$best->iq->project}->state->exp_gu
     $exp_guinier_rg = $cgstates->{$best->iq->project}->state->exp_guinier->rg;
 } elseif ( $need_exp_guinier ) {
     $exp_guinier = null;
-    if ( $sas->guinier_search( "$firstproject: Exp. I(q)", $exp_guinier, $guinier_params ) ) {
+    if ( $sas->guinier_search( "Exp. I(q)", $exp_guinier, $guinier_params ) ) {
         $exp_guinier_rg = $exp_guinier->rg;
         $output->_textarea .= "Experimental I(q) " . SAS::guinier_search_summary_text( $exp_guinier ) . "\n";
     } else {

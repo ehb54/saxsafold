@@ -362,22 +362,7 @@ if ( !$count ) {
     error_exit( "no frames found to process" );
 }
 
-## setup sas with Exp. I(q) data
-
-$plotname = "I(q) waxsis nnls";
-$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
-                             ,[
-                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
-                                 ,'titlefontsize' => 14
-                             ]);
-
-$sas->remove_plot_data( $plotname, "Res./SD" );
-$sas->remove_plot_data( $plotname, "WAXSiS" );
-$sas->remove_data( "Res./SD" );
-
-$chi2  = -1;
-$rmsd  = -1;
-$scale = 0;
+$model0_reload = false;
 
 ## define waxsis_cb here so it is available for model 0 recompute below as well as the per-model loop
 $waxsis_lc = 0;
@@ -434,19 +419,7 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
         }
     }
 
-    ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
-    ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
-    ## NOTE: do NOT add_plot here — model 0 belongs in the plot only if NNLS gives it non-zero
-    ## weight, which is handled by the NNLS results loop below (same as every other frame).
-    ## Adding it here with the pre-rename name "WAXSiS" and then calling rename_data() would
-    ## leave a stale "WAXSiS" trace in the plot because rename_data() only renames the data
-    ## store key, not the name field of any already-added plot trace.
-    $sas->remove_data( "WAXSiS" );
-    $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
-    $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
-    $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
-    $sas->remove_data( "WAXSiS org" );
-    $sas->remove_data( "WAXSiS interp" );
+    $model0_reload = true;
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
         ## first run after this feature was added: cache the existing result
@@ -492,6 +465,40 @@ if (
     $cgstate->state->output_load->iqplot = $m0_sas->plot( "I(q)" );
 } else {
     $ga->tcpmessage( [ $textarea_key => "Warning: could not recompute model 0 stats: " . $m0_sas->last_error . "\n" ] );
+}
+
+## setup sas with Exp. I(q) data
+
+$plotname = "I(q) waxsis nnls";
+$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
+                             ,[
+                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
+                                 ,'titlefontsize' => 14
+                             ]);
+
+$sas->remove_plot_data( $plotname, "Res./SD" );
+$sas->remove_plot_data( $plotname, "WAXSiS" );
+$sas->remove_data( "Res./SD" );
+
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
+## model 0 was recomputed above: load it into the sas object now that Exp. I(q) is present
+if ( $model0_reload ) {
+    ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
+    ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
+    ## NOTE: do NOT add_plot here — model 0 belongs in the plot only if NNLS gives it non-zero
+    ## weight, which is handled by the NNLS results loop below (same as every other frame).
+    ## Adding it here with the pre-rename name "WAXSiS" and then calling rename_data() would
+    ## leave a stale "WAXSiS" trace in the plot because rename_data() only renames the data
+    ## store key, not the name field of any already-added plot trace.
+    $sas->remove_data( "WAXSiS" );
+    $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
+    $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
+    $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
+    $sas->remove_data( "WAXSiS org" );
+    $sas->remove_data( "WAXSiS interp" );
 }
 
 $sas->rename_data( "WAXSiS", $waxsis_data_name );
