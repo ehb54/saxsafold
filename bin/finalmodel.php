@@ -1070,16 +1070,16 @@ $output->downloads = $cgstate->state->output_load->downloads;
 $output->iqresultswaxsis .=
     "<div>"
     . "&nbsp;&nbsp;&nbsp;"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $fitname )
+    . sprintf( "<a target=_blank href='%s'>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$sascoliqname", $sascoliqname ) )
+    . sprintf( "<a target=_blank href='%s'>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$sassomoiqname", $sassomoiqname ) )
+    . sprintf( "<a target=_blank href='%s'>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$pdboutname", $pdboutname ) )
+    . sprintf( "<a target=_blank href='%s'>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", url_with_version( "results/users/$logon/$base_dir/$fitname", $fitname ) )
     . "<br>&nbsp;"
     . "</div>"
     ;
 
 $output->struct = (object) [
-    "file" => "results/users/$logon/$base_dir/$pdboutname"
+    "file" => url_with_version( "results/users/$logon/$base_dir/$pdboutname", $pdboutname )
     #    ,"script" => "background white;ribbon only;select */29; color blue; select */30; color green; frame all"
     ,"script" => "background white;ribbon only;"
     ];

@@ -75,6 +75,14 @@ function object_set_defaults( $inobj, $defobj ) {
     return $inobj;
 }
 
+## the URL of a results file, followed by its modification time: the structure viewer and the download links
+## reuse fixed file names from run to run, and without the version a browser can show its cached copy of an
+## earlier run's file ( the server ignores the query string )
+function url_with_version( $url, $file ) {
+    clearstatcache( true, $file );
+    return file_exists( $file ) ? "$url?v=" . filemtime( $file ) : $url;
+}
+
 function run_cmd( $cmd, $exit_if_error = true, $array_result = false ) {
     global $run_cmd_last_error_code;
 
