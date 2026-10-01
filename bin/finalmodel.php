@@ -46,13 +46,7 @@ require_once "em.php";
 ## split names amoungst group
 
 $em = new em();
-function em_shutdown() {
-    global $em;
-    if ( isset( $em ) ) {
-        $em->release_if_has_instance();
-    }
-}
-register_shutdown_function( 'em_shutdown' );
+em_release_on_exit( $em );
 
 ## does the project already exist ?
 
@@ -261,7 +255,22 @@ $ga->tcpmessage( [ "_textarea" =>
                    . "\n"
                  ] );
 
-## ask really proceed
+## ask really proceed, together with the Guinier settings used later for the solvated Rg of every model
+## ( fits of the stored WAXSiS curves ) and, when Load SAXS did not cache one, the experimental Rg; asked
+## here, before the WAXSiS runs, so that no question waits for the user after a long computation
+$last_guinier = [];
+if ( isset( $cgstate->state->final_guinier_params ) ) {
+    $last_guinier = (array) $cgstate->state->final_guinier_params;
+} elseif ( isset( $cgstate->state->exp_guinier->params ) ) {
+    $last_guinier = (array) $cgstate->state->exp_guinier->params;
+}
+$guinier_note =
+    "<br><br>Guinier settings for the solvated R<sub>g</sub> of the models, from their WAXSiS curves"
+    . ( !isset( $cgstate->state->exp_guinier->rg ) ? ", and for the R<sub>g</sub> of the experimental I(q)" : "" )
+    . ". Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
+    . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
+    . "with the q&middot;R<sub>g</sub> limit (at most " . GUINIER_MODEL_QRGMAX . ") and the relative-error cut-off.<hr>";
+
 
 $estimate_note = $convergence_changed
     ? "<br><br><i>Note: convergence mode changed from '$load_convergence_predlg' (Load Structure) to '$input->waxsis_convergence_mode'. "
@@ -278,17 +287,10 @@ $response =
              "id"           => "q1"
              ,"title"       => "<h5>Proceed with computations? </h5>"
              ,"icon"        => "warning.png"
-             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note"
+             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note$guinier_note"
              ,"timeouttext" => "The time to respond has expired, please submit again."
              ,"buttons"     => [ "Yes, proceed", "Cancel for now" ]
-             ,"fields" => [
-                 [
-                  "id"          => "l1"
-                  ,"type"       => "label"
-                  ,"label"      => ""
-                  ,"align"      => "center"
-                 ]
-             ]
+             ,"fields" => guinier_question_fields( $last_guinier )
             ]
         )
     );
@@ -300,6 +302,14 @@ if ( isset( $response->error ) && strlen( $response->error ) ) {
 if ( $response->_response->button == "cancelfornow" ) {
     error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
 }
+
+$guinier_err    = "";
+$guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
+if ( strlen( $guinier_err ) ) {
+    error_exit( $guinier_err, true, $restore_old_data );
+}
+$cgstate->state->final_guinier_params = (object) $guinier_params;
+$ga->tcpmessage( [ "_textarea" => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
 
 ## collect models
 
@@ -326,21 +336,40 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
 
-## get instance to run waxsis
-### will need to get multiples
+## the instance that runs WAXSiS is acquired by waxsis_resources() just before this job's first WAXSiS run,
+## so a rerun whose curves are all cached takes none
 
-progress_text( 'Waiting for resources to run WAXSiS calculations.' );
+$textarea_key          = "_textarea";
+$waxsis_resources_used = false;
 
-if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
-    error_exit( $em->errors );
+function waxsis_resources( $resume_progress ) {
+    global $em;
+    global $ga;
+    global $input;
+    global $logon;
+    global $waxsis_params;
+    global $waxsis_resources_used;
+
+    if ( $em->has_instance() ) {
+        return;
+    }
+    $waxsis_resources_used = true;
+
+    progress_text( 'Waiting for resources to run WAXSiS calculations.' );
+    if ( !$em->acquire_polling(
+             gethostname() . ":$logon:$input->_uuid"
+             ,function( $waited ) {
+                 progress_text( 'Waiting for resources to run WAXSiS calculations'
+                                . ( $waited >= 60 ? ' (' . intdiv( $waited, 60 ) . ' min so far)' : '' )
+                                . '.<br>All compute instances are busy. Cancelling while waiting is safe.' );
+             }
+         ) ) {
+        error_exit( $em->errors );
+    }
+    $waxsis_params->host = $em->ip();
+    $ga->tcpmessage( [ "_textarea" => "Acquired resources for WAXSiS (" . $em->id() . ", " . $em->ip() . ")\n" ] );
+    progress_text( $resume_progress );
 }
-
-$em_ip = $em->ip();
-$em_id = $em->id();
-
-$textarea_key = "_textarea";
-
-$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 ## run waxsis calcs
 
@@ -352,7 +381,7 @@ $waxsis_params =
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => $cgstate->state->solvent_e_density
         ,'subdir'             => 'waxsisfinal'
-        ,'host'               => $em_ip
+        ,'host'               => ''   # set by waxsis_resources() once an instance is acquired
     ];
 
 
@@ -362,22 +391,7 @@ if ( !$count ) {
     error_exit( "no frames found to process" );
 }
 
-## setup sas with Exp. I(q) data
-
-$plotname = "I(q) waxsis nnls";
-$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
-                             ,[
-                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
-                                 ,'titlefontsize' => 14
-                             ]);
-
-$sas->remove_plot_data( $plotname, "Res./SD" );
-$sas->remove_plot_data( $plotname, "WAXSiS" );
-$sas->remove_data( "Res./SD" );
-
-$chi2  = -1;
-$rmsd  = -1;
-$scale = 0;
+$model0_reload = false;
 
 ## define waxsis_cb here so it is available for model 0 recompute below as well as the per-model loop
 $waxsis_lc = 0;
@@ -416,6 +430,7 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
         ] );
 
         $model0_pdb = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name ) . "-somo.pdb";
+        waxsis_resources( 'Running WAXSiS calculations on model 0' );
         $model0_params = clone $waxsis_params;
         $model0_params->subdir = 'waxsis';
 
@@ -434,19 +449,7 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
         }
     }
 
-    ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
-    ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
-    ## NOTE: do NOT add_plot here — model 0 belongs in the plot only if NNLS gives it non-zero
-    ## weight, which is handled by the NNLS results loop below (same as every other frame).
-    ## Adding it here with the pre-rename name "WAXSiS" and then calling rename_data() would
-    ## leave a stale "WAXSiS" trace in the plot because rename_data() only renames the data
-    ## store key, not the name field of any already-added plot trace.
-    $sas->remove_data( "WAXSiS" );
-    $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
-    $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
-    $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
-    $sas->remove_data( "WAXSiS org" );
-    $sas->remove_data( "WAXSiS interp" );
+    $model0_reload = true;
 } else {
     if ( !file_exists( $waxsis_model0_cached_file ) ) {
         ## first run after this feature was added: cache the existing result
@@ -492,6 +495,40 @@ if (
     $cgstate->state->output_load->iqplot = $m0_sas->plot( "I(q)" );
 } else {
     $ga->tcpmessage( [ $textarea_key => "Warning: could not recompute model 0 stats: " . $m0_sas->last_error . "\n" ] );
+}
+
+## setup sas with Exp. I(q) data
+
+$plotname = "I(q) waxsis nnls";
+$sas->create_plot_from_plot( SAS::PLOT_IQ, $plotname, $cgstate->state->output_load->iqplot
+                             ,[
+                                 'title' => PLOT_TITLE_IQ_NNLS_WAXSIS_FINAL
+                                 ,'titlefontsize' => 14
+                             ]);
+
+$sas->remove_plot_data( $plotname, "Res./SD" );
+$sas->remove_plot_data( $plotname, "WAXSiS" );
+$sas->remove_data( "Res./SD" );
+
+$chi2  = -1;
+$rmsd  = -1;
+$scale = 0;
+
+## model 0 was recomputed above: load it into the sas object now that Exp. I(q) is present
+if ( $model0_reload ) {
+    ## reload model 0 WAXSiS data into the sas object, interpolated and scaled onto Exp. I(q) grid
+    ## (mirrors the per-model loop: load -> interpolate -> scale_nchi2 -> remove intermediates)
+    ## NOTE: do NOT add_plot here — model 0 belongs in the plot only if NNLS gives it non-zero
+    ## weight, which is handled by the NNLS results loop below (same as every other frame).
+    ## Adding it here with the pre-rename name "WAXSiS" and then calling rename_data() would
+    ## leave a stale "WAXSiS" trace in the plot because rename_data() only renames the data
+    ## store key, not the name field of any already-added plot trace.
+    $sas->remove_data( "WAXSiS" );
+    $sas->load_file( SAS::PLOT_IQ, "WAXSiS org", $waxsis_model0_cached_file );
+    $sas->interpolate( "WAXSiS org", "Exp. I(q)", "WAXSiS interp" );
+    $sas->scale_nchi2( "Exp. I(q)", "WAXSiS interp", "WAXSiS", $chi2, $scale );
+    $sas->remove_data( "WAXSiS org" );
+    $sas->remove_data( "WAXSiS interp" );
 }
 
 $sas->rename_data( "WAXSiS", $waxsis_data_name );
@@ -572,6 +609,7 @@ foreach ( $names as $name ) {
         $iqfile     = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
         $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
         if ( !file_exists( $iqfile ) ) {
+            waxsis_resources( "Running WAXSiS calculations on frame $frame<br>Estimated $estimated_time_to_completion remaining" );
             $time_start = dt_now();
             $ok =
                 run_waxsis(
@@ -629,7 +667,10 @@ foreach ( $names as $name ) {
 }
 
 ## waxsis done, release elastic resources
-$em->release();
+$em->release_if_has_instance();
+if ( !$waxsis_resources_used ) {
+    $ga->tcpmessage( [ $textarea_key => "All WAXSiS curves were already computed, no compute instance was needed.\n" ] );
+}
 
 ## nnls
 
@@ -744,64 +785,21 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 
-## models without a WAXSiS log (older runs): solvated Rg from a Guinier fit of the stored WAXSiS curve;
-## experimental Guinier Rg when Load SAXS did not cache one. Both use the same Guinier settings, asked
-## from the user once ( prefilled with the last settings ), so all the Rg values are determined alike.
+## solvated Rg of every model from a Guinier fit of its stored WAXSiS curve ( q*Rg <= GUINIER_MODEL_QRGMAX );
+## the Rg in the WAXSiS log is WAXSiS' own Guinier fit over a wider range, which comes out low for extended
+## models, so it is only reported for reference and used when our fit is not available. The experimental
+## Guinier Rg is determined here when Load SAXS did not cache one. All fits use the Guinier settings asked
+## in the opening dialog ( prefilled with the last settings ), so all the Rg values are determined alike.
+$waxsis_log_rgs   = $notes_rgs;
 $guinier_rg_names = [];
-$missing_names    = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
 $guinier_files    = [];
-foreach ( $missing_names as $name ) {
+foreach ( $iqresults as $name => $v ) {
     if ( isset( $iqfile_by_name[ $name ] ) && file_exists( $iqfile_by_name[ $name ] ) ) {
         $guinier_files[ $name ] = $iqfile_by_name[ $name ];
     }
 }
 $need_exp_guinier = !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" );
-$guinier_params   = [];
-
 if ( count( $guinier_files ) || $need_exp_guinier ) {
-    $last = [];
-    if ( isset( $cgstate->state->final_guinier_params ) ) {
-        $last = (array) $cgstate->state->final_guinier_params;
-    } elseif ( isset( $cgstate->state->exp_guinier->params ) ) {
-        $last = (array) $cgstate->state->exp_guinier->params;
-    }
-    $what = [];
-    if ( count( $guinier_files ) ) {
-        $what[] = "the solvated R<sub>g</sub> of " . count( $guinier_files ) . " model(s) without a WAXSiS log, from their stored WAXSiS curves";
-    }
-    if ( $need_exp_guinier ) {
-        $what[] = "the R<sub>g</sub> of the experimental I(q)";
-    }
-    $response =
-        json_decode(
-            $ga->tcpquestion(
-                [
-                 "id"           => "q1"
-                 ,"title"       => "<h5>Guinier settings</h5>"
-                 ,"icon"        => "noicon.png"
-                 ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
-                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
-                                   . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
-                                   . "with the q&middot;R<sub>g</sub> limit and the relative-error cut-off.<hr>"
-                 ,"timeouttext" => "The time to respond has expired, please submit again."
-                 ,"buttons"     => [ "Use these settings", "Cancel for now" ]
-                 ,"fields"      => guinier_question_fields( $last )
-                ]
-            )
-        );
-    if ( isset( $response->error ) && strlen( $response->error ) ) {
-        error_exit( "Please submit again", true, $restore_old_data );
-    }
-    if ( !isset( $response->_response->button ) || $response->_response->button != "usethesesettings" ) {
-        error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
-    }
-    $guinier_err    = "";
-    $guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
-    if ( strlen( $guinier_err ) ) {
-        error_exit( $guinier_err, true, $restore_old_data );
-    }
-    $cgstate->state->final_guinier_params = (object) $guinier_params;
-    $ga->tcpmessage( [ $textarea_key => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
 
     ## an experimental Rg that Final model itself determined earlier is redone when the settings change,
     ## so it stays consistent with the model fits; one from Load SAXS is the user's choice there and is kept
@@ -856,16 +854,21 @@ $guinier_signature    = json_encode( $model_guinier_params );
             }
         } else {
             $ga->tcpmessage( [ $textarea_key => "Guinier fit of the stored WAXSiS curves not available: " . $sas->last_error . "\n" ] );
+            $guinier_call_failed = true;
         }
     }
     if ( count( $guinier_files ) ) {
         foreach ( $guinier_files as $name => $file ) {
+            if ( !empty( $guinier_call_failed ) && !isset( $guinier_results[ $file ] ) ) {
+                continue;   ## already reported once above
+            }
             if ( isset( $guinier_results[ $file ] ) && $guinier_results[ $file ]->ok ) {
                 $r = $guinier_results[ $file ];
                 $notes_rgs[ $name ] = (object)[
                     'rg'        => $r->rg
                     ,'rg_sd'    => $r->rg_sd
-                    ,'rg_solute' => null
+                    ,'rg_solute' => $waxsis_log_rgs[ $name ]->rg_solute ?? null
+                    ,'rg_log'   => $waxsis_log_rgs[ $name ]->rg ?? null
                     ,'source'   => 'guinier'
                     ,'quality'  => $r->quality
                     ,'qrgmax'   => $r->qrgmax
@@ -874,13 +877,21 @@ $guinier_signature    = json_encode( $model_guinier_params );
             } else {
                 $ga->tcpmessage( [ $textarea_key =>
                     "Guinier fit of the stored WAXSiS curve failed for " . curve_name_text( $name ) . ": "
-                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" ) . "\n" ] );
+                    . ( $guinier_results[ $file ]->errormsg ?? "unknown error" )
+                    . ( isset( $waxsis_log_rgs[ $name ] ) ? sprintf( "; using the WAXSiS log value %.1f", $waxsis_log_rgs[ $name ]->rg ) : "" ) . "\n" ] );
             }
         }
         if ( count( $guinier_rg_names ) ) {
+            $lines = [];
+            foreach ( $guinier_rg_names as $name ) {
+                $lines[] = curve_name_text( $name ) . sprintf( " %.1f", $notes_rgs[ $name ]->rg )
+                    . ( isset( $notes_rgs[ $name ]->rg_log ) ? sprintf( " (WAXSiS log %.1f)", $notes_rgs[ $name ]->rg_log ) : "" );
+            }
             $ga->tcpmessage( [ $textarea_key =>
-                "Solvated Rg from a Guinier fit of the stored WAXSiS curve (no WAXSiS log) for "
-                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", array_map( "curve_name_text", $guinier_rg_names ) ) . "\n" ] );
+                "Solvated Rg from a Guinier fit (q*Rg <= " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve for "
+                . count( $guinier_rg_names ) . " model(s): " . implode( ", ", $lines ) . "\n"
+                . ( count( array_filter( $guinier_rg_names, function( $n ) use ( $notes_rgs ) { return isset( $notes_rgs[ $n ]->rg_log ); } ) )
+                    ? "The WAXSiS log values are WAXSiS' own Guinier fits over a wider q range, listed for reference only.\n" : "" ) ] );
         }
     }
 }
@@ -909,6 +920,18 @@ if ( !empty( $notes_rgs ) && empty( array_diff_key( $iqresults, $notes_rgs ) ) )
         $rg_map[ $name ] = $rg_obj->rg;
     }
     $rg_header = 'Rg solv. [&#8491;]';
+    ## say plainly when a value had to be taken from the WAXSiS log ( our fit of the stored curve not available )
+    $from_log = [];
+    foreach ( $iqresults as $name => $v ) {
+        if ( isset( $notes_rgs[ $name ] ) && ( $notes_rgs[ $name ]->source ?? "waxsis" ) == "waxsis" ) {
+            $from_log[] = curve_name_text( $name ) . sprintf( " %.1f", $notes_rgs[ $name ]->rg );
+        }
+    }
+    if ( count( $from_log ) ) {
+        $ga->tcpmessage( [ $textarea_key =>
+            "Solvated Rg taken from the WAXSiS log (WAXSiS' own Guinier fit over a wider q range) because our fit of the stored curve is not available for "
+            . count( $from_log ) . " model(s): " . implode( ", ", $from_log ) . "\n" ] );
+    }
 } else {
     $missing_notes = array_keys( array_diff_key( $iqresults, $notes_rgs ) );
     $ga->tcpmessage( [ $textarea_key =>
@@ -945,8 +968,8 @@ if ( $use_solvated ) {
         "<small>Solvated Rg"
         . ( $n_waxsis  ? " from the WAXSiS log for $n_waxsis model(s)" : "" )
         . ( $n_waxsis && $n_guinier ? ";" : "" )
-        . ( $n_guinier ? " from a Guinier fit of the stored WAXSiS curve (<i>qR<sub>g</sub></i> &le; 1.3) for $n_guinier model(s)" : "" )
-        . ".</small><br>";
+        . ( $n_guinier ? " from a Guinier fit (q&middot;R<sub>g</sub> &le; " . $model_guinier_params[ 'qrgmax' ] . ") of the stored WAXSiS curve for $n_guinier model(s)" : "" )
+        . ". " . rg_weighted_averages_html( $iqresults, $rg_map, "solvated" ) . "</small><br>";
 }
 
 ### save results to state
@@ -1047,16 +1070,16 @@ $output->downloads = $cgstate->state->output_load->downloads;
 $output->iqresultswaxsis .=
     "<div>"
     . "&nbsp;&nbsp;&nbsp;"
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sascoliqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $sassomoiqname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", $pdboutname )
-    . sprintf( "<a target=_blank href=results/users/$logon/$base_dir/%s>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", $fitname )
+    . sprintf( "<a target=_blank href='%s'>I(q) csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$sascoliqname", $sascoliqname ) )
+    . sprintf( "<a target=_blank href='%s'>I(q) SOMO style csv &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$sassomoiqname", $sassomoiqname ) )
+    . sprintf( "<a target=_blank href='%s'>PDB (NMR-style) &#x21D3;</a>&nbsp;&nbsp;&nbsp;", url_with_version( "results/users/$logon/$base_dir/$pdboutname", $pdboutname ) )
+    . sprintf( "<a target=_blank href='%s'>FIT &#x21D3;</a>&nbsp;&nbsp;&nbsp;<br>&nbsp;", url_with_version( "results/users/$logon/$base_dir/$fitname", $fitname ) )
     . "<br>&nbsp;"
     . "</div>"
     ;
 
 $output->struct = (object) [
-    "file" => "results/users/$logon/$base_dir/$pdboutname"
+    "file" => url_with_version( "results/users/$logon/$base_dir/$pdboutname", $pdboutname )
     #    ,"script" => "background white;ribbon only;select */29; color blue; select */30; color green; frame all"
     ,"script" => "background white;ribbon only;"
     ];
