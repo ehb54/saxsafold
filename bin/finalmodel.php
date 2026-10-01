@@ -261,7 +261,22 @@ $ga->tcpmessage( [ "_textarea" =>
                    . "\n"
                  ] );
 
-## ask really proceed
+## ask really proceed, together with the Guinier settings used later for the solvated Rg of every model
+## ( fits of the stored WAXSiS curves ) and, when Load SAXS did not cache one, the experimental Rg; asked
+## here, before the WAXSiS runs, so that no question waits for the user after a long computation
+$last_guinier = [];
+if ( isset( $cgstate->state->final_guinier_params ) ) {
+    $last_guinier = (array) $cgstate->state->final_guinier_params;
+} elseif ( isset( $cgstate->state->exp_guinier->params ) ) {
+    $last_guinier = (array) $cgstate->state->exp_guinier->params;
+}
+$guinier_note =
+    "<br><br>Guinier settings for the solvated R<sub>g</sub> of the models, from their WAXSiS curves"
+    . ( !isset( $cgstate->state->exp_guinier->rg ) ? ", and for the R<sub>g</sub> of the experimental I(q)" : "" )
+    . ". Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
+    . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
+    . "with the q&middot;R<sub>g</sub> limit (at most " . GUINIER_MODEL_QRGMAX . ") and the relative-error cut-off.<hr>";
+
 
 $estimate_note = $convergence_changed
     ? "<br><br><i>Note: convergence mode changed from '$load_convergence_predlg' (Load Structure) to '$input->waxsis_convergence_mode'. "
@@ -278,17 +293,10 @@ $response =
              "id"           => "q1"
              ,"title"       => "<h5>Proceed with computations? </h5>"
              ,"icon"        => "warning.png"
-             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note"
+             ,"text"        => "The estimated time to complete WAXSiS<br>calculations on <strong>$models_to_estimate</strong> models is <strong>$estimated_time_to_completion</strong>$estimate_note$guinier_note"
              ,"timeouttext" => "The time to respond has expired, please submit again."
              ,"buttons"     => [ "Yes, proceed", "Cancel for now" ]
-             ,"fields" => [
-                 [
-                  "id"          => "l1"
-                  ,"type"       => "label"
-                  ,"label"      => ""
-                  ,"align"      => "center"
-                 ]
-             ]
+             ,"fields" => guinier_question_fields( $last_guinier )
             ]
         )
     );
@@ -300,6 +308,14 @@ if ( isset( $response->error ) && strlen( $response->error ) ) {
 if ( $response->_response->button == "cancelfornow" ) {
     error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
 }
+
+$guinier_err    = "";
+$guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
+if ( strlen( $guinier_err ) ) {
+    error_exit( $guinier_err, true, $restore_old_data );
+}
+$cgstate->state->final_guinier_params = (object) $guinier_params;
+$ga->tcpmessage( [ "_textarea" => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
 
 ## collect models
 
@@ -754,8 +770,8 @@ foreach ( $iqresults as $name => $v ) {
 ## solvated Rg of every model from a Guinier fit of its stored WAXSiS curve ( q*Rg <= GUINIER_MODEL_QRGMAX );
 ## the Rg in the WAXSiS log is WAXSiS' own Guinier fit over a wider range, which comes out low for extended
 ## models, so it is only reported for reference and used when our fit is not available. The experimental
-## Guinier Rg is determined here when Load SAXS did not cache one. All fits use the same Guinier settings,
-## asked from the user once ( prefilled with the last settings ), so all the Rg values are determined alike.
+## Guinier Rg is determined here when Load SAXS did not cache one. All fits use the Guinier settings asked
+## in the opening dialog ( prefilled with the last settings ), so all the Rg values are determined alike.
 $waxsis_log_rgs   = $notes_rgs;
 $guinier_rg_names = [];
 $guinier_files    = [];
@@ -765,52 +781,7 @@ foreach ( $iqresults as $name => $v ) {
     }
 }
 $need_exp_guinier = !isset( $cgstate->state->exp_guinier->rg ) && $sas->data_name_exists( "Exp. I(q)" );
-$guinier_params   = [];
-
 if ( count( $guinier_files ) || $need_exp_guinier ) {
-    $last = [];
-    if ( isset( $cgstate->state->final_guinier_params ) ) {
-        $last = (array) $cgstate->state->final_guinier_params;
-    } elseif ( isset( $cgstate->state->exp_guinier->params ) ) {
-        $last = (array) $cgstate->state->exp_guinier->params;
-    }
-    $what = [];
-    if ( count( $guinier_files ) ) {
-        $what[] = "the solvated R<sub>g</sub> of " . count( $guinier_files ) . " model(s) from their stored WAXSiS curves";
-    }
-    if ( $need_exp_guinier ) {
-        $what[] = "the R<sub>g</sub> of the experimental I(q)";
-    }
-    $response =
-        json_decode(
-            $ga->tcpquestion(
-                [
-                 "id"           => "q1"
-                 ,"title"       => "<h5>Guinier settings</h5>"
-                 ,"icon"        => "noicon.png"
-                 ,"text"        => "A Guinier analysis will determine " . implode( " and ", $what ) . ".<br>"
-                                   . "Leave the fields empty for the automatic range search, or set the same limits as on the Load SAXS page. "
-                                   . "The q<sup>2</sup> limits apply to the experimental curve only; the model curves are always searched from their first point, "
-                                   . "with the q&middot;R<sub>g</sub> limit and the relative-error cut-off.<hr>"
-                 ,"timeouttext" => "The time to respond has expired, please submit again."
-                 ,"buttons"     => [ "Use these settings", "Cancel for now" ]
-                 ,"fields"      => guinier_question_fields( $last )
-                ]
-            )
-        );
-    if ( isset( $response->error ) && strlen( $response->error ) ) {
-        error_exit( "Please submit again", true, $restore_old_data );
-    }
-    if ( !isset( $response->_response->button ) || $response->_response->button != "usethesesettings" ) {
-        error_exit( "Canceled - prior results kept", true, $restore_old_data, 'information.png' );
-    }
-    $guinier_err    = "";
-    $guinier_params = guinier_params_from_fields( $response->_response, $guinier_err );
-    if ( strlen( $guinier_err ) ) {
-        error_exit( $guinier_err, true, $restore_old_data );
-    }
-    $cgstate->state->final_guinier_params = (object) $guinier_params;
-    $ga->tcpmessage( [ $textarea_key => "Guinier settings: " . ( count( $guinier_params ) ? json_encode( $guinier_params ) : "automatic range search, defaults" ) . "\n" ] );
 
     ## an experimental Rg that Final model itself determined earlier is redone when the settings change,
     ## so it stays consistent with the model fits; one from Load SAXS is the user's choice there and is kept
