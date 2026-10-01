@@ -46,13 +46,7 @@ require_once "em.php";
 ## split names amoungst group
 
 $em = new em();
-function em_shutdown() {
-    global $em;
-    if ( isset( $em ) ) {
-        $em->release_if_has_instance();
-    }
-}
-register_shutdown_function( 'em_shutdown' );
+em_release_on_exit( $em );
 
 ## does the project already exist ?
 
@@ -342,21 +336,40 @@ if ( !link_existing_frames( $frameset, "preselected", $procdir, $names, $errors 
 
 # $output->_textarea = json_encode( $names, JSON_PRETTY_PRINT ) . "\n";
 
-## get instance to run waxsis
-### will need to get multiples
+## the instance that runs WAXSiS is acquired by waxsis_resources() just before this job's first WAXSiS run,
+## so a rerun whose curves are all cached takes none
 
-progress_text( 'Waiting for resources to run WAXSiS calculations.' );
+$textarea_key          = "_textarea";
+$waxsis_resources_used = false;
 
-if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
-    error_exit( $em->errors );
+function waxsis_resources( $resume_progress ) {
+    global $em;
+    global $ga;
+    global $input;
+    global $logon;
+    global $waxsis_params;
+    global $waxsis_resources_used;
+
+    if ( $em->has_instance() ) {
+        return;
+    }
+    $waxsis_resources_used = true;
+
+    progress_text( 'Waiting for resources to run WAXSiS calculations.' );
+    if ( !$em->acquire_polling(
+             gethostname() . ":$logon:$input->_uuid"
+             ,function( $waited ) {
+                 progress_text( 'Waiting for resources to run WAXSiS calculations'
+                                . ( $waited >= 60 ? ' (' . intdiv( $waited, 60 ) . ' min so far)' : '' )
+                                . '.<br>All compute instances are busy. Cancelling while waiting is safe.' );
+             }
+         ) ) {
+        error_exit( $em->errors );
+    }
+    $waxsis_params->host = $em->ip();
+    $ga->tcpmessage( [ "_textarea" => "Acquired resources for WAXSiS (" . $em->id() . ", " . $em->ip() . ")\n" ] );
+    progress_text( $resume_progress );
 }
-
-$em_ip = $em->ip();
-$em_id = $em->id();
-
-$textarea_key = "_textarea";
-
-$ga->tcpmessage( [ $textarea_key => "Acquired resources for WAXSiS ($em_id, $em_ip)\n" ] );
 
 ## run waxsis calcs
 
@@ -368,7 +381,7 @@ $waxsis_params =
         ,'expfile'            => $cgstate->state->saxsiqfile
         ,'solvent_e_density'  => $cgstate->state->solvent_e_density
         ,'subdir'             => 'waxsisfinal'
-        ,'host'               => $em_ip
+        ,'host'               => ''   # set by waxsis_resources() once an instance is acquired
     ];
 
 
@@ -417,6 +430,7 @@ if ( $load_convergence !== $input->waxsis_convergence_mode ) {
         ] );
 
         $model0_pdb = preg_replace( '/-somo\.pdb$/', '', $cgstate->state->output_load->name ) . "-somo.pdb";
+        waxsis_resources( 'Running WAXSiS calculations on model 0' );
         $model0_params = clone $waxsis_params;
         $model0_params->subdir = 'waxsis';
 
@@ -595,6 +609,7 @@ foreach ( $names as $name ) {
         $iqfile     = "$procdir/$pdbnoext-waxsis${waxsis_suffix}.dat";
         $notes_dest = "$procdir/$pdbnoext-waxsis${waxsis_suffix}-notes.log";
         if ( !file_exists( $iqfile ) ) {
+            waxsis_resources( "Running WAXSiS calculations on frame $frame<br>Estimated $estimated_time_to_completion remaining" );
             $time_start = dt_now();
             $ok =
                 run_waxsis(
@@ -652,7 +667,10 @@ foreach ( $names as $name ) {
 }
 
 ## waxsis done, release elastic resources
-$em->release();
+$em->release_if_has_instance();
+if ( !$waxsis_resources_used ) {
+    $ga->tcpmessage( [ $textarea_key => "All WAXSiS curves were already computed, no compute instance was needed.\n" ] );
+}
 
 ## nnls
 
