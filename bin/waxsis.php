@@ -139,7 +139,7 @@ function run_waxsis( $pdb, $config, $cb_on_write, $exit_waxsis_error = true ) {
     }
 
     if ( $run_cmd_last_error_code ) {
-        if ( $exit_on_waxsis_error ) {
+        if ( $exit_waxsis_error ) {
             error_exit( "Error running WAXSiS on structure" );
         }
         return false;

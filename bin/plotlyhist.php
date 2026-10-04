@@ -330,7 +330,7 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                            ,"visible"        => true
                                            ,"showline"       => false
-                                           ,"range"          => [ 0.8, 1.8 ]
+                                           ,"range"          => [ 0.55, 1.75 ]   ## rows at 1 and 1.5 sit at 40% and 80% of the strip, clear of the y2 axis labels
                                            ,"zeroline"       => false
                                            ,"tickvals"       => [ 1, 1.5 ]
                                            ,"ticktext"       => [ "computed", "expt." ]
@@ -352,13 +352,13 @@ function final_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $adjac
                                            ]
                                           ] );
                                            
-            $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
+            $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
             $plot->layout->showlegend         = true;
 
             $plot->layout->yaxis->title->text = "Norm. Frequency";
             $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-            $plot->layout->yaxis2->domain     = [ 0.5, .86 ];
-            $plot->layout->yaxis3->domain     = [ 0.87, 0.97 ];   ## marker strip: two rows of triangles, just above the bars
+            $plot->layout->yaxis2->domain     = [ 0.5, .85 ];
+            $plot->layout->yaxis3->domain     = [ 0.885, 0.985 ];   ## marker strip: two rows of triangles, just above the bars
             $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
 #            $plot->layout->barmode            = "group";
@@ -733,7 +733,7 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                    ]
                                    ,"visible"        => true
                                    ,"showline"       => false
-                                   ,"range"          => [ 0.8, 1.8 ]
+                                   ,"range"          => [ 0.55, 1.75 ]   ## rows at 1 and 1.5 sit at 40% and 80% of the strip, clear of the y2 axis labels
                                    ,"zeroline"       => false
                                    ,"tickvals"       => [ 1, 1.5 ]
                                    ,"ticktext"       => [ "computed", "expt." ]
@@ -756,13 +756,13 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
                                   ] );
 
 
-    $plot->layout->title              = "NNLS fitting models dry Rg (top; Rg markers: expt. upper row, computed lower row)<br>MMC dry Rg Histogram (bottom)";
+    $plot->layout->title              = "NNLS fitting models dry Rg (top)<br>MMC dry Rg Histogram (bottom)";
     $plot->layout->showlegend         = true;
 
     $plot->layout->yaxis->title->text = "Norm. Frequency";
     $plot->layout->yaxis->domain      = [ 0, .4 ]; 
-    $plot->layout->yaxis2->domain     = [ 0.5, .86 ];
-    $plot->layout->yaxis3->domain     = [ 0.87, 0.97 ];   ## marker strip: two rows of triangles, just above the bars
+    $plot->layout->yaxis2->domain     = [ 0.5, .85 ];
+    $plot->layout->yaxis3->domain     = [ 0.885, 0.985 ];   ## marker strip: two rows of triangles, just above the bars
     $plot->layout->legend             = [ "x" => 1.1, "y" => .1 ];
 
     #            $plot->layout->barmode            = "group";
