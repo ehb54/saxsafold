@@ -41,7 +41,7 @@ $sas       = new SAS( false );
 
 ## do we have at least 2 projects?
 
-if ( count( $input->projects ) < 2 ) {
+if ( !isset( $input->projects ) || !is_array( $input->projects ) || count( $input->projects ) < 2 ) {
     error_exit( "At least 2 projects must be selected" );
 }
 
@@ -522,9 +522,9 @@ $prfiles    = [];
 
 ## need to offset duplicate frame numbers or else the jsmol will fail for frame select
 
-$frameused             = [];
+$framesused            = [];
 $name_to_frame         = (object)[];
-$frame_offset_messages = [];
+$frame_messages        = [];
 
 foreach ( $iqresults as $name => $conc ) {
     if ( !preg_match( '/^([^:]*):/', $name, $matches ) ) {

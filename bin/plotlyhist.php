@@ -191,14 +191,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                 }
             }
 
-            $bin_size = ( max( $plot->data[0]->y ) - min( $plot->data[0]->y ) ) / $plotly_hist_bin_count;
+            ## no frames (an MMC run that accepted no moves): no bins; frames of a single Rg: one bin at that Rg
+            $bin_size = count( $plot->data[0]->y ) ? ( max( $plot->data[0]->y ) - min( $plot->data[0]->y ) ) / $plotly_hist_bin_count : 0;
 
             foreach ( $plot->data[0]->y as $rg ) {
-                @$rghisto->rgfull[ (string)( round( $rg / $bin_size ) * $bin_size ) ]++;
+                @$rghisto->rgfull[ (string)( $bin_size ? round( $rg / $bin_size ) * $bin_size : $rg ) ]++;
             }
             
             foreach ( $plot->data[1]->y as $rg ) {
-                @$rghisto->rgstride[ (string)( round( $rg / $bin_size ) * $bin_size ) ]++;
+                @$rghisto->rgstride[ (string)( $bin_size ? round( $rg / $bin_size ) * $bin_size : $rg ) ]++;
             }
 
             ksort( $rghisto->rgfull, SORT_NUMERIC );
@@ -676,6 +677,11 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
     #    echo "\$accumres->histplot2->data[0]:\n" . json_encode( $accumres->histplot2->data[0], JSON_PRETTY_PRINT ) . "\n\n";
     #    echo "\$accumres->histplot2->data[1]:\n" . json_encode( $accumres->histplot2->data[1], JSON_PRETTY_PRINT ) . "\n\n";
     #    error_exit( "testing" );
+
+    if ( !isset( $accumres ) ) {
+        ## no project has its MMC Rg values: no histogram, and no model Rg for the bars above it
+        return;
+    }
 
     $plot = $accumres->histplot2;
                 
