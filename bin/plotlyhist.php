@@ -191,14 +191,15 @@ function plotly_hist( $histname, $result, $stride = 0, $offset = 0, $adjacent = 
                 }
             }
 
-            $bin_size = ( max( $plot->data[0]->y ) - min( $plot->data[0]->y ) ) / $plotly_hist_bin_count;
+            ## no frames (an MMC run that accepted no moves): no bins; frames of a single Rg: one bin at that Rg
+            $bin_size = count( $plot->data[0]->y ) ? ( max( $plot->data[0]->y ) - min( $plot->data[0]->y ) ) / $plotly_hist_bin_count : 0;
 
             foreach ( $plot->data[0]->y as $rg ) {
-                @$rghisto->rgfull[ (string)( round( $rg / $bin_size ) * $bin_size ) ]++;
+                @$rghisto->rgfull[ (string)( $bin_size ? round( $rg / $bin_size ) * $bin_size : $rg ) ]++;
             }
             
             foreach ( $plot->data[1]->y as $rg ) {
-                @$rghisto->rgstride[ (string)( round( $rg / $bin_size ) * $bin_size ) ]++;
+                @$rghisto->rgstride[ (string)( $bin_size ? round( $rg / $bin_size ) * $bin_size : $rg ) ]++;
             }
 
             ksort( $rghisto->rgfull, SORT_NUMERIC );
