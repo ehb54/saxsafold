@@ -41,7 +41,7 @@ $sas       = new SAS( false );
 
 ## do we have at least 2 projects?
 
-if ( count( $input->projects ) < 2 ) {
+if ( !isset( $input->projects ) || !is_array( $input->projects ) || count( $input->projects ) < 2 ) {
     error_exit( "At least 2 projects must be selected" );
 }
 
