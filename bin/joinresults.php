@@ -522,9 +522,9 @@ $prfiles    = [];
 
 ## need to offset duplicate frame numbers or else the jsmol will fail for frame select
 
-$frameused             = [];
+$framesused            = [];
 $name_to_frame         = (object)[];
-$frame_offset_messages = [];
+$frame_messages        = [];
 
 foreach ( $iqresults as $name => $conc ) {
     if ( !preg_match( '/^([^:]*):/', $name, $matches ) ) {
