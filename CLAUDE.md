@@ -353,6 +353,17 @@ Work done in this session targets `feature/iqw-trace-rename`.
 
 ---
 
+## Maintenance tools
+
+`bin/replace_expt_iq.php` replaces a project's experimental I(q) by a rescaled copy of the same curve ( e.g. the same data as I*(q) ) without rerunning the stages. Run it inside the container, in the project directory, as the web server user; with no arguments it prints its documentation:
+
+```
+runuser -u www-data -- php /opt/genapp/<app>/bin/replace_expt_iq.php --check NEW_FILE [--sd file|scaled]
+runuser -u www-data -- php /opt/genapp/<app>/bin/replace_expt_iq.php --apply NEW_FILE --sd file|scaled
+```
+
+It refuses unless the project is idle, the q grid is identical and the intensities ( and, with `--sd file`, the SDs ) are the stored ones times one constant. It then updates every stored plot holding the curve, recomputing residuals and RMSD / nChi^2 / P-value annotations with sas.php and checking them against the factors, recomputes the experimental Guinier result, and backs up state.json first. Rerun Final model afterwards.
+
 ## Known subtleties
 
 1. **`{};` at file top** — every PHP file starts with `{};` (empty block). Required by GenApp's parser; do not remove.
