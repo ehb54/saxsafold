@@ -678,6 +678,11 @@ function joined_hist( $result, $nnlsresults, $nnlsresults_colors, $rgdata, $note
     #    echo "\$accumres->histplot2->data[1]:\n" . json_encode( $accumres->histplot2->data[1], JSON_PRETTY_PRINT ) . "\n\n";
     #    error_exit( "testing" );
 
+    if ( !isset( $accumres ) ) {
+        ## no project has its MMC Rg values: no histogram, and no model Rg for the bars above it
+        return;
+    }
+
     $plot = $accumres->histplot2;
                 
     $plot->layout =
