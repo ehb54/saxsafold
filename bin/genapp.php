@@ -190,6 +190,8 @@ class GenApp {
         return "ok";
     }
 
+    ## the user's answer as the JSON string that msg-tcpserver sends; an error is a JSON string too
+    ## ({"error":...}), so the callers' json_decode() sees it on PHP 8, where decoding an object throws
     function tcpquestion( $question, $timeout = 300, $buffersize = 65536 ) {
         $result = (object)[];
         $msg    = (object)[];
@@ -205,7 +207,7 @@ class GenApp {
             $msg->_question = (object)$question;
         } else {
             $result->error = 'question must be a json string, array or object';
-            return $result;
+            return json_encode( $result );
         }
         
         $msgj = utf8_encode( json_encode( $msg ) );
@@ -217,18 +219,18 @@ class GenApp {
         # connect
         if ( !($socket = socket_create( AF_INET, SOCK_STREAM, SOL_TCP ) ) ) {
             $result->error = 'socket create error : ' . socket_strerror( socket_last_error() );
-            return $result;
+            return json_encode( $result );
         }
         if ( !socket_connect( $socket, $this->input->_tcphost, intval( $this->input->_tcpport ) ) ) {
             $result->error = 'socket connect error : ' . socket_strerror( socket_last_error() );
-            return $result;
+            return json_encode( $result );
         }
 
         # send question
 
         if ( strlen( $msgj ) != ( $bytes_sent = socket_write( $socket, $msgj, strlen( $msgj ) ) ) ) {
             $result->error = "socket send error bytes sent = $bytes_sent : " . socket_strerror( socket_last_error() );
-            return $result;
+            return json_encode( $result );
         }
 
         # receive answer

@@ -100,6 +100,10 @@ if ( isset( $cgstate->state->mmcdownloaded ) ) {
 
 $cgstate->state->mmcstride = 10;
 $output->struct = unserialize( serialize( $cgstate->state->output_load->struct ) );
+if ( !is_object( $output->struct ) ) {
+    ## no structure in the project's state: the viewer script alone, as PHP 7.4 made it
+    $output->struct = (object)[];
+}
 $output->struct->script = "background white; color structure; ribbon only";
 if ( isset( $cgstate->state->flex ) && count( $cgstate->state->flex ) ) {
     $output->struct->script .= "; select ";
