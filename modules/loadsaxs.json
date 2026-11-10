@@ -206,7 +206,7 @@
         ,{
             "role"       : "input"
             ,"id"        : "saxsprfile"
-            ,"label"     : "SAXS P(r) file <a target=_blank href=https://somo.chem.utk.edu/bayesapp>[compute using BayesApp]</a>"
+            ,"label"     : "SAXS P(r) file <a target=_blank href=https://bayesfit.genapp.rocks/bayesapp/>[compute using BayesApp]</a>"
             ,"type"      : "lrfile"
             ,"help"      : "You can use BayesApp to compute a P(r) from an I(q) or download ATSAS and use GNOM"
             ,"required"  : "true"
