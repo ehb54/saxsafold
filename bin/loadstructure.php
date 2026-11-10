@@ -60,13 +60,7 @@ $cgstate = new cgrun_state();
 require_once "em.php";
 
 $em = new em();
-function em_shutdown() {
-    global $em;
-    if ( isset( $em ) ) {
-        $em->release_if_has_instance();
-    }
-}
-register_shutdown_function( 'em_shutdown' );
+em_release_on_exit( $em );
 
 ## set waxsis
 require_once "waxsis.php";
@@ -636,9 +630,16 @@ if ( $chaincount != "1" ) {
 $ga->tcpmessage( $output );
 progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations.<br>Please be patient as WAXSiS calculations can take some time to complete ...' );
 
-## get instance to run waxsis
+## get instance to run waxsis ( polled, so nothing stays queued in the manager if the job is cancelled meanwhile )
 
-if ( !$em->acquire( gethostname() . ":$logon:$input->_uuid" ) ) {
+if ( !$em->acquire_polling(
+         gethostname() . ":$logon:$input->_uuid"
+         ,function( $waited ) {
+             progress_text( 'Structural computations complete (see results below). Waiting for resources to run WAXSiS calculations'
+                            . ( $waited >= 60 ? ' (' . intdiv( $waited, 60 ) . ' min so far)' : '' )
+                            . '.<br>All compute instances are busy. Cancelling while waiting is safe.' );
+         }
+     ) ) {
     error_exit( $em->errors );
 }
 
@@ -717,7 +718,7 @@ if ( 1 ) {
 }
 
 ## waxsis done, release elastic resources
-$em->release();
+$em->release_if_has_instance();
 
 progress_text( 'Assembling final results ...' );
 

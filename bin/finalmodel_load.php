@@ -134,5 +134,13 @@ if ( !isset( $result->histplotfinal ) ) {
     }
 }
 
+## offer the settings of the last run again ( the form otherwise reverts to its defaults )
+if ( isset( $cgstate->state->waxsis_final_convergence ) ) {
+    $result->waxsis_convergence_mode = $cgstate->state->waxsis_final_convergence;
+}
+if ( isset( $cgstate->state->final_adjacent_frames ) ) {
+    $result->adjacent_frames = $cgstate->state->final_adjacent_frames;
+}
+
 echo json_encode( $result );
 exit;
